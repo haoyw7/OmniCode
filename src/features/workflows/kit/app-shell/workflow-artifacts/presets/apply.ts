@@ -8,19 +8,7 @@
  * 条目只会**追加**（journal 只追加），所以四种折叠都可以按到达顺序单遍完成。
  */
 
-import {
-  artifactFieldLabel,
-  chartSeriesFields,
-  type ArtifactChartScale,
-  type ArtifactChartType,
-  type ArtifactField,
-  type ArtifactPresetKind,
-  type ArtifactPresetSpec,
-  type BoardSpec,
-  type ChartSpec,
-  type MetricsSpec,
-  type TableSpec,
-} from "./spec.js";
+import { artifactFieldLabel, chartSeriesFields, type ArtifactChartScale, type ArtifactChartType, type ArtifactField, type ArtifactPresetKind, type ArtifactPresetSpec, type BoardSpec, type ChartSpec, type MetricsSpec, type TableSpec } from "./spec.js";
 
 /**
  * 一条到达的条目。`sequence` 是 run 内全局递增的事件序号——它同时是 React key

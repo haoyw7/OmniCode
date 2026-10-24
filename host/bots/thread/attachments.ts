@@ -9,8 +9,8 @@ import { attachmentPath, MAX_REMOTE_ATTACHMENT_BYTES } from "../../attachments";
 import { claimCheckoutResource } from "../../checkout-guards";
 import { resolveHostWorktreeAsync } from "../../git-worktrees";
 import { existingPath } from "../../workspace";
-import { sniffImageMime } from "../../../src/features/connections/files/model/filePreview";
-import type { RemoteAttachment } from "../../../src/features/connections/model/protocol";
+import { sniffImageMime } from "../../../src/domain/imageBytes";
+import type { RemoteAttachment } from "../../../src/contracts/protocol";
 import { currentMachineIO, localMachineIO, machineFs, withMachineIO } from "../../machine-io";
 
 type ReplyAttachmentSource =

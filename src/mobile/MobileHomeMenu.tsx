@@ -1,5 +1,5 @@
 import { useMemo, type RefObject } from "react";
-import type { HostProject, HostSessionSummary } from "../features/connections/model/protocol";
+import type { HostProject, HostSessionSummary } from "../contracts/protocol";
 import { Folder } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { MobileSheet, SHEET_WIDTH } from "./MobileSheet";

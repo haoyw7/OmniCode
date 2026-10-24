@@ -1,14 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  editorTabKey,
-  isFilesystemTab,
-  isPreviewableTab,
-  leafIds,
-  newFileTab,
-  newSubagentTab,
-  newTab,
-  openEditorTab,
-} from "./layout";
+import { editorTabKey, isFilesystemTab, isPreviewableTab, leafIds, newFileTab, newSubagentTab, newTab, openEditorTab } from "./layout";
 import { collectWorkspaceSnapshot } from "./workspaceSnapshot";
 
 const agent = (parentSessionId: string, path: string[]) =>

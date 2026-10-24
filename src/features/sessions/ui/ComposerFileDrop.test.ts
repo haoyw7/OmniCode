@@ -1,13 +1,11 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DragDropEvent } from "@tauri-apps/api/webview";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import {
-  EXPLORER_FILE_POINTER_DRAG_EVENT,
-  type ExplorerFilePointerDragDetail,
-} from "../../../shared/lib/drag";
+import { EXPLORER_FILE_POINTER_DRAG_EVENT, type ExplorerFilePointerDragDetail } from "../../../shared/lib/drag";
 import { Composer } from "./Composer";
 
 const { invoke, listen, platform } = vi.hoisted(() => ({
@@ -30,7 +28,7 @@ vi.mock("../../../platform/tauri/platform", async (importOriginal) => ({
     return platform.isWin;
   },
 }));
-vi.mock("./useComposerSkills", () => ({
+vi.mock("../../skills/model/useComposerSkills", () => ({
   useComposerSkills: () => ({
     contextKey: "codex:~",
     contextToken: { key: "codex:~", generation: 0 },

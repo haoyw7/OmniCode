@@ -2,26 +2,14 @@ import { DisclosureChevron } from "../../../../../shared/ui/DisclosureChevron";
 import { useContext, useState } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
-import type { ApprovalDecision } from "../../../../../integrations/harness";
-import type { Block } from "../../../model/session";
-import {
-  needsApproval,
-  toolCallLabel,
-  toolCallState,
-} from "../../../model/transcriptActivity";
-import {
-  resolveToolRenderer,
-  toolBodyText,
-} from "../../../model/toolRenderer";
-import { TranscriptPlatformContext } from "../../TranscriptPlatform";
+import type { ApprovalDecision } from "../../../../../contracts/harness";
+import type { Block } from "../../../../../contracts/session";
+import { needsApproval, toolCallState } from "../../../model/transcriptActivity";
+import { toolCallLabel } from "../../../../../domain/toolLabel";
+import { resolveToolRenderer, toolBodyText } from "../../../model/toolRenderer";
+import { TranscriptPlatformContext } from "../../../../../shared/ui/markdown/TranscriptPlatform";
 import { ToolOutput } from "./ToolBody";
-import {
-  ApprovalControls,
-  ToolKindIcon,
-  ToolCallStatusIcon,
-  ToolCallSummary,
-  ToolOpenRow,
-} from "./ToolCallParts";
+import { ApprovalControls, ToolKindIcon, ToolCallStatusIcon, ToolCallSummary, ToolOpenRow } from "./ToolCallParts";
 
 /**
  * One tool call: a summary line every renderer shares, and whatever the call

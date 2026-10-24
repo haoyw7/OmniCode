@@ -1,5 +1,7 @@
 import { newSession } from "../src/features/sessions/model/session";
-import { applyHarnessEvent } from "../src/integrations/harness/core/apply";
+import { createSessionProjection } from "../src/domain/apply";
+import { resolveModel as projectionResolveModel } from "../src/integrations/harness/core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { afterEach, expect, it } from "vitest";
 import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";

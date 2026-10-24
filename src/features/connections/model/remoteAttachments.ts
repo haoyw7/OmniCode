@@ -1,6 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { Attachment } from "../../sessions/model/session";
-import type { RemoteAttachment } from "./protocol";
+import { readAttachmentBase64 } from "../../../platform/tauri/attachmentFiles";
+import type { Attachment } from "../../../contracts/session";
+import type { RemoteAttachment } from "../../../contracts/protocol";
 import { remoteRequest } from "./connections";
 
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -47,7 +47,7 @@ export async function uploadRemoteAttachments(
     const data =
       file.data ??
       (file.path
-        ? await invoke<string>("read_file_base64", { path: file.path })
+        ? await readAttachmentBase64(file.path)
         : undefined);
     if (data === undefined)
       throw new Error(`Cannot read ${file.name} for remote upload`);

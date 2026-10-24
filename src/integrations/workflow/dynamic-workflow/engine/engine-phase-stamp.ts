@@ -5,8 +5,8 @@
  * 表由引擎拥有并在实例创建时写入；本模块只读取。
  */
 
-import type { RunEvent } from "./types.js";
-import { refToString, WorkflowError } from "./types.js";
+import { type RunEvent, refToString, WorkflowError } from "./types.js";
+
 
 /** 实例键（`siteId@ordinal`）→ 它出生时的阶段名。引擎的 `instancePhases` 的只读视图。 */
 export type InstancePhases = ReadonlyMap<string, string>;

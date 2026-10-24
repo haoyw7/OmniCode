@@ -21,11 +21,7 @@ vi.mock("../../../platform/tauri/fs", () => ({
 }));
 
 import { BranchPicker } from "./BranchPicker";
-import {
-  gitBranches,
-  gitCheckout,
-  gitCreateBranch,
-} from "../../../platform/tauri/fs";
+import { gitBranches, gitCheckout, gitCreateBranch } from "../../../platform/tauri/fs";
 
 let container: HTMLDivElement;
 let root: Root;

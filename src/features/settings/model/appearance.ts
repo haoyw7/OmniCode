@@ -2,26 +2,16 @@ import { animate, type AnimationPlaybackControlsWithThen } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { prefersReducedMotion } from "../../../shared/lib/reducedMotion";
 import { DESKTOP_SCHEME_KEY, isDesktopDocument, loadDesktopTheme } from "../../../shared/theme/desktopAppearance";
-import { activePreferenceStore, SHARED_PREFERENCES_CHANGED } from "./sharedPreferences";
+import { activePreferenceStore, SHARED_PREFERENCES_CHANGED, preferenceStorage } from "./sharedPreferences";
 import { parsePreferenceAsset, preferenceAssetUrl, PREFERENCE_ASSET_READY } from "./preferenceAssets";
-import { preferenceStorage } from "./sharedPreferences";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+
+import { nativeAssetUrl, setNativeWindowGlass, setNativeWindowBackgroundBlur } from "../../../platform/tauri/appearanceAssets";
 import { hslToRgb, isHexColor, type Rgb } from "../../../shared/lib/colorUtils";
 import { IS_LINUX, IS_MAC } from "../../../platform/tauri/platform";
 import { readFlag, writeFlag } from "./storageFlags";
 import { applyUiScale, loadUiScale } from "./uiScale";
-import {
-  applyPreparedNewThreadBackground,
-  clearPreparedNewThreadBackground,
-} from "./newThreadBackgroundEffects";
-import {
-  applyDesktopSkin,
-  DESKTOP_SKIN_INFO,
-  DESKTOP_SKIN_KEY,
-  isDesktopSkinId,
-  loadDesktopSkin,
-  type DesktopSkinPreference,
-} from "../../../shared/theme/desktopSkin";
+import { applyPreparedNewThreadBackground, clearPreparedNewThreadBackground } from "./newThreadBackgroundEffects";
+import { applyDesktopSkin, DESKTOP_SKIN_INFO, DESKTOP_SKIN_KEY, isDesktopSkinId, loadDesktopSkin, type DesktopSkinPreference } from "../../../shared/theme/desktopSkin";
 
 const ACCENT_COLOR_KEY = "omnicode.accentColor";
 const THEME_HUE_KEY = "omnicode.themeHue";
@@ -494,7 +484,7 @@ export function syncNativeGlass(scheme: ColorScheme) {
   appliedGlassRequest = request;
   const generation = ++glassSyncGeneration;
   const setWindow = () =>
-    invoke("set_window_glass_enabled", { enabled, background }).catch(() => {});
+    setNativeWindowGlass(enabled, background).catch(() => {});
 
   if (glassFadeMotion !== undefined) {
     glassFadeMotion.stop();
@@ -664,7 +654,7 @@ export function applySidebarBlur(value: number) {
   const next = Math.round(clamp(value, SIDEBAR_BLUR_MIN, SIDEBAR_BLUR_MAX));
   if (next === appliedSidebarBlur) return next;
   appliedSidebarBlur = next;
-  void invoke("set_window_background_blur", { radius: next });
+  void setNativeWindowBackgroundBlur(next);
   return next;
 }
 
@@ -769,7 +759,7 @@ export function applyChatBackground(
 export function chatBackgroundSrc(path: string | null): string | null {
   if (!path) return null;
   if (parsePreferenceAsset(path)) return preferenceAssetUrl(path) ?? null;
-  return `${convertFileSrc(path)}?v=${chatBackgroundRevision}`;
+  return `${nativeAssetUrl(path)}?v=${chatBackgroundRevision}`;
 }
 
 function isNewThreadBackgroundEffect(

@@ -3,13 +3,8 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { pathKey } from "../../../shared/lib/paths";
-import {
-  loadProjectGroupAssignments,
-  loadProjectGroups,
-  saveProjectGroupAssignments,
-  saveProjectGroups,
-} from "../model/projectGroups";
-import { savePinnedProjects } from "../model/recents";
+import { loadProjectGroupAssignments, loadProjectGroups } from "../model/projectGroups";
+
 import { ProjectList } from "../../../app/shell/ProjectList";
 import { useProjectDiffStats } from "../../source-control/hooks/useProjectDiffStats";
 

@@ -2,7 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { notificationMuteActions } from "../../notifications/ui/notificationMuteActions";
+import { notificationMuteActions } from "../../notifications/model/notificationMuteActions";
 import { TabGroupMenu } from "./TabGroupMenu";
 import { BellOff } from "../../../shared/ui/icons";
 import { startMotionClock, stopMotionClock, finishMotion } from "../../../../tests/helpers/sharedMotionClock";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { HostSessionSummary } from "../features/connections/model/protocol";
+import type { HostSessionSummary } from "../contracts/protocol";
 import { filterMobileSessions } from "./sessionFilter";
 
 const row = (id: string, extra: Partial<HostSessionSummary> = {}): HostSessionSummary => ({

@@ -1,7 +1,4 @@
-import {
-  DEVICE_LOCAL_PREFERENCE_KINDS, DEVICE_LOCAL_PROJECT_LIST_PREFERENCES, DEVICE_LOCAL_PROJECT_MAP_PREFERENCES,
-  preferenceField, preferenceKind, SHARED_PREFERENCE_KINDS, validateSharedPreferenceValue,
-} from "./sharedPreferenceSchema";
+import { DEVICE_LOCAL_PREFERENCE_KINDS, DEVICE_LOCAL_PROJECT_LIST_PREFERENCES, DEVICE_LOCAL_PROJECT_MAP_PREFERENCES, preferenceField, preferenceKind, SHARED_PREFERENCE_KINDS, validateSharedPreferenceValue } from "../../../domain/sharedPreferenceSchema";
 
 export type PreferenceValues = Record<string, string>;
 export type PreferenceSnapshot = { revision: number; imported: boolean; values: PreferenceValues };

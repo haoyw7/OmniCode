@@ -1,9 +1,5 @@
-import type { Block } from "./session";
-import {
-  groupTurnItems,
-  groupTurns,
-  type TurnItem,
-} from "./transcriptActivity";
+import type { Block } from "../../../contracts/session";
+import { groupTurnItems, groupTurns, type TurnItem } from "./transcriptActivity";
 
 /** Reuse unchanged history while immutable updates replace the live blocks. */
 export class TranscriptTurnCache {

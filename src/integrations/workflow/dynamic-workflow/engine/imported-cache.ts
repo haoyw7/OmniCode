@@ -10,17 +10,7 @@
  */
 
 import { canonicalJson } from "./hash.js";
-import type {
-  ActorRef,
-  ActorSessionSeed,
-  ImportedActorCandidate,
-  ImportedAskEntry,
-  ImportedRunCache,
-  ImportedWorldEntry,
-  InstanceRef,
-  NodeRecord,
-  PersonaSpec,
-} from "./types.js";
+import type { ActorRef, ActorSessionSeed, ImportedActorCandidate, ImportedAskEntry, ImportedRunCache, ImportedWorldEntry, InstanceRef, NodeRecord, PersonaSpec } from "./types.js";
 
 /**
  * 一个已附着候选的 actor 的导入消费态：消费游标 + 分歧标志。

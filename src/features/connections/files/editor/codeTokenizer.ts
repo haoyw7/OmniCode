@@ -1,10 +1,5 @@
 import type { HighlightResult, ThemeInput } from "@streamdown/code";
-import {
-  bundledLanguages,
-  createHighlighter,
-  type BundledLanguage,
-  type GrammarState,
-} from "shiki";
+import { bundledLanguages, createHighlighter, type BundledLanguage, type GrammarState } from "shiki";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 
 type Highlighter = Awaited<ReturnType<typeof createHighlighter>>;

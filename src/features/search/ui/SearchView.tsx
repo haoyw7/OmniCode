@@ -1,61 +1,21 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  Folder,
-  LoaderCircle,
-  MessageSquare,
-  Search,
-} from "../../../shared/ui/icons";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
-  type ReactNode,
-} from "react";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { Folder, LoaderCircle, MessageSquare, Search } from "../../../shared/ui/icons";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { MatchText } from "../../../shared/ui/MatchText";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
+import { useProjectLogoSource } from "../../projects/model/useProjectLogoSource";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import {
-  conversationRowsFrom,
-  flattenGrouped,
-  groupHits,
-  hitsFromContentMatches,
-  hitsFromFileRanks,
-  hitsFromSessionSearch,
-  mergeHits,
-  searchConversationTitles,
-  searchRecentProjects,
-  searchSessionMessages,
-  type AppSearchHit,
-  type SearchScope,
-} from "../model/appSearch";
-import {
-  loadProjectFiles,
-  peekProjectFiles,
-  rankProjectFiles,
-  recentOpenedFiles,
-} from "../../connections/files/model/fileIndex";
+import { conversationRowsFrom, flattenGrouped, groupHits, hitsFromContentMatches, hitsFromFileRanks, hitsFromSessionSearch, mergeHits, searchConversationTitles, searchRecentProjects, searchSessionMessages, type AppSearchHit, type SearchScope } from "../model/appSearch";
+import { loadProjectFiles, peekProjectFiles, rankProjectFiles, recentOpenedFiles } from "../../connections/files/model/fileIndex";
 import { prettyCwd, projectName } from "../../../shared/lib/paths";
 import { parseWslPath } from "../../../shared/lib/wslPaths";
-import {
-  isLocalProject,
-  type RecentProject,
-} from "../../projects/model/recents";
-import {
-  cancelProjectSearch,
-  searchProject,
-  type OpenFileFn,
-} from "../model/search";
-import { type Session } from "../../sessions/model/session";
-import {
-  cancelSessionSearch,
-  searchSessions,
-  type SessionSummary,
-} from "../../sessions/data/sessionStore";
+import { isLocalProject, type RecentProject } from "../../projects/model/recents";
+import { searchProject } from "../model/search";
+import type { OpenFileFn } from "../../../shared/lib/fileNavigation";
+import { type Session } from "../../../contracts/session";
+import { cancelSessionSearch, searchSessions, type SessionSummary } from "../../sessions/data/sessionStore";
 
 const SCOPES: { id: SearchScope; label: string }[] = [
   { id: "all", label: "All" },
@@ -287,11 +247,7 @@ export function SearchView({
       if (searchOwner) {
         void cancelSessionSearch(searchOwner).catch(() => undefined);
       }
-      const searchId = activeProjectSearchId.current;
       activeProjectSearchId.current = null;
-      if (searchId && searchableProject(cwd)) {
-        void cancelProjectSearch(cwd, searchId).catch(() => undefined);
-      }
     };
   }, [cwd, scope, trimmed]);
 
@@ -513,6 +469,7 @@ function ResultList({
   onActive: (index: number) => void;
   onOpen: (hit: AppSearchHit) => void;
 }) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const { t: uiT } = useTranslation();
   const activeRef = useRef<HTMLButtonElement>(null);
   const pointer = useRef({ x: Number.NaN, y: Number.NaN, allow: false });
@@ -555,7 +512,7 @@ function ResultList({
     >
       {hits.map((hit, index) => {
         const highlighted = index === active;
-        const row = rowCopy(hit, query);
+        const row = rowCopy(hit, query, resolveProjectLogoSrc);
         return (
           <button
             key={hit.id}
@@ -589,6 +546,7 @@ function ResultList({
 function rowCopy(
   hit: AppSearchHit,
   query: string,
+  resolveProjectLogoSrc: ReturnType<typeof useProjectLogoSource>,
 ): { icon: ReactNode; title: ReactNode; meta: string } {
   if (hit.kind === "conversation") {
     return {
@@ -627,7 +585,7 @@ function rowCopy(
   return {
     icon: (
       <ProjectLogoIcon
-        path={hit.path}
+        src={resolveProjectLogoSrc(hit.path)}
         className="size-3.5 rounded-sm"
         fallback={Folder}
       />

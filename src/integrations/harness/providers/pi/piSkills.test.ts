@@ -43,13 +43,7 @@ vi.mock("./piClient", () => ({
   },
 }));
 
-import {
-  discoverPiSkills,
-  piCommandsFromRpcData,
-  discoverOmpCommands,
-  ompCommandsFromRpcData,
-  piSkillsFromRpcData,
-} from "./piSkills";
+import { discoverPiSkills, piCommandsFromRpcData, discoverOmpCommands, ompCommandsFromRpcData, piSkillsFromRpcData } from "./piSkills";
 
 describe("Pi native command discovery", () => {
   it("retains extensions, templates and skills with reserved invocations", () => {

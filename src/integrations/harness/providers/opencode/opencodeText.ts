@@ -1,34 +1,11 @@
-import { modelsFor } from "../../../../features/sessions/model/models";
-import type { TurnIntent } from "../../../../features/sessions/model/session";
-import {
-  childUsesSelectedMachine,
-  execChild,
-  freeHarnessPort,
-  killChild,
-  resolveOpenCodeBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
+import { modelsFor } from "../../core/modelCatalog";
+import type { TurnIntent } from "../../../../contracts/session";
+import { childUsesSelectedMachine, execChild, freeHarnessPort, killChild, resolveOpenCodeBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
 import { OpenCodeClient } from "./opencodeClient";
-import {
-  appendOpenCodeAssistantTextDelta,
-  asRecord,
-  compareSemver,
-  eventSessionId,
-  KNOWN_HIDDEN_AGENTS,
-  mergeOpenCodeAssistantText,
-  MINIMUM_OPENCODE_VERSION,
-  parseOpenCodeModelSlug,
-  parseOpenCodeVersion,
-  parseServerUrlFromOutput,
-  stringField,
-  textDeltaEvent,
-  type OpenCodePart,
-} from "./opencodeProtocol";
+import { appendOpenCodeAssistantTextDelta, asRecord, compareSemver, eventSessionId, KNOWN_HIDDEN_AGENTS, mergeOpenCodeAssistantText, MINIMUM_OPENCODE_VERSION, parseOpenCodeModelSlug, parseOpenCodeVersion, parseServerUrlFromOutput, stringField, textDeltaEvent, type OpenCodePart } from "./opencodeProtocol";
 import { abortTextPromptRace } from "../../core/abortTextPrompt";
-import { streamTextDelta } from "../../core/streamText";
-import type { HarnessEvent } from "../../core/types";
+import { streamTextDelta } from "../../../../domain/streamText";
+import type { HarnessEvent } from "../../../../contracts/harness";
 
 const TEXT_CHILD_ID = "omnicode-opencode-text";
 const SERVER_TIMEOUT_MS = 30_000;

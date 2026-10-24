@@ -2,13 +2,9 @@ import { Button } from "../shared/ui/forms/Button";
 import { motion } from "motion/react";
 import { motionGeometry, panelTransition } from "../shared/motion/tokens";
 import { useId, useState } from "react";
-import {
-  REMOTE_PROVIDERS,
-  type HostModelCatalog,
-  type HostProviderAccounts,
-  type RemoteProvider,
-} from "../features/connections/model/protocol";
-import { HARNESS_TITLE } from "../features/sessions/model/session";
+import { REMOTE_PROVIDERS, type RemoteProvider } from "../contracts/provider";
+import { type HostModelCatalog, type HostProviderAccounts } from "../contracts/protocol";
+import { HARNESS_TITLE } from "../contracts/session";
 import { isHarnessAuthError } from "../integrations/harness/core/authSupport";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";

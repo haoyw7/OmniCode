@@ -4,32 +4,11 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { Loader } from "../../../shared/ui/icons";
 import { Modal } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
-import {
-  CHAT_BACKGROUND_OPACITY_MAX,
-  CHAT_BACKGROUND_OPACITY_MIN,
-  chatBackgroundSrc,
-  loadChatBackgroundOpacity,
-  loadChatBackgroundPath,
-  loadNewThreadBackgroundEffect,
-  NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
-  NEW_THREAD_BACKGROUND_EFFECT_DESCRIPTIONS,
-  NEW_THREAD_BACKGROUND_EFFECT_LABELS,
-  NEW_THREAD_BACKGROUND_EFFECTS,
-  type NewThreadBackgroundEffect,
-} from "../../settings/model/appearance";
-import {
-  clearProjectChatBackground,
-  pickAndSaveProjectChatBackground,
-  projectChatBackgroundSrc,
-} from "../model/chatBackground";
-import {
-  clearProjectChatBackgroundSetting,
-  loadProjectChatBackgroundSettings,
-  projectChatBackgroundImageRevision,
-  saveProjectChatBackgroundSettings,
-} from "../model/projectChatBackground";
-import { useProjectBackgroundEffect } from "./useProjectBackgroundEffect";
-import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
+import { CHAT_BACKGROUND_OPACITY_MAX, CHAT_BACKGROUND_OPACITY_MIN, chatBackgroundSrc, loadChatBackgroundOpacity, loadChatBackgroundPath, loadNewThreadBackgroundEffect, NEW_THREAD_BACKGROUND_EFFECT_DEFAULT, NEW_THREAD_BACKGROUND_EFFECT_DESCRIPTIONS, NEW_THREAD_BACKGROUND_EFFECT_LABELS, NEW_THREAD_BACKGROUND_EFFECTS, type NewThreadBackgroundEffect } from "../../settings/model/appearance";
+import { clearProjectChatBackground, pickAndSaveProjectChatBackground, projectChatBackgroundSrc } from "../model/chatBackground";
+import { clearProjectChatBackgroundSetting, loadProjectChatBackgroundSettings, projectChatBackgroundImageRevision, saveProjectChatBackgroundSettings } from "../model/projectChatBackground";
+import { useProjectBackgroundEffect } from "../model/useProjectBackgroundEffect";
+import { GradientBlurBackground } from "../../../shared/ui/GradientBlurBackground";
 
 type Props = {
   project: string;

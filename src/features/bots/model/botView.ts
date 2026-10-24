@@ -1,9 +1,7 @@
-import type { RuntimeMode, TurnOrigin } from "../../sessions/model/session";
-import type {
-  RemoteProvider,
-  RemoteAttachment,
-} from "../../connections/model/protocol";
-import type { UserQuestionPrompt, UserQuestionReply } from "../../sessions/model/userQuestion";
+import type { RuntimeMode, TurnOrigin, UserQuestionPrompt, UserQuestionReply } from "../../../contracts/session";
+import type { RemoteProvider } from "../../../contracts/provider";
+import type { RemoteAttachment } from "../../../contracts/protocol";
+
 import type { BotHabit } from "./botHabits";
 import type { BotManagedWorktree } from "../../../integrations/harness/core/botAutonomy";
 

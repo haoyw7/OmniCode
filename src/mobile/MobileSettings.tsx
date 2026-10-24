@@ -3,10 +3,7 @@ import { Switch } from "../shared/ui/forms/Switch";
 import { MobileHapticSettings } from "./MobileHapticSettings";
 import { MobileSettingsIcon as SettingsIcon, MobileSettingsGlyph } from "./MobileSettingsIcon";
 import { useCallback, useRef, type CSSProperties, type ReactNode, type RefObject } from "react";
-import {
-  ChevronRight,
-  Sparkles,
-} from "../shared/ui/icons";
+import { ChevronRight, Sparkles } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import type { HostConnectionStatus } from "./client";
 import type { GlassEffect, GlassSettings } from "./glassSettings";
@@ -17,11 +14,7 @@ import type { ConnectionAppearance } from "./connectionAppearance";
 import { MobileSelect } from "./MobileSelect";
 import type { useMobileActivity } from "./useMobileActivity";
 import type { FollowUpBehavior } from "../features/settings/model/settings";
-import {
-  ACCENT_COLOR_PRESET_LABELS,
-  ACCENT_COLOR_PRESETS,
-  type TranscriptLayout,
-} from "../features/settings/model/appearance";
+import { ACCENT_COLOR_PRESET_LABELS, ACCENT_COLOR_PRESETS, type TranscriptLayout } from "../features/settings/model/appearance";
 
 import type { MobilePreferencePanel, MobileSettingsPage } from "./mobileSettingsRoutes";
 import { MobileSkinPicker } from "./MobileSkinPicker";

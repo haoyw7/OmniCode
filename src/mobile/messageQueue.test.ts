@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MobileMessageQueue } from "./MobileMessageQueue";
 import { MOBILE_MATERIAL_SELECTOR } from "./theme/material";
 import { setUiLanguage } from "../shared/i18n/language";
-import type { QueuedMessage } from "../features/sessions/model/session";
+import type { QueuedMessage } from "../contracts/session";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
 const mobileCss = ["src/mobile/theme/tokens.css", ...readdirSync("src/mobile/styles").filter((name) => /^\d+-.+\.css$/.test(name)).sort().map((name) => `src/mobile/styles/${name}`)]
   .map((path) => readFileSync(path, "utf8")).join("\n");

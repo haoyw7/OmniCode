@@ -10,11 +10,7 @@
 //   - workflowRunStepCounts 是唯一允许的步数读法——表内 + 表外，读面三处（run 卡、时间线摘要、
 //     TUI 镜像）共用同一计算，保证同一条 run 的显示步数一致。
 
-import {
-  WORKFLOW_RUNS_LIMITS,
-  type WorkflowRunState,
-  type WorkflowRunUsage,
-} from "./workflow-runs.js";
+import { WORKFLOW_RUNS_LIMITS, type WorkflowRunState, type WorkflowRunUsage } from "./workflow-runs.js";
 
 /** 一条被拒实例的事件对两个计数器的影响。 */
 export interface UnlistedInstanceEvent {

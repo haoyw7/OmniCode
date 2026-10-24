@@ -52,13 +52,12 @@ const {
   stopCodexSession,
   __codexTestReset,
 } = await import("./codex");
-import type { HarnessEvent } from "../../core/types";
-import {
-  newSession,
-  type RuntimeMode,
-  type TurnIntent,
-} from "../../../../features/sessions/model/session";
-import { appendUser, applyHarnessEvent } from "../../core/apply";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import { newSession } from "../../../../features/sessions/model/session";
+import { type RuntimeMode, type TurnIntent } from "../../../../contracts/session";
+import { createSessionProjection } from "../../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../core/modelCatalog";
+const { appendUser, applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 
 function parse() {
   return sent.map((line) => JSON.parse(line) as Record<string, unknown>);

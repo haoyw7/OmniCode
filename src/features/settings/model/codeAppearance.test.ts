@@ -4,7 +4,7 @@ import { createHighlighter } from "shiki";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import { CODE_THEMES, codeThemeInput, codeThemeName, loadCodeThemePalette } from "../../../shared/theme/codeThemes";
 import { codeHighlightThemes, loadCodeTheme, saveCodeTheme } from "./codeAppearance";
-import { validateSharedPreferenceValue } from "./sharedPreferenceSchema";
+import { validateSharedPreferenceValue } from "../../../domain/sharedPreferenceSchema";
 
 beforeEach(() => localStorage.clear());
 

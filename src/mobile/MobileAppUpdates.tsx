@@ -6,21 +6,9 @@ import { Capacitor } from "@capacitor/core";
 import { ArrowDownCircle, RefreshCw } from "../shared/ui/icons";
 import { MobileSwap } from "./MobileSwap";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import {
-  localizedReleaseNotes,
-  presentReleaseNotes,
-} from "../app/model/releaseNotes";
-import { AgentMarkdown } from "../features/sessions/ui/AgentMarkdown";
-import {
-  Updates,
-  checkMobileUpdate,
-  getInstalledBuild,
-  hasMobileUpdate,
-  updateBaseUrls,
-  updateDownloadUrl,
-  type InstalledBuild,
-  type MobileUpdate,
-} from "./updates";
+import { localizedReleaseNotes, presentReleaseNotes } from "../shared/lib/releaseNotes";
+import { AgentMarkdown } from "../shared/ui/markdown/AgentMarkdown";
+import { Updates, checkMobileUpdate, getInstalledBuild, hasMobileUpdate, updateBaseUrls, updateDownloadUrl, type InstalledBuild, type MobileUpdate } from "./updates";
 
 // Keep the loading indicator and duplicate-action guard active together.
 const minimumLoading = () =>

@@ -1,11 +1,6 @@
 import { applyFileMentionsToTurn } from "../../connections/files/model/fileMentions";
 import { applyNotesToTurn } from "../../notes";
-import {
-  applySkillsToTurn,
-  warmNativeSkills,
-  isNativeCommandPrompt,
-  type SkillCatalogContext,
-} from "../../skills/model/skills";
+import { applySkillsToTurn, warmNativeSkills, isNativeCommandPrompt, type SkillCatalogContext } from "../../skills/model/skills";
 import { nativeCommandPrompt } from "../../../integrations/harness/core/nativeCommands";
 
 export async function preparePrompt(

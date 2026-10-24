@@ -1,13 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from "vitest";
-import {
-  allowsProjectNotification,
-  loadNotificationPreferences,
-  updateNotificationPreferences,
-  notificationPreferencesSnapshot,
-  subscribeNotificationPreferences,
-  getProjectNotificationRule,
-} from "./notificationPreferences";
+import { allowsProjectNotification, loadNotificationPreferences, updateNotificationPreferences, notificationPreferencesSnapshot, subscribeNotificationPreferences, getProjectNotificationRule } from "./notificationPreferences";
 
 beforeEach(() => localStorage.clear());
 

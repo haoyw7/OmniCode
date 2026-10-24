@@ -4,7 +4,7 @@ import { useEffect, useRef, type MouseEvent as ReactMouseEvent } from "react";
 import type { RankedFile } from "../../connections/files/model/fileIndex";
 import { isNoteMentionPath } from "../../notes";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
 import { MatchText } from "../../../shared/ui/MatchText";
 
 type Props = {

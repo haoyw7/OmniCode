@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LIVE_VERBS, liveStatus, liveVerb } from "./liveStatus";
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 
 const user: Block = { id: "u1", role: "user", text: "fix it", startedAt: 0 };
 

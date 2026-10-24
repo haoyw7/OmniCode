@@ -1,16 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  editorTabKey,
-  isAgentTab,
-  isFilesystemTab,
-  leafIds,
-  newAgentTab,
-  newFileTab,
-  newTab,
-  openEditorTab,
-} from "../../workspace/model/layout";
+import { editorTabKey, isAgentTab, isFilesystemTab, leafIds, newAgentTab, newFileTab, newTab, openEditorTab } from "../../workspace/model/layout";
 import { groupTurns } from "./transcriptActivity";
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 
 const agent = (sessionId: string, title: string) =>
   newAgentTab(title, "/repo", {

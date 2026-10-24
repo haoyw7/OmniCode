@@ -1,6 +1,9 @@
+import type { SessionPaneProps } from "../model/sessionPane";
+vi.mock("../../providers/model/hostModelCatalog", () => ({ refreshHostModelCatalogs: async () => {} }));
 // @vitest-environment happy-dom
-import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act, createElement, type ReactNode } from "react";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -17,7 +20,7 @@ vi.mock("@tauri-apps/api/webview", () => ({
 vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: () => ({ onFocusChanged: async () => () => {} }),
 }));
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("../../providers/model/harnessAvailability", () => ({
   getHarnessAvailabilitySnapshot: () => 0,
   hasProbedHarnessAvailability: () => true,
   isHarnessAvailable: () => true,
@@ -27,21 +30,47 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
 }));
 vi.mock("../../../integrations/harness/core/registry", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../integrations/harness/core/registry")>()),
-  refreshHarnessCatalogs: async () => {},
   isLiveHarness: () => true,
 }));
 vi.mock("./ModelPicker", () => ({ ModelPicker: () => null, ModelControlPills: () => null }));
 vi.mock("./SessionReview", () => ({ SessionReview: () => null }));
 
-import { newSession, type Session } from "../model/session";
-import {
-  anchorWorktreeCreation,
-  completeWorktreeCreation,
-  startWorktreeCreation,
-} from "../../source-control/model/worktreeCreation";
-import { SessionPane, type SessionPaneProps } from "./SessionPane";
+// Exercise the Host-owned pane's real presentation with controlled projections.
+// Transport, command receipts, and sync are covered by RemoteSession.test.ts.
+const hostPresentation = vi.hoisted(() => ({
+  submit: vi.fn<SessionPaneProps["onSubmit"]>(() => true),
+  runs: [],
+}));
+vi.mock("../../connections/ui/RemoteSession", () => ({
+  RemoteSession: ({ shell, render }: {
+    shell: Session;
+    render: (props: import("../../connections/model/remoteSessionPresentation").RemoteSessionOverrides) => ReactNode;
+  }) => createElement(OrchestrationRuntimeContext.Provider, {
+    value: {
+      subscribe: () => () => {}, snapshot: () => hostPresentation.runs,
+      hydrate: async () => {}, resumeBlocker: () => undefined,
+      resumeLeadBusy: () => false, resume: async () => {},
+      stop: async () => {}, cancelTask: async () => {},
+    },
+  }, render({
+    session: shell,
+    hostManaged: true,
+    remoteSession: false,
+    hostFeatures: { attachments: true, plan: true, draft: true, checkpoint: true },
+    hostSessionLoading: false,
+    hostSessionStarted: shell.blocks.some(block => block.role === "user"),
+    allowedModelHarnesses: [shell.harness],
+    onSubmit: hostPresentation.submit,
+  })),
+}));
+
+import { newSession } from "../model/session";
+import { type Session } from "../../../contracts/session";
+import { anchorWorktreeCreation, completeWorktreeCreation, startWorktreeCreation } from "../../../domain/worktreeCreation";
+import { SessionPane } from "./SessionPane";
 import { TranscriptPool, TranscriptPoolOutlet } from "./TranscriptPool";
 import { saveTranscriptLayout } from "../../settings/model/appearance";
+import { OrchestrationRuntimeContext } from "../../orchestration/model/OrchestrationActions";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -63,6 +92,7 @@ afterEach(() => {
 const noop = () => {};
 
 async function render(session: Session, extra: Partial<SessionPaneProps> = {}) {
+  hostPresentation.submit.mockImplementation(extra.onSubmit ?? (() => true));
   await act(async () => {
     root.render(
       createElement(

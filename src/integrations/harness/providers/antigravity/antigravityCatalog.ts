@@ -1,17 +1,8 @@
 import { homeDir } from "../../../../platform/tauri/fs";
-import { setHarnessModels } from "../../../../features/sessions/model/models";
+import { setHarnessModels } from "../../core/modelCatalog";
 import { AcpClient } from "../../core/acp";
-import {
-  killChild,
-  resolveAntigravityBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import {
-  antigravitySpawnCwd,
-  modelsFromSessionNew,
-} from "./antigravityProtocol";
+import { killChild, resolveAntigravityBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { antigravitySpawnCwd, modelsFromSessionNew } from "./antigravityProtocol";
 
 const PROBE_ID = "omnicode-antigravity-probe";
 const REQUEST_TIMEOUT_MS = 12_000;

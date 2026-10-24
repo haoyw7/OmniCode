@@ -1,10 +1,13 @@
 import { machineExec as exec, machineFs, machinePath, machineEnvironment, currentMachineIO } from "./machine-io";
 import { projectMachineKey } from "../src/integrations/harness/core/machine";
 import { randomUUID } from "node:crypto";
-import type { FileMtime, FsEntry, GitPr, ProjectFile } from "../src/platform/tauri/fs";
+import type { FileMtime, FsEntry, GitPr, ProjectFile } from "../src/contracts/workspace";
 import { hostWorktrees } from "./git-worktrees";
+import { detailedHostWorktrees } from "./worktree-lifecycle";
 import { createHostBranch, hostBranches, switchHostBranch } from "./git-branches";
 import type { HostStore } from "./store";
+import { BinaryTransfers } from "./binary-transfers";
+import type { AttachmentPathInfo } from "../src/contracts/hostMedia";
 import { claimCheckoutResource, claimCheckoutWrite, withCheckoutIntegration } from "./checkout-guards";
 import {
   createHostPath,
@@ -28,6 +31,9 @@ export const WORKSPACE_COMMANDS = [
   "list_project_files",
   "read_text_file",
   "read_binary_file",
+  "inspect_paths",
+  "read_file_base64",
+  "read_attachment_chunk",
   "read_file_preview",
   "write_text_file",
   "stat_files",
@@ -92,6 +98,7 @@ const alreadyExists = (name: string) =>
 type Located = { root: string; relative: string };
 
 export class WorkspaceCommands {
+  private readonly attachmentTransfers = new BinaryTransfers();
   private roots = new Map<string, { at: number; roots: string[] }>();
   private rootsGeneration = 0;
 
@@ -169,6 +176,12 @@ export class WorkspaceCommands {
         return this.readText(input.path);
       case "read_binary_file":
         return this.readBinary(input.path);
+      case "inspect_paths":
+        return this.inspectAttachmentPaths(input.paths);
+      case "read_file_base64":
+        return this.readAttachment(input.path);
+      case "read_attachment_chunk":
+        return Promise.resolve(this.attachmentTransfers.read(this.attachmentScope(input.path), input.transfer, input.offset));
       case "read_file_preview":
         return this.preview(input.path, input.maxLines, input.startLine);
       case "write_text_file":
@@ -364,6 +377,34 @@ export class WorkspaceCommands {
    * files an agent cites outside the projects (skills, configs). Writes and
    * editor reads keep the project boundary.
    */
+  private attachmentScope(input: unknown): string {
+    if (typeof input !== "string" || !machinePath.isAbsolute(input) || input.includes("\0") || input.length > 4096)
+      throw new Error("Invalid workspace path");
+    return `${currentMachineIO().key}:${input}`;
+  }
+
+  private async inspectAttachmentPaths(input: unknown): Promise<AttachmentPathInfo[]> {
+    if (!Array.isArray(input) || input.length > MAX_STAT_FILES) throw new Error("Too many paths");
+    const entries = await Promise.all(input.map(async value => {
+      const { path } = await this.existing(value, true);
+      const info = await machineFs.stat(path);
+      return { path, name: machinePath.basename(path) || path, size: info.size, isDir: info.isDirectory() };
+    }));
+    return entries;
+  }
+
+  private async readAttachment(input: unknown) {
+    const scope = this.attachmentScope(input);
+    const { path } = await this.existing(input);
+    const limit = 20 * 1024 * 1024;
+    const info = await machineFs.stat(path);
+    if (!info.isFile()) throw new Error("Not a file");
+    if (info.size > limit) throw new Error("File is too large to attach inline (maximum 20 MB).");
+    const bytes = await machineFs.readPrefix(path, limit + 1);
+    if (bytes.length > limit) throw new Error("File is too large to attach inline (maximum 20 MB).");
+    return this.attachmentTransfers.create(scope, bytes);
+  }
+
   private async readBinary(input: unknown): Promise<string> {
     if (
       typeof input !== "string" ||
@@ -832,17 +873,6 @@ export class WorkspaceCommands {
   }
 
   private async gitWorktrees(cwd: unknown) {
-    const listed = await hostWorktrees(await this.gitRoot(cwd));
-    return {
-      defaultRoot: listed.defaultRoot,
-      worktrees: listed.worktrees.map((tree) => ({
-        ...tree,
-        locked: false,
-        prunable: tree.missing,
-        dirty: null,
-        unpushed: null,
-        sessionIds: [],
-      })),
-    };
+    return detailedHostWorktrees(this.store, await this.gitRoot(cwd));
   }
 }

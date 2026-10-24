@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { readCursorSubagents } from "./cursor-subagents";
+import { readCursorSubagents, readCursorToolCalls } from "./cursor-subagents";
 
 const roots: string[] = [];
 afterEach(() => {
@@ -101,4 +101,25 @@ it("reads full child histories, associates exact parents and observes live WAL u
   } finally {
     db.close();
   }
+});
+
+it("recovers omitted tool arguments from the session's own store, newest first", async () => {
+  const root = mkdtempSync(join(tmpdir(), "omnicode-cursor-tools-"));
+  roots.push(root);
+  const directory = join(root, "chats", "project", "session-1");
+  mkdirSync(directory, { recursive: true });
+  const db = new DatabaseSync(join(directory, "store.db"));
+  try {
+    db.exec("CREATE TABLE blobs(id TEXT PRIMARY KEY, data BLOB)");
+    const insert = (id: string, value: unknown) => db.prepare("INSERT INTO blobs VALUES (?,?)").run(id, Buffer.from(typeof value === "string" ? value : JSON.stringify(value)));
+    insert("old", { content: [{ type: "tool-call", toolCallId: "call-aaaaaaaa-1\nfc_bbbbbbbb_1", toolName: "Edit", args: { path: "old" } }] });
+    insert("noise", "not json");
+    insert("new", { content: [{ type: "tool-call", toolCallId: "call-aaaaaaaa-1\nfc_bbbbbbbb_1", toolName: "Edit", args: { path: "new" } }] });
+  } finally {
+    db.close();
+  }
+  await expect(readCursorToolCalls({ sessionId: "session-1", toolCallIds: ["fc_bbbbbbbb_1", "missing-call"] }, root))
+    .resolves.toEqual([{ toolCallId: "fc_bbbbbbbb_1", toolName: "Edit", args: { path: "new" } }]);
+  await expect(readCursorToolCalls({ sessionId: "other", toolCallIds: ["fc_bbbbbbbb_1"] }, root)).rejects.toThrow("was not found");
+  await expect(readCursorToolCalls({ sessionId: "../x", toolCallIds: [] }, root)).rejects.toThrow("Invalid Cursor id");
 });

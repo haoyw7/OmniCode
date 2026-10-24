@@ -1,16 +1,7 @@
 import { useSyncExternalStore } from "react";
-import {
-  errorRateLimits,
-  fetchingRateLimits,
-  idleRateLimits,
-  type ProviderRateLimits,
-  type RateLimitProvider,
-} from "./rateLimits";
-import {
-  fetchClaudeRateLimits,
-  fetchCodexRateLimits,
-  fetchOpencodeGoRateLimits,
-} from "./rateLimitsFetch";
+import { errorRateLimits, fetchingRateLimits, idleRateLimits } from "../../../domain/rateLimits";
+import { type ProviderRateLimits, type RateLimitProvider } from "../../../contracts/session";
+import { fetchClaudeRateLimits, fetchCodexRateLimits, fetchOpencodeGoRateLimits } from "./rateLimitsFetch";
 import { providerUsageHost, providerUsageSourceKey } from "./providerUsageSource";
 
 const snapshots = new Map<string, ProviderRateLimits>();

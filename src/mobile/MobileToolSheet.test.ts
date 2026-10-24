@@ -1,19 +1,16 @@
 import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motionTestClock";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Block } from "../features/sessions/model/session";
+import type { Block } from "../contracts/session";
 import { setUiLanguage } from "../shared/i18n/language";
 import { AgentTranscript } from "../features/sessions/ui/AgentTranscript";
-import { TranscriptPlatformContext } from "../features/sessions/ui/TranscriptPlatform";
+import { TranscriptPlatformContext } from "../shared/ui/markdown/TranscriptPlatform";
 import { MobileToolSheet, toolDetails } from "./MobileToolSheet";
-import {
-  decodePreview,
-  fencedSource,
-  MAX_PREVIEW_BYTES,
-} from "./MobileFileSheet";
+import { decodePreview, fencedSource, MAX_PREVIEW_BYTES } from "./MobileFileSheet";
 
 const shell: Block = {
   id: "shell",

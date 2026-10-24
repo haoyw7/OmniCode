@@ -6,17 +6,9 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SurfaceVisibilityContext } from "../../shared/ui/SurfaceVisibility";
 import { ActivityBar, type ActivityBarLayout } from "./ActivityBar";
 import { useUpdateStatus } from "./useUpdateStatus";
-import {
-  installPendingUpdate,
-  probeForUpdate,
-  readAppVersion,
-  type UpdaterSnapshot,
-} from "../model/updater";
+import { installPendingUpdate, probeForUpdate, readAppVersion, type UpdaterSnapshot } from "../model/updater";
 import { setUiLanguage } from "../../shared/i18n/language";
-import {
-  loadUpdatePreferences,
-  saveUpdatePreferences,
-} from "../model/updatePreferences";
+import { loadUpdatePreferences, saveUpdatePreferences } from "../model/updatePreferences";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => null),

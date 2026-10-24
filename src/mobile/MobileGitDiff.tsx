@@ -1,12 +1,10 @@
+import type { GitFileDiff } from "../contracts/workspace";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { processFile, type FileDiffOptions } from "@pierre/diffs";
 import { FileDiff } from "@pierre/diffs/react";
-import {
-  prepareReviewDiff,
-  reviewFileMetadata,
-} from "../features/source-control/model/reviewDiff";
-import type { ToolPreviewLine } from "../features/sessions/model/session";
-import type { GitFileDiff } from "../platform/tauri/fs";
+import { prepareReviewDiff, reviewFileMetadata } from "../features/source-control/model/reviewDiff";
+import type { ToolPreviewLine } from "../contracts/session";
+
 import { SCHEME_CHANGE_EVENT } from "../features/settings/model/appearance";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";

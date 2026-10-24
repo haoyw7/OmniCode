@@ -4,10 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { WatchedSessions } from "./BotSettings";
 import { fullBotPolicy, type BotPolicy } from "../model/botView";
-import {
-  followSessionProjects,
-  removeWatchedSession,
-} from "../model/botSessions";
+import { followSessionProjects, removeWatchedSession } from "../model/botSessions";
 import { setUiLanguage } from "../../../shared/i18n/language";
 
 let root: Root, node: HTMLDivElement;

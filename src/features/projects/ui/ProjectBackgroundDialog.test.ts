@@ -4,10 +4,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectBackgroundDialog } from "./ProjectBackgroundDialog";
-import {
-  loadProjectChatBackgroundSettings,
-  saveProjectChatBackgroundSettings,
-} from "../model/projectChatBackground";
+import { loadProjectChatBackgroundSettings, saveProjectChatBackgroundSettings } from "../model/projectChatBackground";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),

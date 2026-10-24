@@ -1,13 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import {
-  configureDefaultIconArtwork,
-  IconArtworkContext,
-  LoaderCircle,
-  Plus,
-  Star,
-} from "../shared/ui/icons";
+import { configureDefaultIconArtwork, IconArtworkContext, LoaderCircle, Plus, Star } from "../shared/ui/icons";
 import { desktopIconArtwork } from "./desktopIconArtwork";
 
 afterEach(() => configureDefaultIconArtwork({}));

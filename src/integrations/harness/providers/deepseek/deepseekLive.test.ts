@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { HarnessEvent, SendTurnInput } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput } from "../../core/types";
 
 const transport = vi.hoisted(() => ({
   line: undefined as ((line: string) => void) | undefined,
@@ -42,16 +43,7 @@ vi.mock("../../../../platform/tauri/fs", () => ({
   deleteGeneratedImages: transport.remove,
 }));
 
-import {
-  sendDeepseekTurn,
-  cancelDeepseekTurn,
-  stopDeepseekBackgroundTask,
-  stopDeepseekSession,
-  forgetDeepseekSession,
-  respondDeepseekApproval,
-  respondDeepseekQuestion,
-  keepDeepseekQuestionOpen,
-} from "./deepseek";
+import { sendDeepseekTurn, cancelDeepseekTurn, stopDeepseekBackgroundTask, stopDeepseekSession, forgetDeepseekSession, respondDeepseekApproval, respondDeepseekQuestion, keepDeepseekQuestionOpen } from "./deepseek";
 
 const reply = (id: number, result: unknown) =>
   transport.line!(JSON.stringify({ jsonrpc: "2.0", id, result }));

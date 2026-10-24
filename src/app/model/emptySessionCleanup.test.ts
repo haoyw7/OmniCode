@@ -1,25 +1,9 @@
 import { describe, expect, it } from "vitest";
-import {
-  newSession,
-  type Session,
-} from "../../features/sessions/model/session";
-import {
-  newFileTab,
-  newTab,
-  newTerminalFile,
-  openEditorTab,
-  splitPane,
-  leafIds,
-} from "../../features/workspace/model/layout";
-import {
-  clearComposerDraft,
-  setComposerDraft,
-} from "../../features/sessions/model/draftCache";
-import {
-  isDisposableEmptySession,
-  pendingNewSessionDraft,
-  pruneDepartedEmptySessions,
-} from "./emptySessionCleanup";
+import { newSession } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
+import { newFileTab, newTab, newTerminalFile, openEditorTab, splitPane, leafIds } from "../../features/workspace/model/layout";
+import { clearComposerDraft, setComposerDraft } from "../../features/sessions/model/draftCache";
+import { isDisposableEmptySession, pendingNewSessionDraft, pruneDepartedEmptySessions } from "./emptySessionCleanup";
 
 describe("empty session cleanup", () => {
   it("allows only an untouched empty conversation", () => {

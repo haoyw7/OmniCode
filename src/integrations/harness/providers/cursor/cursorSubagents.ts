@@ -1,16 +1,8 @@
-import type { Session } from "../../../../features/sessions/model/session";
-import { isTaskListToolName } from "../../../../features/sessions/model/taskList";
-import { applyHarnessEvent } from "../../core/apply";
-import {
-  readStoredCursorSubagentRuns,
-  type StoredCursorSubagentRun,
-} from "./cursorStore";
-import {
-  extractToolPreview,
-  formatAgentType,
-  titleFromToolInput,
-} from "../../core/preview";
-import type { HarnessEvent } from "../../core/types";
+import type { Session } from "../../../../contracts/session";
+import { isTaskListToolName } from "../../../../domain/taskList";
+import { readStoredCursorSubagentRuns, type StoredCursorSubagentRun } from "./cursorStore";
+import { extractToolPreview, formatAgentType, titleFromToolInput } from "../../../../domain/preview";
+import type { HarnessEvent } from "../../../../contracts/harness";
 
 export function cursorAgentLabel(value?: string | null): string | undefined {
   const label = value
@@ -104,15 +96,15 @@ export function cursorSubagentEvents(
 }
 
 /** Reopen older Cursor rows with the work already saved in their child stores. */
-export async function recoverCursorSubagents(
+export async function recoverCursorSubagentEvents(
   session: Session,
-): Promise<Session> {
+): Promise<HarnessEvent[]> {
   if (session.harness !== "cursor" || !session.providerSessionId)
-    return session;
+    return [];
   const rows = session.blocks.filter(
     (block) => block.tool?.kind === "agent" && block.tool.callId,
   );
-  if (!rows.length) return session;
+  if (!rows.length) return [];
   const runs = await readStoredCursorSubagentRuns(
     session.providerSessionId,
     rows.map((row) => row.tool!.callId!),
@@ -123,15 +115,15 @@ export async function recoverCursorSubagents(
   // Nested runs are returned only after their verified parent, so a run is
   // applied only for a saved row or a child call of a run already applied.
   const known = new Set(titles.keys());
+  const events: HarnessEvent[] = [];
   for (const run of runs) {
     if (!known.has(run.toolCallId)) continue;
     for (const step of run.steps)
       if (step.toolCallId && kindFromCursorToolName(step.toolName) === "agent")
         known.add(step.toolCallId);
-    for (const event of cursorSubagentEvents(run, titles.get(run.toolCallId)))
-      session = applyHarnessEvent(session, event);
+    events.push(...cursorSubagentEvents(run, titles.get(run.toolCallId)));
   }
-  return session;
+  return events;
 }
 
 export function kindFromCursorToolName(

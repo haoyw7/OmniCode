@@ -1,19 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  autoPermissionOption,
-  eventsFromAcpUpdate,
-  extractModelConfigId,
-  fxModeId,
-  fxPromptBlocks,
-  mergeFxCatalogModels,
-  modelFromFxStatusOutput,
-  modelsFromFxOutput,
-  permissionOptionId,
-  permissionRequestFromAcp,
-  readConfigOptions,
-  sessionIdFromResult,
-} from "./fxProtocol";
-import { harnessSupportsAttachments } from "../../../../features/sessions/model/session";
+import { autoPermissionOption, eventsFromAcpUpdate, extractModelConfigId, fxModeId, fxPromptBlocks, mergeFxCatalogModels, modelFromFxStatusOutput, modelsFromFxOutput, permissionOptionId, permissionRequestFromAcp, readConfigOptions, sessionIdFromResult } from "./fxProtocol";
+import { harnessSupportsAttachments } from "../../../../domain/session";
 
 describe("fx protocol", () => {
   // fx's "ask" mode stops for every read and command, and we surface none of

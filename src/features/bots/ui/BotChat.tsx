@@ -1,39 +1,17 @@
 import { botReadRevision, markBotRead } from "../model/botUnread";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useState,
-  useRef,
-  startTransition,
-  type ReactNode,
-  type ClipboardEvent,
-  type DragEvent,
-} from "react";
-import { isTauri } from "@tauri-apps/api/core";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef, startTransition, type ReactNode, type ClipboardEvent, type DragEvent } from "react";
+import { isDesktopShell } from "../../../platform/tauri/window";
 import { readClipboardImage } from "../../../platform/tauri/clipboard";
 import { filesFromClipboard } from "../../sessions/model/attachments";
 import { flushSync } from "react-dom";
 import { BotClient, type BotRpc } from "../model/botRpc";
 import { compactBotTimeline } from "../model/botTimeline";
-import type {
-  BotMessage,
-  BotPatch,
-  BotConfiguration,
-  SessionReference,
-} from "../model/botView";
-import type {
-  HostDescriptor,
-  HostModelCatalog,
-  HostProject,
-  HostSessionSummary,
-  RemoteAttachment,
-} from "../../connections/model/protocol";
+import type { BotMessage, BotPatch, BotConfiguration, SessionReference } from "../model/botView";
+import type { HostDescriptor, HostModelCatalog, HostProject, HostSessionSummary, RemoteAttachment } from "../../../contracts/protocol";
 import { botErrorMessage } from "../model/botErrors";
 import { quoteBotReply } from "../model/botReply";
-import { REMOTE_PROVIDERS } from "../../connections/model/protocol";
+import { REMOTE_PROVIDERS } from "../../../contracts/provider";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { BotSettings } from "./BotSettings";
 import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
@@ -41,30 +19,21 @@ import { BotWorkerDetails } from "./BotWorkerDetails";
 import { resolveBotTarget, type BotTarget } from "../model/botNavigation";
 import { botActivityLabel } from "../model/botActivity";
 import type { BotTask, BotTimeline } from "../../../integrations/harness/core/botAutonomy";
-import type {
-  BotChatChrome,
-  BotControlsProps,
-  BotDraftAttachment,
-} from "./BotChatChrome";
-import {
-  desktopBotsLegacyChrome,
-  DesktopBotsMessageMenu,
-} from "./DesktopBotsLegacyChrome";
+import type { BotChatChrome, BotControlsProps, BotDraftAttachment } from "./BotChatChrome";
+import { desktopBotsLegacyChrome, DesktopBotsMessageMenu } from "./DesktopBotsLegacyChrome";
 import { useBotReplyMenu } from "./useBotReplyMenu";
 import { useBotDraft } from "./useBotDraft";
 import { useBotMessageSwipe } from "./useBotMessageSwipe";
 import { BotMessages } from "./BotMessages";
-import { TranscriptPlatformContext } from "../../sessions/ui/TranscriptPlatform";
-import {
-  useTranscriptRenderingPlatform,
-} from "../../sessions/ui/useTranscriptRenderingPlatform";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
+import { useTranscriptRenderingPlatform } from "../../../shared/ui/markdown/useTranscriptRenderingPlatform";
 import { Shimmer } from "../../../shared/ui/Shimmer";
 import { JumpToBottomButton, useJumpToBottomVisibility } from "../../../shared/ui/messaging/JumpToBottomButton";
 import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
 import { usePauseOffscreenAnimation } from "../../../shared/hooks/usePauseOffscreenAnimation";
 import { reducedMotionQuery } from "../../../shared/lib/reducedMotion";
-import { slidePromptIn } from "../../sessions/ui/promptLaunch";
+import { slidePromptIn } from "../../../shared/motion/promptLaunch";
 import { ArrowUp, X, Loader2, Sparkles } from "../../../shared/ui/icons";
 import { DesktopBotsNavigation, desktopBotsChrome } from "./DesktopBotsChrome";
 import { useBotNavigationLayout } from "./BotNavigationLayout";
@@ -853,7 +822,7 @@ export function BotChat({
     if (files.length) {
       event.preventDefault();
       attach(files);
-    } else if (!chrome && isTauri() && !event.clipboardData.getData("text/plain")) {
+    } else if (!chrome && isDesktopShell() && !event.clipboardData.getData("text/plain")) {
       event.preventDefault();
       attach(async () => [await readClipboardImage()]);
     }

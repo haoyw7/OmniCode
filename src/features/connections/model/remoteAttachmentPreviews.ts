@@ -1,6 +1,6 @@
-import { walkTranscript } from "../../sessions/model/agentTranscript";
-import type { Block } from "../../sessions/model/session";
-import type { HostSession } from "./protocol";
+import { walkTranscript } from "../../../domain/agentTranscript";
+import type { Block } from "../../../contracts/session";
+import type { HostSession } from "../../../contracts/protocol";
 
 type Chunk = { data: string; offset: number; size: number };
 const downloads = new Map<string, Promise<string>>();

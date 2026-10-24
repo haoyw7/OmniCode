@@ -1,11 +1,7 @@
-import { isChatFolder } from "../../features/projects/model/chatFolderPath";
+import { isChatFolder } from "../../domain/chatFolderPath";
 import { looksLikeProject } from "../../features/projects/model/recents";
 import { preferenceStorage } from "../../features/settings/model/sharedPreferences";
-import {
-  findSurfacePane,
-  leafIds,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { findSurfacePane, leafIds, type WorkspaceTab } from "../../features/workspace/model/layout";
 
 export type DesktopMode = "chat" | "code";
 export type DesktopLocation = {

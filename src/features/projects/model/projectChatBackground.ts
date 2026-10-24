@@ -1,11 +1,4 @@
-import {
-  CHAT_BACKGROUND_OPACITY_MAX,
-  CHAT_BACKGROUND_OPACITY_MIN,
-  NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
-  loadChatBackgroundOpacity,
-  NEW_THREAD_BACKGROUND_EFFECTS,
-  type NewThreadBackgroundEffect,
-} from "../../settings/model/appearance";
+import { CHAT_BACKGROUND_OPACITY_MAX, CHAT_BACKGROUND_OPACITY_MIN, NEW_THREAD_BACKGROUND_EFFECT_DEFAULT, loadChatBackgroundOpacity, NEW_THREAD_BACKGROUND_EFFECTS, type NewThreadBackgroundEffect } from "../../settings/model/appearance";
 import { activePreferenceStore, preferenceStorage, SHARED_PREFERENCES_CHANGED } from "../../settings/model/sharedPreferences";
 import { parsePreferenceAsset } from "../../settings/model/preferenceAssets";
 import { pathKey } from "../../../shared/lib/paths";

@@ -6,12 +6,7 @@ import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import { formatDateTime } from "../automationFormat.js";
 import { SavedWorkflowArtifactChips } from "./SavedWorkflowArtifactChips.js";
-import {
-  formatSavedWorkflowRunArgs,
-  formatSavedWorkflowTokens,
-  savedWorkflowRunBadgeKind,
-  savedWorkflowRunDurationMs,
-} from "./savedWorkflowRunHistory.js";
+import { formatSavedWorkflowRunArgs, formatSavedWorkflowTokens, savedWorkflowRunBadgeKind, savedWorkflowRunDurationMs } from "./savedWorkflowRunHistory.js";
 
 /** 详情页某一行运行记录对应的项目（全局工作流跨 cwd 时用；cwd 命中已打开项目才能「查看实例」）。 */
 export interface SavedWorkflowRunProject {

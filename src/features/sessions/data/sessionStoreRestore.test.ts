@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SessionRecord } from "./sessionStore";
 
 const invoke = vi.fn();
 vi.mock("@tauri-apps/api/core", () => ({ invoke: (...args: unknown[]) => invoke(...args) }));
@@ -8,7 +7,7 @@ const { getSession } = await import("./sessionStore");
 const { summaryFromSession } = await import("./sessionHistory");
 
 /** A saved Codex session holding the one row this PR repairs. */
-function codexRecord(): SessionRecord {
+function codexRecord() {
   return {
     id: "s1",
     harness: "codex",
@@ -33,10 +32,10 @@ function codexRecord(): SessionRecord {
         },
       },
     ],
-  } as unknown as SessionRecord;
+  };
 }
 
-describe("restoring a session whose repair cannot be persisted", () => {
+describe("restoring read-only legacy session projections", () => {
   beforeEach(() => invoke.mockReset());
 
   it("preserves stored activity when an older transcript is reopened", async () => {
@@ -47,21 +46,21 @@ describe("restoring a session whose repair cannot be persisted", () => {
     expect(invoke.mock.calls.map(([command]) => command)).toEqual(["session_get"]);
   });
 
-  it("still returns the repaired session when the write fails", async () => {
+  it("returns repaired cache data without attempting a native write", async () => {
     invoke.mockImplementation((cmd: string) => {
       if (cmd === "session_get") return Promise.resolve(codexRecord());
       if (cmd === "session_upsert") return Promise.reject(new Error("db locked"));
       return Promise.resolve(null);
     });
 
-    // A failed persistence must not cost the reader the session: the repair
-    // stays in memory and the next load retries the write.
+    // Cached Rust rows remain readable; repairs affect only the projection.
     const session = await getSession("s1");
     expect(session).not.toBeNull();
     expect(session?.blocks[1].text).toBe("Find files");
+    expect(invoke.mock.calls.some(([cmd]) => cmd === "session_upsert")).toBe(false);
   });
 
-  it("persists the repair when the write succeeds", async () => {
+  it("does not persist repairs even when the Rust store is writable", async () => {
     invoke.mockImplementation((cmd: string) => {
       if (cmd === "session_get") return Promise.resolve(codexRecord());
       return Promise.resolve(null);
@@ -71,6 +70,6 @@ describe("restoring a session whose repair cannot be persisted", () => {
     expect(session?.blocks[1].text).toBe("Find files");
     expect(
       invoke.mock.calls.some(([cmd]) => cmd === "session_upsert"),
-    ).toBe(true);
+    ).toBe(false);
   });
 });

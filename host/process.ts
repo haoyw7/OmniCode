@@ -5,7 +5,7 @@ import { constants } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, dirname, extname, join, basename, isAbsolute } from "node:path";
 import { promisify } from "node:util";
-import type { RemoteProvider } from "../src/features/connections/model/protocol";
+import type { RemoteProvider } from "../src/contracts/provider";
 import { resolveWorkBuddy } from "./workbuddy";
 import { isWindowsDesktopProviderPath, resolveWindowsDesktopProvider } from "./windows-provider-cli";
 import {
@@ -184,11 +184,13 @@ async function fileContains(
   return false;
 }
 
-async function resolveInstalledProvider(
+export async function installedProviderPaths(
   provider: RemoteProvider,
-): Promise<string> {
+  firstOnly = false,
+): Promise<string[]> {
   const windows = process.platform === "win32";
   const bundled: string[] = [];
+  const found: string[] = [];
   if (windows && provider === "antigravity")
     throw new Error("Antigravity ACP is not available on Windows");
   for (const directory of providerDirectories(provider)) {
@@ -216,16 +218,23 @@ async function resolveInstalledProvider(
               continue;
             }
           }
-          return candidate;
+          if (firstOnly) return [candidate];
+          found.push(candidate);
         } catch {
           /* try the next installed launcher */
         }
       }
     }
   }
-  if (bundled.length) return bundled[0];
+  if (firstOnly && bundled.length) return [bundled[0]];
   const desktop = await resolveWindowsDesktopProvider(provider);
-  if (desktop) return desktop;
+  if (desktop) bundled.push(desktop);
+  return [...found, ...bundled];
+}
+
+async function resolveInstalledProvider(provider: RemoteProvider): Promise<string> {
+  const first = (await installedProviderPaths(provider, true))[0];
+  if (first) return first;
   throw new Error(
     `${provider} is not installed on this host or is missing from its PATH. Install its native CLI or standard npm package.`,
   );

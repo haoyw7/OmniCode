@@ -1,10 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  LAST_LOCATION_KEY,
-  readLastLocation,
-  saveLastLocation,
-} from "./lastLocation";
+import { LAST_LOCATION_KEY, readLastLocation, saveLastLocation } from "./lastLocation";
 
 describe("mobile last location", () => {
   afterEach(() => {

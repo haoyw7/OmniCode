@@ -1,12 +1,5 @@
 import ts from "typescript";
-import {
-  adoptFields,
-  cloneValue,
-  collapseInto,
-  emptyValue,
-  mergeInto,
-  type AbstractValue,
-} from "./domain.js";
+import { adoptFields, cloneValue, collapseInto, emptyValue, mergeInto, type AbstractValue } from "./domain.js";
 import type { EvalContext, Evaluator } from "./taint.js";
 
 /**

@@ -1,9 +1,6 @@
 import { faceState } from "./workflow-face-motion.js";
 import { Omi } from "../../../../../shared/ui/branding/Omi";
-import {
-  PROJECT_MASCOTS,
-  type ProjectMascot,
-} from "../../../../projects/model/projectMascots";
+import { PROJECT_MASCOTS, type ProjectMascot } from "../../../../projects/model/projectMascots";
 import { cn } from "../../../../../shared/lib/cn";
 import type { StepRunStatus } from "../workflow-graph/types.js";
 

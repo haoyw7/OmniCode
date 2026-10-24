@@ -1,13 +1,6 @@
-import type { Session } from "../../sessions/model/session";
-import type {
-  HostOrchestrationView,
-  HostSession,
-  HostSessionSummary,
-} from "../../connections/model/protocol";
-import {
-  remotePath,
-  type RemoteProject,
-} from "../../connections/model/remoteProjects";
+import type { Session } from "../../../contracts/session";
+import type { HostOrchestrationView, HostSession, HostSessionSummary } from "../../../contracts/protocol";
+import { remotePath, type RemoteProject } from "../../connections/model/remoteProjects";
 import { rememberRemoteSession, remoteSessionFor } from "../../connections/model/connections";
 
 export type OrchestrationSource = {

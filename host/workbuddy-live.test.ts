@@ -8,7 +8,8 @@ import { HostChildBackend } from "./child-backend";
 import { workBuddyAccounts } from "./workbuddy";
 import { configureChildBackend, startHarnessBridge } from "../src/integrations/harness/core/child";
 import { workbuddyAdapter } from "../src/integrations/harness/providers/workbuddy/workbuddyAdapter";
-import type { HarnessEvent, SendTurnInput } from "../src/integrations/harness/core/types";
+import type { HarnessEvent } from "../src/contracts/harness";
+import type { SendTurnInput } from "../src/integrations/harness/core/types";
 
 // Explicit opt-in: these tests use the installed desktop login and real model requests.
 const enabled = process.env.OMNICODE_WORKBUDDY_LIVE === "1" && ["win32", "darwin"].includes(process.platform);

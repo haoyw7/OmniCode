@@ -1,12 +1,16 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { appendUser, applyHarnessEvent } from "../../../integrations/harness/core/apply";
-import type { HarnessEvent } from "../../../integrations/harness/core/types";
+import { createSessionProjection } from "../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../../integrations/harness/core/modelCatalog";
+const { appendUser, applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
+import type { HarnessEvent } from "../../../contracts/harness";
 import { setUiLanguage } from "../../../shared/i18n/language";
 import { applyReducedMotion } from "../../../shared/lib/reducedMotion";
-import { newSession, type Session } from "../model/session";
+import { newSession } from "../model/session";
+import { type Session } from "../../../contracts/session";
 import { AgentTranscript } from "./AgentTranscript";
 
 let node: HTMLDivElement;

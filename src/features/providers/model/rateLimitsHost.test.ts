@@ -5,7 +5,7 @@ import { remoteRequest } from "../../connections/model/connections";
 import { configureSharedHost } from "../../connections/model/remoteProjects";
 import { resolveCodexBinary } from "../../../integrations/harness/core/child";
 import { fetchClaudeRateLimits, fetchCodexRateLimits } from "./rateLimitsFetch";
-import { idleRateLimits } from "./rateLimits";
+import { idleRateLimits } from "../../../domain/rateLimits";
 import { saveProviderAccount } from "./providerAccounts";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));

@@ -1,16 +1,9 @@
-import {
-  startMotionClock,
-  stopMotionClock,
-  finishMotion,
-} from "../../../../tests/helpers/sharedMotionClock";
+import { startMotionClock, stopMotionClock, finishMotion } from "../../../../tests/helpers/sharedMotionClock";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  loadNotificationPreferences,
-  updateNotificationPreferences,
-} from "../model/notificationPreferences";
+import { loadNotificationPreferences, updateNotificationPreferences } from "../model/notificationPreferences";
 import { rememberNotificationProjects } from "../model/notificationProjects";
 import { ProjectNotificationSettings } from "./ProjectNotificationSettings";
 import { invoke } from "@tauri-apps/api/core";

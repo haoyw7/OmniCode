@@ -2,21 +2,8 @@ import { workflowFold } from "./workflow-motion.js";
 import { motion as motionElement } from "motion/react";
 import { useId } from "react";
 import { cn } from "../../../../../shared/lib/cn";
-import type {
-  TimelineBand,
-  TimelineInk,
-  TimelineStation,
-  WorkflowTimelineModel,
-} from "./timeline-model.js";
-import {
-  bandAt,
-  bandForkX,
-  bandMergeX,
-  lampX,
-  STUB,
-  TAIL,
-  type TimelineLayout,
-} from "./timeline-geometry.js";
+import type { TimelineBand, TimelineInk, TimelineStation, WorkflowTimelineModel } from "./timeline-model.js";
+import { bandAt, bandForkX, bandMergeX, lampX, STUB, TAIL, type TimelineLayout } from "./timeline-geometry.js";
 import { MarchLight } from "./WorkflowMarchLight.js";
 import { stationLampClass } from "./WorkflowTimelineLedge.js";
 

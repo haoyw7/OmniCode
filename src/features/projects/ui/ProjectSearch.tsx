@@ -1,28 +1,10 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  CaseSensitive,
-  ChevronLeft,
-  LoaderCircle,
-  Regex,
-  WholeWord,
-} from "../../../shared/ui/icons";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from "react";
-import {
-  cancelProjectSearch,
-  searchProject,
-  type OpenFileFn,
-  type ProjectSearchMatch,
-  type ProjectSearchOptions,
-  type ProjectSearchResult,
-} from "../../search/model/search";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import { CaseSensitive, ChevronLeft, LoaderCircle, Regex, WholeWord } from "../../../shared/ui/icons";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { searchProject } from "../../search/model/search";
+import { type ProjectSearchMatch, type ProjectSearchOptions, type ProjectSearchResult } from "../../../contracts/search";
+import type { OpenFileFn } from "../../../shared/lib/fileNavigation";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
 
 type Props = {
   cwd: string;
@@ -133,11 +115,7 @@ export function ProjectSearch({
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
-      const searchId = activeSearchId.current;
       activeSearchId.current = null;
-      if (searchId) {
-        void cancelProjectSearch(cwd, searchId).catch(() => undefined);
-      }
     };
   }, [caseSensitive, cwd, exclude, include, query, regex, wholeWord, search]);
 

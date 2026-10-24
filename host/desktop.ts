@@ -5,7 +5,8 @@ import { DatabaseSync } from "node:sqlite";
 import { createHash, randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { HostStore } from "./store";
-import { importDesktopSessions } from "./desktop-import";
+import { desktopImportAudit, importDesktopSessions } from "./desktop-import";
+import { importDesktopCheckpoints } from "./legacy-checkpoint-import";
 import { readLegacyRetirementManifest } from "./legacy-orchestration";
 
 /** Used only by the native desktop bootstrap. Its credential never reaches JS. */
@@ -150,6 +151,8 @@ export async function prepareDesktopHost(
   const store = new HostStore(join(directory, "host.db"));
   try {
     importDesktopSessions(store, join(desktopDirectory, "omnicode.db"));
+    importDesktopCheckpoints(join(desktopDirectory, "checkpoints"), join(directory, "checkpoints"),
+      store.sessions().map(value => value.session.id));
     const credentialPath = join(
       desktopDirectory,
       "shared-host-credential.json",
@@ -206,6 +209,8 @@ export async function prepareDesktopHost(
       environmentId: store.environmentId,
       projects: store.projects(),
       sessions,
+      projections: store.sessions(),
+      migrationAudit: desktopImportAudit(store, legacyPath),
     };
   } finally {
     store.close();

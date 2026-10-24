@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { HostSession } from "../src/features/connections/model/protocol";
+import type { HostSession } from "../src/contracts/protocol";
 import { rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

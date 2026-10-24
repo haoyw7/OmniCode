@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { LoaderCircle, RefreshCw } from "../../../shared/ui/icons";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
 import type { BotMemoryTopic } from "../model/botView";
 import type { BotTopicNote as TopicNote } from "../model/useBotTopicNotes";
 

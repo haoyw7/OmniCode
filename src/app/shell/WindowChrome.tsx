@@ -3,13 +3,7 @@ import { IconButton } from "../../shared/ui/forms/IconButton";
 import type { ReactNode } from "react";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { useShortcutLabel } from "../commands/useCommandShortcut";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronDown,
-  ChevronUp,
-  PanelLeft,
-} from "../../shared/ui/icons";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, PanelLeft } from "../../shared/ui/icons";
 import { IS_MAC } from "../../platform/tauri/platform";
 import { windowDragRegion } from "./startWindowDrag";
 import { WindowControls } from "./WindowControls";

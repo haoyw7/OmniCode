@@ -1,4 +1,4 @@
-import { usefulNativeTitle } from "../../../features/sessions/model/titlePolicy";
+import { usefulNativeTitle } from "../../../domain/titlePolicy";
 
 /** Read Claude title metadata from rows already decoded by a transcript parser. */
 export function claudeNativeTitleFromRows(

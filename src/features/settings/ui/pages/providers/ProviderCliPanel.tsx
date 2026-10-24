@@ -2,19 +2,12 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { ArrowDownCircle, FolderOpen, Loader, Trash2 } from "../../../../../shared/ui/icons";
-import {
-  localHarnessCliPlan,
-  type HarnessCliPlan,
-} from "../../../../../platform/tauri/harnessInstall";
+import { hostHarnessCliPlan } from "../../../../providers/model/hostProviderRuntime";
+import { type HarnessCliPlan } from "../../../../../contracts/providerRuntime";
 import { revealPath } from "../../../../../platform/tauri/fs";
-import {
-  harnessInstallUnavailableReason,
-  runHarnessInstall,
-  runHarnessUninstall,
-  useHarnessInstall,
-} from "../../../../providers/model/harnessInstall";
-import { runtimeProviderBinaryPath } from "../../../../providers/model/providerBinaryPaths";
-import type { HarnessId } from "../../../../sessions/model/session";
+import { harnessInstallUnavailableReason, runHarnessInstall, runHarnessUninstall, useHarnessInstall } from "../../../../providers/model/harnessInstall";
+import { runtimeProviderBinaryPath } from "../../../../../integrations/harness/core/runtimeBinaryPaths";
+import type { HarnessId } from "../../../../../contracts/session";
 
 export type ProviderCliPanelKind = "install" | "uninstall";
 
@@ -46,7 +39,7 @@ export function ProviderCliPanel({
     let current = true;
     setPlan(null);
     setPlanError(null);
-    localHarnessCliPlan(harness, runtimeProviderBinaryPath(harness))
+    hostHarnessCliPlan(harness, runtimeProviderBinaryPath(harness))
       .then((next) => { if (current) setPlan(next); })
       .catch((cause) => {
         if (current) setPlanError(cause instanceof Error ? cause.message : String(cause));

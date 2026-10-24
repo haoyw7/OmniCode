@@ -1,32 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
+import { inboxHostCommand as invoke } from "../../connections/model/inboxHost";
 
-export type GithubPrCheckState =
-  "pass" | "fail" | "pending" | "skipping" | "cancel" | "unknown";
-
-export type GithubPrCheck = {
-  name: string;
-  workflow: string;
-  state: GithubPrCheckState;
-  url: string | null;
-  startedAt: string | null;
-  completedAt: string | null;
-};
-
-export type GithubPrChecks = {
-  headOid: string;
-  checks: GithubPrCheck[];
-};
-
-export type GithubCheckDetails = {
-  steps: {
-    name: string;
-    state: GithubPrCheckState;
-    startedAt: string | null;
-    completedAt: string | null;
-  }[];
-  annotations: { path: string; line: number; message: string; level: string }[];
-  notice: string | null;
-};
+import type { GithubPrCheckState, GithubPrCheck, GithubPrChecks, GithubCheckDetails } from "../../../contracts/github";
 
 export function githubActionsJobId(
   url: string | null,

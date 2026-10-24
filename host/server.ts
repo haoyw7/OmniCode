@@ -1,5 +1,4 @@
-import { dirname, join } from "node:path";
-import { HostProviderUsage } from "./provider-usage";
+import { dirname } from "node:path";
 import {
   createServer,
   type IncomingMessage,
@@ -11,21 +10,30 @@ import { currentMachineIO, machineExec as exec } from "./machine-io";
 import { projectMachineKey } from "../src/integrations/harness/core/machine";
 import { createHash, randomUUID } from "node:crypto";
 import { claimCheckoutResource, claimCheckoutWrite, withCheckoutIntegration } from "./checkout-guards";
-import {
-  HOST_PROTOCOL_VERSION,
-  type HostModelCatalog,
-  type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+import { HOST_PROTOCOL_VERSION, HOST_UNAVAILABLE_CODE, type HostModelCatalog } from "../src/contracts/protocol";
+import { HOST_DESKTOP_APP_CAPABILITY } from "../src/contracts/app";
+import { parseRelocate } from "./session-relocate";
+import { isHostUnavailable } from "./host-unavailable";
+import { type RemoteProvider } from "../src/contracts/provider";
 import { HostEngine } from "./engine";
 import { HostClientState } from "./client-state";
 import { HostPreferenceAssets } from "./preference-assets";
 import { HostAccountManagement } from "./account-management";
-import { HOST_CLIENT_STATE_CAPABILITY } from "../src/features/connections/model/hostState";
+import { HostProviderLogin } from "./provider-login";
+import { HostMedia } from "./media";
+import { HOST_INBOX_MEDIA_CAPABILITY, HOST_LINK_PREVIEW_CAPABILITY, HOST_ATTACHMENT_READ_CAPABILITY } from "../src/contracts/hostMedia";
+import { HostProviderManagement } from "./provider-management";
+import { HOST_PROVIDER_RUNTIME_CAPABILITY } from "../src/contracts/providerRuntime";
+import { fetchHostOpenCodeUsage } from "./opencode-usage";
+import { fetchHostPiUsage } from "./pi-usage";
+import { HOST_OPENCODE_USAGE_CAPABILITY, HOST_PI_USAGE_CAPABILITY, HOST_USAGE_RESET_CAPABILITY } from "../src/contracts/providerUsage";
+import { HOST_PROVIDER_LOGIN_CAPABILITY } from "../src/contracts/providerLogin";
+import { HOST_CLIENT_STATE_CAPABILITY } from "../src/contracts/hostState";
 import { PairingCodeError } from "./store";
 import { botErrorCode } from "./bots/thread/errors";
 import { writeAttachmentChunk, readAttachmentChunk } from "./attachments";
-import type { LinkedWorkItem } from "../src/features/sessions/model/session";
-import { parseGithubWorkItemUrl } from "../src/features/sessions/model/sessionWorkItem";
+import type { LinkedWorkItem, AgentModel } from "../src/contracts/session";
+import { parseGithubWorkItemUrl } from "../src/domain/workItemIdentity";
 import { SyncTransfers } from "./sync-transfer";
 import { browseHostDirectories } from "./browse";
 import { pairingHostCandidates } from "./pairing-hosts";
@@ -36,7 +44,6 @@ import {
 } from "./git-branches";
 import {
   createHostWorktree,
-  hostWorktrees,
   HostWorktreeStatus,
   resolveHostWorktreeAsync,
 } from "./git-worktrees";
@@ -53,6 +60,20 @@ import {
   writeHostFile,
 } from "./workspace";
 import { WorkspaceCommands } from "./workspace-commands";
+import { HostAuxiliaryProvider } from "./auxiliary-provider";
+import { HostMcp } from "./mcp";
+import { HOST_MCP_CAPABILITY } from "../src/contracts/mcp";
+import { PROVIDER_AUXILIARY_CAPABILITY } from "../src/contracts/providerAuxiliary";
+import { ProjectMoves } from "./project-moves";
+import { HostWorktreeLifecycle, detailedHostWorktrees } from "./worktree-lifecycle";
+import { WorktreeCreationProgress } from "./worktree-progress";
+import { HOST_WORKTREE_PROGRESS_CAPABILITY } from "../src/contracts/worktree";
+import { InboxCredentials } from "./inbox-credentials";
+import { HostLinear } from "./linear";
+import { HostJira } from "./jira";
+import { HostGitlab } from "./gitlab";
+import { HostAzureDevOps } from "./azure-devops";
+import { HostGithub } from "./github";
 import { discoverCodexModels } from "../src/integrations/harness/providers/codex/codexCatalog";
 import { discoverClaudeModels } from "../src/integrations/harness/providers/claude/claudeCatalog";
 import { discoverCursorModels } from "../src/integrations/harness/providers/cursor/cursorCatalog";
@@ -63,23 +84,12 @@ import { discoverFxModels } from "../src/integrations/harness/providers/fx/fxCat
 import { discoverHermesModels } from "../src/integrations/harness/providers/hermes/hermesCatalog";
 import { discoverDeepseekAccount, discoverDeepseekModels } from "../src/integrations/harness/providers/deepseek/deepseekCatalog";
 import type { DeepseekAccountClient } from "../src/integrations/harness/providers/deepseek/deepseekAccount";
-import { resolveDeepseekBinary } from "../src/integrations/harness/core/child";
+import { resolveDeepseekBinary, resolveAntigravityBinary, resolveClaudeBinary, resolveCodexBinary, resolveCursorBinary, resolveFxBinary, resolveGrokBinary, resolveHermesBinary, resolveOmpBinary, resolveOpenCodeBinary, resolvePiBinary, resolveWorkBuddyBinary } from "../src/integrations/harness/core/child";
 import { discoverAntigravityModels } from "../src/integrations/harness/providers/antigravity/antigravityCatalog";
 import { discoverWorkBuddyModels } from "../src/integrations/harness/providers/workbuddy/workbuddyAdapter";
-import { setHarnessModels, type AgentModel } from "../src/features/sessions/model/models";
-import {
-  resolveAntigravityBinary,
-  resolveClaudeBinary,
-  resolveCodexBinary,
-  resolveCursorBinary,
-  resolveFxBinary,
-  resolveGrokBinary,
-  resolveHermesBinary,
-  resolveOmpBinary,
-  resolveOpenCodeBinary,
-  resolvePiBinary,
-  resolveWorkBuddyBinary,
-} from "../src/integrations/harness/core/child";
+import { setHarnessModels } from "../src/integrations/harness/core/modelCatalog";
+
+
 
 // Providers also add models server-side, without a CLI update.
 const CATALOG_MAX_AGE_MS = 5 * 60_000;
@@ -156,7 +166,15 @@ export function createHostServer(
   const clientState = new HostClientState(engine.store);
   const preferenceAssets = new HostPreferenceAssets(engine.store);
   const accounts = new HostAccountManagement(dirname(engine.store.attachmentDir), (provider, accountId) => engine.stopProviderAccount(provider, accountId));
-  const providerUsage = new HostProviderUsage(join(dirname(engine.store.attachmentDir), "desktop-owner.json"));
+  const providerLogin = new HostProviderLogin(dirname(engine.store.attachmentDir));
+  const providerManagement = new HostProviderManagement(dirname(engine.store.attachmentDir), async provider => (await resolveBinary[provider]()).path);
+  const inboxCredentials = new InboxCredentials(dirname(engine.store.attachmentDir));
+  const linear = new HostLinear(inboxCredentials);
+  const jira = new HostJira(inboxCredentials);
+  const gitlab = new HostGitlab(inboxCredentials);
+  const azureDevOps = new HostAzureDevOps(inboxCredentials);
+  const github = new HostGithub();
+  const providerUsage = engine.providerUsage;
   let discovering: Promise<RemoteProvider[]> | undefined;
   const availableProviders = () => {
     if (!discoverProviders) return Promise.resolve(providers);
@@ -179,6 +197,9 @@ export function createHostServer(
     ),
     capabilities: [
       HOST_CLIENT_STATE_CAPABILITY,
+      HOST_INBOX_MEDIA_CAPABILITY,
+      HOST_LINK_PREVIEW_CAPABILITY,
+      HOST_ATTACHMENT_READ_CAPABILITY,
       "preferences.read",
       "preferences.patch",
       "preferences.assets.upload",
@@ -189,16 +210,38 @@ export function createHostServer(
       "connections.patch",
       "environments.v1",
       "sessions",
+      "sessions.inbox.v1",
       "sessions.sync.wait.v1",
       "projects.browse",
       "projects.createChat",
+      "projects.move.v1",
+      "inbox.linear.v1",
+      "inbox.github.v1",
+      "inbox.azuredevops.v1",
+      "inbox.jira.v1",
+      "inbox.gitlab.v1",
+      "sessions.btw.v1",
+      "sessions.submit.v1",
+      "sessions.outcome.v1",
+      "sessions.planEdit.v1",
+      "sessions.usageLimit.v1",
       "models.list",
+      "models.refresh.v1",
+      PROVIDER_AUXILIARY_CAPABILITY,
       "providerAccounts.defaults",
       "providerAccounts.manage.v1",
+      HOST_PROVIDER_LOGIN_CAPABILITY,
+      HOST_PROVIDER_RUNTIME_CAPABILITY,
+      HOST_MCP_CAPABILITY,
       "providerAccounts.usage.v1",
+      HOST_OPENCODE_USAGE_CAPABILITY,
+      HOST_PI_USAGE_CAPABILITY,
+      HOST_USAGE_RESET_CAPABILITY,
       "providerAccounts.deepseek.v1",
       "skills.list",
       "notes.v1",
+      "automations.v1",
+      "reminders.v1",
       "approvals",
       "questions",
       "diff",
@@ -207,6 +250,8 @@ export function createHostServer(
       "git.createBranch",
       "git.worktrees",
       "git.worktreeCreate",
+      HOST_WORKTREE_PROGRESS_CAPABILITY,
+      "git.worktreeLifecycle.v1",
       "files.read",
       "files.list",
       "files.index",
@@ -230,6 +275,8 @@ export function createHostServer(
       "sessions.switchAccount",
       "sessions.stopBackgroundTask",
       "sessions.checkpoint",
+      "sessions.relocate",
+      HOST_DESKTOP_APP_CAPABILITY,
       "nativeSources.list",
       "nativeSources.import",
       "nativeSources.syncAll",
@@ -267,6 +314,8 @@ export function createHostServer(
     }
   >();
   const transfers = new SyncTransfers();
+  const media = new HostMedia();
+  const worktreeProgress = new WorktreeCreationProgress();
   const worktreeStatus = new HostWorktreeStatus();
   const linkedWorktree = (projectId: string, cwd: string) => {
     const project = engine.store.project(projectId);
@@ -280,6 +329,23 @@ export function createHostServer(
     (projectId, action) => engine.withIdleProject(projectId, action),
     (path) => engine.assertWorkspaceWrite(path),
   );
+  const projectMoves = new ProjectMoves(engine.store, engine.checkpoints);
+  const auxiliaryProviders = new HostAuxiliaryProvider(engine.store, workspace, availableProviders);
+  const mcp = new HostMcp(engine.store);
+  const worktreeLifecycle = new HostWorktreeLifecycle(engine.store);
+  const moveProject = (id: string, to: string, rename: boolean) => {
+    const projects = projectMoves.affectedProjects(id).sort((a, b) => a.id.localeCompare(b.id));
+    const move = async () => {
+      for (const project of projects) engine.assertWorkspaceWrite(project.cwd);
+      for (const project of projects) await engine.releaseProjectBindings(project.id);
+      const moved = await projectMoves.move(id, to, rename);
+      workspace.invalidateRoots();
+      return moved;
+    };
+    const idle = (index: number): ReturnType<typeof move> => index === projects.length ? move()
+      : engine.withIdleProject(projects[index].id, () => idle(index + 1));
+    return idle(0);
+  };
   // A cold catalog can start an entire CLI (and its extensions) per provider.
   // Share the budget across projects, clients and stale-cache refreshes.
   let activeProbes = 0;
@@ -301,11 +367,11 @@ export function createHostServer(
   // Cached per project and provider so one failing or slow CLI never forces
   // every other provider to be probed again. An expired list keeps answering
   // while its replacement is discovered in the background.
-  const providerModels = async (cwd: string, provider: RemoteProvider, retainFailure = false) => {
+  const providerModels = async (cwd: string, provider: RemoteProvider, retainFailure = false, force = false) => {
     const key = `${cwd}\n${provider}`;
     const binary = await providerBinary(provider);
     const cached = catalogs.get(key);
-    if (cached?.binary === binary &&
+    if (cached?.binary === binary && (!force || (!cached.probed && !cached.failedAt)) &&
         (!cached.failedAt || (retainFailure && Date.now() - cached.failedAt < 15_000))) {
       if (cached.probed && Date.now() - cached.probed >= CATALOG_MAX_AGE_MS && !cached.refreshing) {
         const next = discover(cwd, provider);
@@ -326,7 +392,7 @@ export function createHostServer(
     );
     return entry.models;
   };
-  const models = async (projectId?: unknown, progressive = false, requested?: unknown) => {
+  const models = async (projectId?: unknown, progressive = false, requested?: unknown, force = false) => {
     const cwd = engine.modelCatalogDirectory(typeof projectId === "string" ? projectId : undefined);
     const available = (await availableProviders()).filter(provider =>
       !Array.isArray(requested) || requested.includes(provider));
@@ -335,7 +401,7 @@ export function createHostServer(
     const complete = Promise.all(
       available.map(async (provider) => {
         try {
-          result.models[provider] = await providerModels(cwd, provider, progressive && Array.isArray(requested));
+          result.models[provider] = await providerModels(cwd, provider, progressive && Array.isArray(requested), force);
         } catch (error) {
           result.errors[provider] =
             error instanceof Error ? error.message : String(error);
@@ -513,6 +579,19 @@ export function createHostServer(
           case "projects.list":
             result = engine.store.projects();
             break;
+          case "inbox.run": {
+            if (typeof params.command !== "string" || !/^(linear|jira|gitlab|azure_devops|git_github)_/.test(params.command)) throw new Error("Unsupported inbox operation");
+            if (["linear_set_token", "jira_set_config", "gitlab_set_config", "azure_devops_set_config"].includes(params.command) && !engine.store.adminToken(token)) throw new Error("Only this computer's desktop can manage inbox connections");
+            const args = params.args && typeof params.args === "object" && !Array.isArray(params.args) ? { ...params.args as Record<string, unknown> } : {};
+            if (params.command.startsWith("git_github_") && params.command !== "git_github_status" || ["gitlab_repo", "gitlab_list_work_items", "azure_devops_repo", "azure_devops_list_work_items"].includes(params.command)) {
+              args.cwd = engine.store.project(String(params.projectId ?? "")).cwd;
+            }
+            if (params.command.startsWith("git_github_")) {
+              const release = typeof args.cwd === "string" ? claimCheckoutResource(engine.store, `github:${randomUUID()}`, args.cwd) : undefined;
+              try { result = await github.run(params.command, args); } finally { release?.(); }
+            } else result = await (params.command.startsWith("azure_devops_") ? azureDevOps : params.command.startsWith("gitlab_") ? gitlab : params.command.startsWith("jira_") ? jira : linear).run(params.command, args);
+            break;
+          }
           case "projects.browse":
             result = await browseHostDirectories(params.path);
             break;
@@ -522,11 +601,59 @@ export function createHostServer(
           case "projects.createChat":
             result = await engine.createChat();
             break;
-          case "models.list":
-            result = await models(params.projectId, params.progressive === true, params.providers);
+          case "projects.rename":
+          case "projects.rebase":
+            result = await moveProject(String(params.projectId ?? ""), String(params.cwd ?? ""), input.method === "projects.rename");
             break;
+          case "models.list":
+            result = await models(params.projectId, params.progressive === true, params.providers, params.force === true);
+            break;
+          case "providers.auxiliary.start":
+          case "providers.auxiliary.read":
+          case "providers.auxiliary.cancel": {
+            const owner = createHash("sha256").update(token).digest("hex");
+            result = input.method === "providers.auxiliary.start" ? auxiliaryProviders.start(owner, params)
+              : input.method === "providers.auxiliary.read" ? await auxiliaryProviders.read(owner, params.requestId)
+              : auxiliaryProviders.cancel(owner, params.requestId);
+            break;
+          }
+          case "mcp.discover":
+            result = await mcp.discover(params);
+            break;
+          case "mcp.start":
+          case "mcp.status":
+          case "mcp.cancel": {
+            if (input.method === "mcp.start" && ["add", "remove", "login"].includes(String(params.operation)) && !engine.store.adminToken(token))
+              throw new Error("Only this computer's desktop can change MCP servers");
+            const owner = createHash("sha256").update(token).digest("hex");
+            result = input.method === "mcp.start" ? mcp.start(owner, params)
+              : input.method === "mcp.status" ? await mcp.status(owner, params)
+              : mcp.cancel(owner, params);
+            break;
+          }
           case "providerAccounts.list":
             result = accounts.read().accounts;
+            break;
+          case "providers.loginStart":
+          case "providers.loginStatus":
+            if (!engine.store.adminToken(token)) throw new Error("Only this computer's desktop can manage provider sign-in");
+            result = input.method === "providers.loginStart" ? await providerLogin.start(params) : providerLogin.status(params);
+            break;
+          case "providers.runtimeInspect":
+          case "providers.runtimeInfo":
+          case "providers.runtimePlan":
+          case "providers.runtimeLatest":
+          case "providers.runtimeClaimUpdateCheck":
+          case "providers.runtimeStart":
+          case "providers.runtimeStatus":
+            if (!engine.store.adminToken(token)) throw new Error("Only this computer's desktop can manage provider installations");
+            if (input.method === "providers.runtimeInspect") result = await providerManagement.inspect(params);
+            else if (input.method === "providers.runtimeInfo") result = await providerManagement.info(params);
+            else if (input.method === "providers.runtimePlan") result = await providerManagement.plan(params);
+            else if (input.method === "providers.runtimeLatest") result = await providerManagement.latest(params);
+            else if (input.method === "providers.runtimeClaimUpdateCheck") result = providerManagement.claim();
+            else if (input.method === "providers.runtimeStart") result = providerManagement.start(params);
+            else result = providerManagement.status(params);
             break;
           case "providerAccounts.read":
             result = accounts.read();
@@ -547,6 +674,17 @@ export function createHostServer(
             break;
           case "providerAccounts.usage":
             result = await providerUsage.read(params);
+            break;
+          case "providerAccounts.opencodeUsage":
+            result = await fetchHostOpenCodeUsage();
+            break;
+          case "providerAccounts.piUsage":
+            result = await fetchHostPiUsage(params.provider);
+            break;
+          case "providerAccounts.consumeReset":
+            if (!engine.store.adminToken(token)) throw new Error("Only this computer's desktop can reset provider usage");
+            if (!providerUsage.consumeReset) throw new Error("This Host does not support Codex usage resets.");
+            result = await providerUsage.consumeReset(params);
             break;
           case "providerAccounts.deepseek": {
             const client = params.client as DeepseekAccountClient | undefined;
@@ -578,6 +716,40 @@ export function createHostServer(
           case "notes.list":
             result = engine.notes.list();
             break;
+          case "automations.list":
+            result = engine.automations.store.list();
+            break;
+          case "automations.upsert":
+            result = engine.automations.store.upsert(params.automation);
+            break;
+          case "automations.delete":
+            result = engine.automations.store.delete(String(params.id ?? ""));
+            break;
+          case "automations.runs":
+            result = engine.automations.store.runs(String(params.automationId ?? ""));
+            break;
+          case "automations.run": {
+            const run = engine.automations.store.manual(String(params.automationId ?? ""));
+            await engine.automations.tick();
+            result = engine.automations.store.runs(run.automationId).find(item => item.id === run.id);
+            break;
+          }
+          case "automations.claimEvent":
+            result = engine.automations.store.claimEvent(String(params.automationId ?? ""), params.claim as import("./automations").AutomationEventClaim);
+            void engine.automations.tick().catch(() => undefined);
+            break;
+          case "reminders.list":
+            result = { reminders: engine.reminders.list(), nextDueAt: engine.reminders.nextDueAt() };
+            break;
+          case "reminders.set":
+            result = engine.reminders.set(params as import("../src/contracts/reminders").ReminderSet);
+            break;
+          case "reminders.clear":
+            result = engine.reminders.clear(params as import("../src/contracts/reminders").ReminderClear);
+            break;
+          case "reminders.claimDue":
+            result = engine.reminders.claimDue(params as import("../src/contracts/reminders").ReminderClaim);
+            break;
           case "notes.get":
             result = engine.notes.get(params.id);
             break;
@@ -600,13 +772,13 @@ export function createHostServer(
             result = {
               environmentId: engine.store.environmentId,
               assistant: engine.assistant.store.notificationActivity(),
-              sessions: engine.store.summaries().filter((session) => !session.orchestrationLeadId && !session.workflowParentId && !session.assistantOwnerId),
+              sessions: engine.store.summaries().filter((session) => !session.inboxAsk && !session.orchestrationLeadId && !session.workflowParentId && !session.assistantOwnerId),
             };
             break;
           case "sessions.list": {
             const projectId = String(params.projectId ?? "");
             const project = engine.store.project(projectId);
-            const summaries = engine.store.summaries(projectId).filter((session) => !session.orchestrationLeadId && !session.workflowParentId && !session.assistantOwnerId);
+            const summaries = engine.store.summaries(projectId).filter((session) => !session.inboxAsk && !session.orchestrationLeadId && !session.workflowParentId && !session.assistantOwnerId);
             const paths = [...new Set(summaries.map((session) => session.executionCwd || session.cwd || project.cwd))];
             const branches = new Map(await Promise.all((engine.machines?.workspaceReady(project.machine) === false ? [] : paths).map(async (cwd) => {
               const branch = await exec("git", ["symbolic-ref", "--quiet", "--short", "HEAD"], {
@@ -690,6 +862,21 @@ export function createHostServer(
             result = await engine.sessionCheckpoint(sessionId, params.action, params.path ?? undefined, params.turnId);
             break;
           }
+          case "sessions.relocate": {
+            const request = parseRelocate(params);
+            result = await engine.relocateSession(request.sessionId, params.projectId, request.path);
+            break;
+          }
+          case "app.commands.poll": {
+            const abort = new AbortController();
+            response.once("close", () => abort.abort());
+            result = await engine.app.desktop.poll(createHash("sha256").update(token).digest("hex"), params,
+              () => !abort.signal.aborted && engine.store.authenticated(token));
+            break;
+          }
+          case "app.commands.complete":
+            result = engine.app.desktop.complete(createHash("sha256").update(token).digest("hex"), params);
+            break;
           case "sessions.nativeAccess": {
             result = await engine.nativeAccess(String(params.sessionId ?? ""));
             break;
@@ -698,7 +885,7 @@ export function createHostServer(
             const sessionId = String(params.sessionId ?? "");
             const current = engine.store.session(sessionId);
             if (!current.session.nativeSession) throw new Error("This conversation has no native source");
-            engine.nativeSessions.touch(sessionId);
+            engine.touchSession(sessionId);
             result = (await engine.nativeSessions.refresh(sessionId, { force: true })) ?? null;
             break;
           }
@@ -776,6 +963,7 @@ export function createHostServer(
             break;
           case "sessions.get": {
             const sessionId = String(params.sessionId ?? "");
+            engine.touchSession(sessionId);
             if (Number.isSafeInteger(params.revision) && engine.store.sessionSummary(sessionId)?.revision === params.revision) {
               result = null;
               break;
@@ -801,6 +989,10 @@ export function createHostServer(
               remoteControl: !engine.store.adminToken(token),
               remoteControlDevice: engine.store.remoteControlDevice(token),
             });
+            break;
+          case "commands.outcome":
+            result = engine.commandOutcome(String(params.sessionId ?? ""), String(params.commandId ?? ""),
+              typeof params.projectId === "string" ? params.projectId : undefined);
             break;
           case "workflows.request":
             result = await engine.workflows.rpc(params, (projectId) => engine.store.project(projectId).cwd, (path) => {
@@ -879,6 +1071,15 @@ export function createHostServer(
             break;
           case "attachments.read":
             result = readAttachmentChunk(engine.store, params);
+            break;
+          case "media.inbox":
+            result = await media.inbox(params.url, createHash("sha256").update(token).digest("hex"));
+            break;
+          case "media.chunk":
+            result = media.chunk(createHash("sha256").update(token).digest("hex"), params);
+            break;
+          case "links.preview":
+            result = await media.preview(params.url);
             break;
           case "devices.revokeSelf":
             // Only the caller's own credential. Sessions and other devices
@@ -993,7 +1194,27 @@ export function createHostServer(
             const project = engine.store.project(
               String(params.projectId ?? ""),
             );
-            result = await hostWorktrees(project.cwd);
+            result = await detailedHostWorktrees(engine.store, project.cwd);
+            break;
+          }
+          case "git.worktreeCheckRemove":
+            result = await worktreeLifecycle.check(String(params.projectId ?? ""), params.path, params.force === true) ?? null;
+            break;
+          case "git.worktreeRemove": {
+            const projectId = String(params.projectId ?? "");
+            const project = engine.store.project(projectId);
+            engine.assertProjectWrite(projectId);
+            engine.assertWorkspaceWrite(String(params.path ?? ""));
+            const ids = [...new Set([projectId, ...worktreeLifecycle.projectsUsing(String(params.path ?? ""))])].sort();
+            const remove = async () => {
+              for (const id of ids) await engine.releaseProjectBindings(id);
+              const removed = await worktreeLifecycle.remove(project.id, params.path, params.force === true, params.keepSessions === true);
+              workspace.invalidateRoots();
+              return removed;
+            };
+            const idle = (index: number): ReturnType<typeof remove> => index === ids.length ? remove()
+              : engine.withIdleProject(ids[index], () => idle(index + 1));
+            result = await idle(0);
             break;
           }
           case "git.worktreeName":
@@ -1009,22 +1230,29 @@ export function createHostServer(
             // Creating a separate checkout only reads the source commit. Keep
             // its directories alive without requiring running sessions to stop.
             const releases: Array<() => void> = [];
+            const progress = worktreeProgress.begin(createHash("sha256").update(token).digest("hex"), params.progressId);
             try {
               for (const path of new Set([project.cwd, cwd]))
                 releases.push(claimCheckoutResource(engine.store, `worktree-create:${randomUUID()}`, path));
-              result = await createHostWorktree(
+              const created = await createHostWorktree(
                 project.cwd,
                 params.branch,
                 params.base,
                 params.existing,
                 cwd,
+                progress?.line,
               );
+              result = { ...(await detailedHostWorktrees(engine.store, project.cwd)).worktrees.find(tree => tree.path === created.path), ...created };
             } finally {
+              progress?.finish();
               for (const release of releases) release();
             }
             workspace.invalidateRoots();
             break;
           }
+          case "git.worktreeProgress":
+            result = worktreeProgress.read(createHash("sha256").update(token).digest("hex"), params.progressId, params.offset);
+            break;
           case "files.read": {
             const project = engine.store.project(
               String(params.projectId ?? ""),
@@ -1055,6 +1283,19 @@ export function createHostServer(
             break;
           }
           case "workspace.run":
+            if (params.command === "rename_path" && params.args && typeof params.args === "object") {
+              const args = params.args as { path?: unknown; name?: unknown };
+              const io = currentMachineIO();
+              const project = typeof args.path === "string" ? engine.store.projects().find(value =>
+                projectMachineKey(value.machine) === io.key && io.path.resolve(value.cwd) === io.path.resolve(String(args.path))) : undefined;
+              if (project) {
+                if (typeof args.name !== "string" || !args.name || args.name === "." || args.name === ".." || /[/\\\0]/.test(args.name))
+                  throw new Error("Invalid project name");
+                const moved = await moveProject(project.id, io.path.join(io.path.dirname(project.cwd), args.name), true);
+                result = moved.cwd;
+                break;
+              }
+            }
             result = (await workspace.run(params.command, params.args)) ?? null;
             break;
           case "files.search": {
@@ -1149,18 +1390,24 @@ export function createHostServer(
         const result = engine.machines ? await engine.machines.forRequest(String(input.method), params, execute) : await execute();
         response.end(JSON.stringify({ result }));
       } catch (error) {
+        const unavailable = isHostUnavailable(error);
         if (!response.destroyed)
-          response.writeHead(error instanceof PairingCodeError ? error.code === "PAIRING_CODE_USED" ? 409 : 401 : 400).end(
+          response.writeHead(error instanceof PairingCodeError ? error.code === "PAIRING_CODE_USED" ? 409 : 401 : unavailable ? 503 : 400,
+            unavailable ? { "Retry-After": "1" } : undefined).end(
             JSON.stringify({
               error:
                 error instanceof Error ? error.message : "Host request failed",
               ...(assistantRequest ? { code: botErrorCode(error) } : {}),
               ...(error instanceof PairingCodeError ? { code: error.code } : {}),
+              ...(unavailable ? { code: HOST_UNAVAILABLE_CODE } : {}),
             }),
           );
       }
     },
   );
   server.on("close", () => accounts.close());
+  server.on("close", () => providerLogin.close());
+  server.on("close", () => auxiliaryProviders.close());
+  server.on("close", () => mcp.close());
   return server;
 }

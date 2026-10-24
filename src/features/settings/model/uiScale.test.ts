@@ -1,14 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  normalizeUiScale,
-  UI_SCALE_DEFAULT,
-  UI_SCALE_MAX,
-  UI_SCALE_MIN,
-  UI_SCALE_PERCENTS,
-  uiScaleCommand,
-  zoomInUiScale,
-  zoomOutUiScale,
-} from "./uiScale";
+import { normalizeUiScale, UI_SCALE_DEFAULT, UI_SCALE_MAX, UI_SCALE_MIN, UI_SCALE_PERCENTS, uiScaleCommand, zoomInUiScale, zoomOutUiScale } from "./uiScale";
 
 describe("ui scale", () => {
   it("clamps to the supported range and rounds to one decimal", () => {

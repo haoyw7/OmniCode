@@ -1,5 +1,5 @@
 import { pathKey } from "../../shared/lib/paths";
-import { normalizeProjectPath } from "../../features/projects/model/recents";
+import { normalizeProjectPath } from "../../domain/pathDisplay";
 
 /** Concurrent summary reads are independent by project; a forced refresh wins. */
 export function createProjectHistoryLoader<T>(callbacks: {

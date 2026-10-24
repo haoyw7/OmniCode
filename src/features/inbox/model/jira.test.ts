@@ -1,31 +1,15 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  clearJiraCache,
-  disconnectJira,
-  jiraIssueDetails,
-  jiraIssueThread,
-  jiraIssueComment,
-  jiraProjectIdsForFetch,
-  peekJiraIssueDetails,
-  peekJiraIssueThread,
-  saveJiraConfig,
-  type JiraIssue,
-} from "./jira";
-import {
-  clearInboxCache,
-  listInboxItems,
-  inboxItemStatus,
-  inboxStartDraft,
-} from "./githubTasks";
+import { clearJiraCache, disconnectJira, jiraIssueDetails, jiraIssueThread, jiraIssueComment, jiraProjectIdsForFetch, peekJiraIssueDetails, peekJiraIssueThread, saveJiraConfig } from "./jira";
+import type { JiraIssue } from "../../../contracts/jira";
+import { clearInboxCache, listInboxItems, inboxItemStatus } from "./githubTasks";
+import { inboxStartDraft } from "../../../domain/automationInbox";
 import { inboxTrackerDescription } from "./inboxContext";
-import {
-  clearPendingInboxSelfActivity,
-  consumeInboxSelfActivity,
-} from "./inboxSelfActivity";
+import { clearPendingInboxSelfActivity, consumeInboxSelfActivity } from "./inboxSelfActivity";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../connections/model/inboxHost", async () => ({ inboxHostCommand: (await import("@tauri-apps/api/core")).invoke }));
 
 const issue: JiraIssue = {
   provider: "jira",

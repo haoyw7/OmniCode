@@ -1,7 +1,7 @@
 import ts from "typescript";
 import { harvestConstraints, mergeConstraints } from "./jsdoc.js";
-import type { JsonSchema, JsonValue } from "./types.js";
-import { MAX_UNION_MEMBERS } from "./types.js";
+import { type JsonSchema, type JsonValue, MAX_UNION_MEMBERS } from "./types.js";
+
 
 /**
  * 类型 → JSON Schema 的发射器（emitter），由 checker 的结构化视图驱动（泛型/别名/

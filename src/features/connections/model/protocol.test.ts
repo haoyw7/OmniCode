@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
-import { applySessionSync, sessionClockOffset, type HostSession } from "./protocol";
+import { applySessionSync, sessionClockOffset } from "../../../domain/sessionSync";
+import { type HostSession } from "../../../contracts/protocol";
 
 const known: HostSession = {
   projectId: "project",

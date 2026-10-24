@@ -1,39 +1,14 @@
 import type { WorkflowRunState } from "../../_shims/protocol.js";
 import { laneRefsById, type LaneRef } from "../workflow-graph/lane-name.js";
-import {
-  collapseStatuses,
-  liveParticipantView,
-  participantStatus,
-  participantsOfPhase,
-  withImplicitPhase,
-} from "../workflow-graph/participant-model.js";
+import { collapseStatuses, liveParticipantView, participantStatus, participantsOfPhase, withImplicitPhase } from "../workflow-graph/participant-model.js";
 import { phaseBinder } from "../workflow-graph/instance-phases.js";
 import { phaseNameMatches, type PhaseNaming } from "../workflow-graph/phase-name.js";
 import { phaseMembers } from "../workflow-graph/phase-model.js";
 import { workflowRunOverlay } from "../workflow-graph/run-status.js";
-import {
-  laneClassOf,
-  type LaneClass,
-  type StepRunStatus,
-  type WorkflowCausalityGraphData,
-} from "../workflow-graph/types.js";
+import { laneClassOf, type LaneClass, type StepRunStatus, type WorkflowCausalityGraphData } from "../workflow-graph/types.js";
 import { sharedTimelineModel } from "./timeline-cache.js";
-import {
-  observePhase,
-  phaseEntryFor,
-  siteIdsOf,
-  stationUnlisted,
-  type StationUnlisted,
-} from "./station-observation.js";
-import {
-  assignAirLanes,
-  bandOf,
-  foldPhaseBands,
-  foldPhaseEdges,
-  trackOf,
-  type RailSpec,
-  type TimelineRailKind,
-} from "./timeline-bands.js";
+import { observePhase, phaseEntryFor, siteIdsOf, stationUnlisted, type StationUnlisted } from "./station-observation.js";
+import { assignAirLanes, bandOf, foldPhaseBands, foldPhaseEdges, trackOf, type RailSpec, type TimelineRailKind } from "./timeline-bands.js";
 
 /**
  * 时间线模型。

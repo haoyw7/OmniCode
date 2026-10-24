@@ -1,15 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  clearKnownInboxItems,
-  knownInboxEntries,
-  rememberInboxItems,
-  inboxHasUnseenItems,
-  inboxSeenIsSeeded,
-  isInboxEntryUnseen,
-  markInboxItemSeen,
-  markInboxItemsSeen,
-  seedInboxSeenIfNeeded,
-} from "./inboxSeen";
+import { clearKnownInboxItems, knownInboxEntries, rememberInboxItems, inboxHasUnseenItems, inboxSeenIsSeeded, isInboxEntryUnseen, markInboxItemSeen, markInboxItemsSeen, seedInboxSeenIfNeeded } from "./inboxSeen";
 
 const KEY = "omnicode.inboxSeen";
 

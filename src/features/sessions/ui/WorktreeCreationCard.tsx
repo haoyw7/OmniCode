@@ -4,11 +4,8 @@ import { useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { Check, ChevronRight, FolderTree, Loader } from "../../../shared/ui/icons";
-import type {
-  WorktreeCreation,
-  WorktreeLogLine,
-} from "../../source-control/model/worktreeCreation";
-import { WORKTREE_NAME_ERROR } from "../../source-control/model/worktreeNaming";
+import type { WorktreeCreation, WorktreeLogLine } from "../../../contracts/session";
+import { WORKTREE_NAME_ERROR } from "../../../domain/worktreeNaming";
 
 /**
  * The worktree creation record under the message that started it. The log stays

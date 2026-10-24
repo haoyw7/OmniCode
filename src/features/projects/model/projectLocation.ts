@@ -1,13 +1,7 @@
-import {
-  resolveProjectLocation,
-  type ProjectLocation,
-} from "../../../platform/tauri/fs";
+import { resolveProjectLocation, type ProjectLocation } from "../../../platform/tauri/fs";
 import { pathKey } from "../../../shared/lib/paths";
-import {
-  isLocalProject,
-  normalizeProjectPath,
-  sameProjectPath,
-} from "./recents";
+import { isLocalProject, sameProjectPath } from "./recents";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
 
 const KEY = "omnicode.projectLocations";
 

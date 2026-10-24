@@ -2,7 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProviderRateLimits, RateLimitWindow } from "./rateLimits";
+import type { ProviderRateLimits, RateLimitWindow } from "../../../contracts/session";
 
 const fetches = vi.hoisted(() => ({
   claude: vi.fn<(accountId: string) => Promise<ProviderRateLimits>>(),
@@ -15,13 +15,7 @@ vi.mock("./rateLimitsFetch", () => ({
   fetchCodexRateLimits: fetches.codex,
 }));
 
-import {
-  accountHeadroom,
-  accountStatus,
-  bestAlternativeAccount,
-  useProviderAccountUsage,
-  type AccountUsage,
-} from "./accountUsage";
+import { accountHeadroom, accountStatus, bestAlternativeAccount, useProviderAccountUsage, type AccountUsage } from "./accountUsage";
 import { clearCachedRateLimits, loadRateLimits } from "./rateLimitsCache";
 import type { ProviderAccount } from "./providerAccounts";
 

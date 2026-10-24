@@ -1,8 +1,5 @@
 import { useSyncExternalStore } from "react";
-import {
-  preferenceStorage,
-  subscribeSharedPreferences,
-} from "../../settings/model/sharedPreferences";
+import { preferenceStorage, subscribeSharedPreferences } from "../../settings/model/sharedPreferences";
 
 export const STATUS_CARD_IDS = [
   "environment",

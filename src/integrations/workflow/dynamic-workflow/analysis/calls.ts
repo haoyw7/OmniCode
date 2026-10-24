@@ -1,22 +1,5 @@
 import ts from "typescript";
-import {
-  addOcc,
-  addPlaceholder,
-  clearExact,
-  cloneValue,
-  collapse,
-  collapseInto,
-  emptyValue,
-  HEAP_MUTATORS,
-  isDirectCallee,
-  isJsonStringify,
-  mergeBound,
-  mergeInto,
-  phKey,
-  singleOcc,
-  VALUE_DEPTH_CAP,
-  type AbstractValue,
-} from "./domain.js";
+import { addOcc, addPlaceholder, clearExact, cloneValue, collapse, collapseInto, emptyValue, HEAP_MUTATORS, isDirectCallee, isJsonStringify, mergeBound, mergeInto, phKey, singleOcc, VALUE_DEPTH_CAP, type AbstractValue } from "./domain.js";
 import type { EvalContext, Evaluator } from "./taint.js";
 import type { ApplicationVia } from "./state.js";
 import { applySuperCall } from "./classes.js";

@@ -1,18 +1,11 @@
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { saveProjectLogoAsset, removeProjectLogoAsset, forgetLogoAsset, nativeAssetUrl } from "../../../platform/tauri/appearanceAssets";
+import { pickNativeFile } from "../../../platform/tauri/dialogs";
 import { projectKey } from "../../../shared/lib/paths";
-import {
-  loadTabGroupLogos,
-  notifyTabGroupLogosChanged,
-  saveTabGroupLogo,
-  tabGroupLogoDisplayRevision,
-} from "../../workspace/model/tabGroups";
+import { loadTabGroupLogos, notifyTabGroupLogosChanged, saveTabGroupLogo, tabGroupLogoDisplayRevision } from "../../workspace/model/tabGroups";
 
 export async function pickImageFile(directory: string): Promise<string | null> {
-  const selected = await open({
+  const selected = await pickNativeFile({
     defaultPath: directory,
-    multiple: false,
-    directory: false,
     title: "Choose project logo",
     filters: [
       {
@@ -49,7 +42,7 @@ export function droppableLogoFile(
 
 async function forgetLogoFile(path: string | null): Promise<void> {
   if (!path) return;
-  await invoke("forget_logo_file", { path }).catch(() => undefined);
+  await forgetLogoAsset(path).catch(() => undefined);
 }
 
 export async function pickAndSetProjectLogo(projectPath: string): Promise<string | null> {
@@ -57,10 +50,7 @@ export async function pickAndSetProjectLogo(projectPath: string): Promise<string
   if (!sourcePath) return null;
   const project = projectKey(projectPath);
   const logos = loadTabGroupLogos();
-  const path = await invoke<string>("save_project_logo", {
-    project,
-    sourcePath,
-  });
+  const path = await saveProjectLogoAsset(project, sourcePath);
   await forgetLogoFile(droppableLogoFile(logos, project, path));
   saveTabGroupLogo(project, path);
   notifyTabGroupLogosChanged();
@@ -69,7 +59,7 @@ export async function pickAndSetProjectLogo(projectPath: string): Promise<string
 
 export async function clearProjectLogo(project: string): Promise<void> {
   const stale = droppableLogoFile(loadTabGroupLogos(), project);
-  await invoke("remove_project_logo", { project });
+  await removeProjectLogoAsset(project);
   await forgetLogoFile(stale);
   saveTabGroupLogo(project, null);
   notifyTabGroupLogosChanged();
@@ -77,5 +67,5 @@ export async function clearProjectLogo(project: string): Promise<void> {
 
 export function projectLogoSrc(path: string | null | undefined): string | null {
   if (!path) return null;
-  return `${convertFileSrc(path)}?v=${tabGroupLogoDisplayRevision()}`;
+  return `${nativeAssetUrl(path)}?v=${tabGroupLogoDisplayRevision()}`;
 }

@@ -1,5 +1,5 @@
-import { collectDiagnostics, createWorkflowProgram } from "../compiler/compile.js";
-import type { CompileDiagnostic } from "../compiler/compile.js";
+import { collectDiagnostics, createWorkflowProgram, type CompileDiagnostic } from "../compiler/compile.js";
+
 import { collectSites } from "./sites.js";
 import { collectFacadeMisuse } from "./facade-misuse.js";
 import { collectWorldRunCommands } from "./world-run.js";

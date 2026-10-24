@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { remoteRequest } from "./connections";
 import { sharedHostMachineId } from "./remoteProjects";
-import type { HostEnvironmentDefinition, HostEnvironments } from "./hostState";
+import type { HostEnvironmentDefinition, HostEnvironments } from "../../../contracts/hostState";
 import { parseWslPath, wslPath } from "../../../shared/lib/wslPaths";
 
 /** Named environments live on this computer's shared Host, which applies

@@ -1,12 +1,6 @@
-import {
-  remoteMachineFor,
-  remoteRequest,
-} from "../../connections/model/connections";
-import {
-  remoteProjectFor,
-  sharedHostMachineId,
-} from "../../connections/model/remoteProjects";
-import type { GeneratedSessionTitle } from "./sessionTitle";
+import { remoteMachineFor, remoteRequest } from "../../connections/model/connections";
+import { remoteProjectFor, sharedHostMachineId } from "../../connections/model/remoteProjects";
+import type { GeneratedSessionTitle } from "../../../domain/sessionTitle";
 
 /** Desktop title requests use the same configured API and credential owner as Host sessions. */
 export async function generateConfiguredSessionTitle(

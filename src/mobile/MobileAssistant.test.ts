@@ -1,16 +1,13 @@
 import { advanceMotionTimers, startMotionClock, stopMotionClock } from "./motionTestClock";
 // @vitest-environment happy-dom
 import { act, createElement, createRef } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
 import { MobileAssistant, type MobileAssistantHandle } from "./MobileAssistant";
 import { botTasks } from "../integrations/harness/core/botAutonomy";
-import {
-  fullBotPolicy as fullAssistantPolicy,
-  type BotMessage as AssistantMessage,
-  type BotConfiguration as AssistantView,
-} from "../features/bots/model/botView";
+import { fullBotPolicy as fullAssistantPolicy, type BotMessage as AssistantMessage, type BotConfiguration as AssistantView } from "../features/bots/model/botView";
 import type { BotRpc as AssistantRpc } from "../features/bots/model/botRpc";
 import { setUiLanguage } from "../shared/i18n/language";
 import { KEYBOARD_EVENT, installKeyboardMotion } from "./keyboardMotion";

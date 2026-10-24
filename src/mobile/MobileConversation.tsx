@@ -2,13 +2,7 @@ import { motion } from "motion/react";
 import { popTransition, immediateTransition } from "../shared/motion/tokens";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
 import { useTranscriptHaptics } from "./useTranscriptHaptics";
-import {
-  useCallback,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-  type Ref,
-} from "react";
+import { useCallback, useState, type ComponentProps, type ReactNode, type Ref } from "react";
 import { AgentTranscript } from "../features/sessions/ui/AgentTranscript";
 import { useTranscriptLayout } from "../features/sessions/hooks/useTranscriptLayout";
 import { useTranslation } from "../shared/i18n/useTranslation";

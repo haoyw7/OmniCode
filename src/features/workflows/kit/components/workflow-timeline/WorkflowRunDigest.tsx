@@ -15,17 +15,9 @@ import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import type { WorkflowRunCardSummary } from "../../ToolCallBlocks/fileSummaryTypes.js";
 import { buildWorkflowTimeline, type TimelinePill } from "./timeline-model.js";
 import { workflowCardDetail } from "./timeline-summary.js";
-import {
-  WORKFLOW_RUN_ENDED_KIND_ID,
-  WorkflowCardHeader,
-  workflowRunKindMessageId,
-} from "./WorkflowCardChrome.js";
+import { WORKFLOW_RUN_ENDED_KIND_ID, WorkflowCardHeader, workflowRunKindMessageId } from "./WorkflowCardChrome.js";
 import { WorkflowArtifactStrip } from "./WorkflowArtifactStrip.js";
-import {
-  useWorkflowRunSettingsPopoverState,
-  WorkflowRunSettingsPopover,
-  type WorkflowRunSettingsHost,
-} from "./WorkflowRunSettingsPopover.js";
+import { useWorkflowRunSettingsPopoverState, WorkflowRunSettingsPopover, type WorkflowRunSettingsHost } from "./WorkflowRunSettingsPopover.js";
 import { timelineHeight, WorkflowTimeline } from "./WorkflowTimeline.js";
 import { WorkflowTruncatedNotice } from "./WorkflowTruncatedNotice.js";
 

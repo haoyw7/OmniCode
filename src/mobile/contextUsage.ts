@@ -1,9 +1,7 @@
-import type {
-  HostModelCatalog,
-  RemoteProvider,
-} from "../features/connections/model/protocol";
-import type { Session } from "../features/sessions/model/session";
-import type { ContextUsage } from "../features/sessions/model/contextUsage";
+import type { HostModelCatalog } from "../contracts/protocol";
+import type { RemoteProvider } from "../contracts/provider";
+import type { Session, ContextUsage } from "../contracts/session";
+
 
 /** Use a real usage reading and, if needed, the exact model's Host catalog limit. */
 export function mobileContextUsage(

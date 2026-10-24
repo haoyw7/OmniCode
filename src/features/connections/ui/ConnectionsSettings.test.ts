@@ -6,11 +6,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { ConnectionsSettings } from "./ConnectionsSettings";
 import { configureSharedHost } from "../model/remoteProjects";
-import {
-  REMOTE_PROVIDERS,
-  type RemoteMachine,
-  type SshSetup,
-} from "../model/protocol";
+import { REMOTE_PROVIDERS } from "../../../contracts/provider";
+import { type RemoteMachine, type SshSetup } from "../../../contracts/protocol";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 let container: HTMLDivElement;

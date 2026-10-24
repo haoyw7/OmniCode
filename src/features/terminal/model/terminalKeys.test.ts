@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  isMacTerminalClearShortcut,
-  macTerminalShortcutData,
-  terminalClipboardShortcut,
-} from "./terminalKeys";
+import { isMacTerminalClearShortcut, macTerminalShortcutData, terminalClipboardShortcut } from "./terminalKeys";
 
 function key(
   key: string,

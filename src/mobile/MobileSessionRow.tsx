@@ -1,13 +1,13 @@
 import { MobileSpinner } from "./MobileSpinner";
 import type { ButtonHTMLAttributes } from "react";
-import type { HostSessionSummary } from "../features/connections/model/protocol";
+import type { HostSessionSummary } from "../contracts/protocol";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
-import { sessionRecencyAt } from "../features/sessions/model/sessionActivity";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
-import { SessionWorktreeIcon } from "../features/sessions/ui/SessionWorktreeIcon";
+import { sessionRecencyAt } from "../domain/sessionActivity";
+import { HarnessIcon } from "../shared/ui/HarnessIcon";
+import { SessionWorktreeIcon } from "../shared/ui/SessionWorktreeIcon";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { Pin, TriangleAlert } from "../shared/ui/icons";
-import { formatMobileRelativeTime } from "./relativeTime";
+import { formatRelativeTime } from "../shared/lib/relativeTime";
 
 /** One conversation in a list page: its agent, title, then its state or age. */
 export function MobileSessionRow({
@@ -60,7 +60,7 @@ export function MobileSessionRow({
         </span>
       ) : (
         <time dateTime={new Date(sessionRecencyAt(session)).toISOString()}>
-          {formatMobileRelativeTime(sessionRecencyAt(session), now, language)}
+          {formatRelativeTime(sessionRecencyAt(session), now, language)}
         </time>
       )}
       {unread && (

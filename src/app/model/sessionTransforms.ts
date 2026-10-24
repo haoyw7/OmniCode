@@ -1,20 +1,13 @@
-import { noteCardMeta, type NoteComposerCard } from "../../features/notes";
-import { dropContextWindow } from "../../features/sessions/model/contextUsage";
-import { planComposerSwitch } from "../../features/sessions/model/handoff";
-import {
-  mergeModelSettings,
-  resolveModel,
-} from "../../features/sessions/model/models";
-import {
-  HARNESS_LABEL,
-  formatSessionTitle,
-  sessionDisplayTitle,
-  type HarnessId,
-  type PlanBuildTarget,
-  type PlanStatus,
-  type SecondOpinionMeta,
-  type Session,
-} from "../../features/sessions/model/session";
+import { noteCardMeta } from "../../domain/notesText";
+import type { NoteComposerCard, HarnessId, PlanBuildTarget, PlanStatus, SecondOpinionMeta, Session } from "../../contracts/session";
+import { dropContextWindow } from "../../domain/contextUsage";
+import { planComposerSwitch } from "../../domain/handoff";
+import { mergeModelSettings } from "../../features/sessions/model/models";
+import { resolveModel } from "../../integrations/harness/core/modelCatalog";
+import { sessionDisplayTitle } from "../../features/sessions/model/session";
+import { formatSessionTitle } from "../../domain/session";
+import { HARNESS_LABEL } from "../../contracts/session";
+
 
 export function withPlanStatus(
   session: Session,

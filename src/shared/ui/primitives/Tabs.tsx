@@ -1,11 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import {
-  panelTransition,
-  immediateTransition,
-  popInitial,
-  popAnimate,
-  popExit,
-} from "../../motion/tokens";
+import { panelTransition, immediateTransition, popInitial, popAnimate, popExit } from "../../motion/tokens";
 import { useMotionPreference } from "../../motion/useMotionPreference";
 import { MotionPresenceItem } from "./MotionPresenceItem";
 import * as React from "react";

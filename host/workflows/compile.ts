@@ -25,11 +25,8 @@ import {
   type WorkflowDriver,
 } from "../../src/integrations/workflow/dynamic-workflow/index.js";
 import { boundCausalityGraph } from "../../src/integrations/workflow/graphBounds.js";
-import {
-  createWorkflowPhaseAlongside,
-  createWorkflowPhaseNames,
-  type CreateWorkflowCausalityGraph,
-} from "../../src/integrations/workflow/createWorkflow.js";
+import { createWorkflowPhaseAlongside, createWorkflowPhaseNames } from "../../src/integrations/workflow/createWorkflow.js";
+import { type CreateWorkflowCausalityGraph } from "../../src/contracts/workflow";
 import { runWorkflowScript } from "./runtime/harness.js";
 import { executeWorldRead } from "./world-read.js";
 import { nodeExecutionPort, nodeFileSystemPort } from "./node-ports.js";

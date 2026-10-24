@@ -1,14 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
+import { updateNativeTray } from "../../platform/tauri/tray";
 import { useEffect, useRef } from "react";
 import { remoteRequest } from "../../features/connections/model/connections";
-import type {
-  HostSessionActivity,
-  HostSessionSummary,
-} from "../../features/connections/model/protocol";
-import {
-  sharedHostMachineId,
-  sharedProjects,
-} from "../../features/connections/model/remoteProjects";
+import type { HostSessionActivity, HostSessionSummary } from "../../contracts/protocol";
+import { sharedHostMachineId, sharedProjects } from "../../features/connections/model/remoteProjects";
 import { sessionDisplayTitle } from "../../features/sessions/model/session";
 import { RemoteSessionUnread } from "../../features/sessions/model/remoteSessionUnread";
 
@@ -105,10 +99,7 @@ export function useTraySessions(
       const next = JSON.stringify(sessions);
       if (next === last) return;
       last = next;
-      await invoke("tray_update", {
-        labels: JSON.parse(labelsKey) as TrayLabels,
-        sessions,
-      }).catch(() => undefined);
+      await updateNativeTray(JSON.parse(labelsKey) as TrayLabels, sessions).catch(() => undefined);
     };
     void poll();
     const timer = window.setInterval(() => void poll(), TRAY_POLL_MS);

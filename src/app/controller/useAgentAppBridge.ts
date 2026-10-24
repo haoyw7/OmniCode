@@ -1,298 +1,104 @@
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import type { RefObject } from "react";
-import { useEffect, useRef } from "react";
-import { flushSync } from "react-dom";
-import {
-  handleAgentApp,
-  type AppSessionListing,
-  type AppSessionPlacement,
-} from "../../features/agent-app/model/agentApp";
-import { NOTES_CHANGED_EVENT, upsertNote } from "../../features/notes";
-import { orchestrator } from "../../features/orchestration/model/orchestration";
-import { sameProjectPath } from "../../features/projects/model/recents";
-import type { QuickLaunch } from "../../features/quick-composer/model/quickComposer";
-import {
-  getSession,
-  listSessionsByProject,
-} from "../../features/sessions/data/sessionStore";
-import {
-  sessionDraftBlock,
-  type Attachment,
-  type Session,
-} from "../../features/sessions/model/session";
-import {
-  createWorktree,
-  listWorktrees,
-} from "../../features/source-control/model/worktrees";
-import type { Submit } from "./workspaceTypes";
+import type { Dispatch, RefObject, SetStateAction } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { Session } from "../../contracts/session";
+import type { DesktopAppCommand } from "../../contracts/app";
+import type { RemoteMachine } from "../../contracts/protocol";
+import { consumeDesktopAppCommands } from "../../features/connections/model/desktopAppCommands";
+import { loadRemoteSession, rememberRemoteSession, remoteSessionFor, useRemoteMachines, REMOTE_HISTORY_CHANGE } from "../../features/connections/model/connections";
+import { projectPath, remoteProjectFor } from "../../features/connections/model/remoteProjects";
+import { sharedSessionBackend } from "../../features/sessions/data/sharedSessionBackend";
+import { leafIds, newTab, splitPane, type WorkspaceTab } from "../../features/workspace/model/layout";
+import { desktopWindow } from "../../platform/tauri/window";
 
 type Options = {
-  launchQuickSession: (
-    launch: QuickLaunch,
-    deliveryId: string,
-    placement?: AppSessionPlacement | undefined,
-  ) => Promise<void>;
-  submitSession: Submit;
-  onSaveDraft: (
-    sessionId: string,
-    text: string,
-    attachments?: Attachment[],
-    appRequestId?: string | undefined,
-  ) => boolean;
-  ensureOpenSession: (sessionId: string) => Promise<Session | null>;
   sessionsRef: RefObject<Session[]>;
+  setSessions: Dispatch<SetStateAction<Session[]>>;
+  tabsRef: RefObject<WorkspaceTab[]>;
+  setTabs: Dispatch<SetStateAction<WorkspaceTab[]>>;
+  appendTab(tab: WorkspaceTab, cwd?: string): void;
+  revealTab(tabId: string, cwd: string): void;
 };
 
-export function useAgentAppBridge({
-  launchQuickSession,
-  submitSession,
-  onSaveDraft,
-  ensureOpenSession,
-  sessionsRef,
-}: Options) {
-  const launchQuickSessionRef = useRef(launchQuickSession);
-
-  launchQuickSessionRef.current = launchQuickSession;
-
-  const submitSessionRef = useRef(submitSession);
-
-  submitSessionRef.current = submitSession;
-
-  const saveDraftRef = useRef(onSaveDraft);
-
-  saveDraftRef.current = onSaveDraft;
-
-  const ensureOpenSessionRef = useRef(ensureOpenSession);
-
-  ensureOpenSessionRef.current = ensureOpenSession;
-
-  const appReceipts = useRef(
-    new Map<string, { signature: string; promise: Promise<unknown> }>(),
-  );
-
+/** Only presentation remains in the window: Host already created/sent the session. */
+export function useAgentAppBridge(options: Options) {
+  const current = useRef(options); current.current = options;
+  const windowId = useRef<string | undefined>(undefined);
+  if (!windowId.current) windowId.current = `${desktopWindow().label}-${crypto.randomUUID()}`;
+  const { machines } = useRemoteMachines();
+  const [, refreshBindings] = useState(0);
   useEffect(() => {
-    const listening = listen<{
-      id: string;
-      namespace: string;
-      sessionId: string;
-      requestId: string;
-      action: string;
-      input: Record<string, unknown>;
-    }>("omnicode-control-request", ({ payload }) => {
-      const handle = async () => {
-        if (payload.namespace === "control") {
-          return orchestrator.handle(
-            payload.sessionId,
-            payload.requestId,
-            payload.action,
-            payload.input,
-          );
-        }
-        if (payload.namespace !== "app")
-          throw new Error("Unknown CLI namespace");
-        const source = sessionsRef.current.find(
-          (session) => session.id === payload.sessionId,
-        );
-        if (
-          !source ||
-          source.inboxAsk ||
-          source.orchestrationLeadId ||
-          orchestrator.run(source.id)
-        )
-          throw new Error("This session cannot use the OmniCode app CLI");
-        const key = `${source.id}:${payload.requestId}`;
-        const signature = JSON.stringify([payload.action, payload.input]);
-        const previous = appReceipts.current.get(key);
-        if (previous) {
-          if (previous.signature !== signature)
-            throw new Error("Request ID was already used with different input");
-          return previous.promise;
-        }
-        const promise = handleAgentApp(
-          source,
-          payload.requestId,
-          payload.action,
-          payload.input,
-          {
-            start: async (launch, id, placement) => {
-              const open = sessionsRef.current.find(
-                (session) => session.id === id,
-              );
-              const stored = open ? null : await getSession(id);
-              const existing = open ?? stored;
-              const previous = existing?.blocks.find(
-                (block) => block.appRequestId === id,
-              );
-              if (previous) {
-                if (
-                  previous.text !== launch.prompt ||
-                  (!launch.draft && !!previous.draft)
-                )
-                  throw new Error(
-                    "Request ID was already used for another session launch",
-                  );
-                return;
-              }
-              if (
-                existing?.blocks.some(
-                  (block) => block.role === "user" && !block.draft,
-                )
-              )
-                return;
-              if (existing && sessionDraftBlock(existing))
-                throw new Error("Session ID already has a different draft");
-              await launchQuickSessionRef.current(launch, id, placement);
-            },
-            sessions: async (cwd): Promise<AppSessionListing[]> => {
-              const stored = await listSessionsByProject(cwd);
-              const byId = new Map<string, AppSessionListing>();
-              for (const session of stored) {
-                if (session.orchestrationLeadId) continue;
-                byId.set(session.id, {
-                  id: session.id,
-                  title: session.title,
-                  harness: session.harness,
-                  model: session.model,
-                  busy: false,
-                  hasDraft: !!session.draft,
-                });
-              }
-              for (const session of sessionsRef.current) {
-                if (
-                  session.orchestrationLeadId ||
-                  !sameProjectPath(session.cwd, cwd)
-                )
-                  continue;
-                byId.set(session.id, {
-                  id: session.id,
-                  title: session.title,
-                  harness: session.harness,
-                  model: session.model,
-                  busy: !!session.busy,
-                  hasDraft: !!sessionDraftBlock(session),
-                });
-              }
-              return [...byId.values()];
-            },
-            session: async (id) => {
-              const target =
-                sessionsRef.current.find((session) => session.id === id) ??
-                (await getSession(id));
-              return target &&
-                !target.orchestrationLeadId &&
-                sameProjectPath(target.cwd, source.cwd)
-                ? target
-                : null;
-            },
-            send: async (id, prompt, requestId) => {
-              const target = await ensureOpenSessionRef.current(id);
-              if (
-                !target ||
-                target.orchestrationLeadId ||
-                !sameProjectPath(target.cwd, source.cwd) ||
-                orchestrator.run(id)
-              )
-                throw new Error("Session is unavailable in this project");
-              const previous = target.blocks.find(
-                (block) => block.appRequestId === requestId,
-              );
-              if (previous) {
-                if (previous.text !== prompt)
-                  throw new Error(
-                    "Request ID was already used with another prompt",
-                  );
-                if (previous.draft)
-                  throw new Error("Request ID belongs to an unsent draft");
-                return { alreadySubmitted: true };
-              }
-              if (target.busy)
-                throw new Error("Session is busy; try again when it finishes");
-              if (sessionDraftBlock(target))
-                throw new Error(
-                  "Session already has a draft; send or remove it first",
-                );
-              const accepted = await submitSessionRef.current(id, prompt, [], {
-                appRequestId: requestId,
-              });
-              if (!accepted)
-                throw new Error("Session could not accept the follow-up");
-              return { alreadySubmitted: false };
-            },
-            draft: async (id, prompt, requestId) => {
-              const target = await ensureOpenSessionRef.current(id);
-              if (
-                !target ||
-                target.orchestrationLeadId ||
-                !sameProjectPath(target.cwd, source.cwd) ||
-                orchestrator.run(id)
-              )
-                throw new Error("Session is unavailable in this project");
-              const previous = target.blocks.find(
-                (block) => block.appRequestId === requestId,
-              );
-              if (previous) {
-                if (previous.text !== prompt)
-                  throw new Error(
-                    "Request ID was already used with another prompt",
-                  );
-                return { alreadySaved: true, draft: !!previous.draft };
-              }
-              if (target.busy)
-                throw new Error("Session is busy; try again when it finishes");
-              if (sessionDraftBlock(target))
-                throw new Error(
-                  "Session already has a draft; send or remove it first",
-                );
-              const saved = flushSync(() =>
-                saveDraftRef.current(id, prompt, [], requestId),
-              );
-              if (!saved) throw new Error("Session could not accept a draft");
-              return { alreadySaved: false, draft: true };
-            },
-            worktrees: (cwd) => listWorktrees(cwd),
-            createWorktree: (cwd, branch, base, existing) =>
-              createWorktree(cwd, branch, base, existing),
-            notes: () => invoke("notes_list"),
-            note: (id) => invoke("notes_get", { id }),
-            saveNote: async (note) => {
-              const saved = await upsertNote(note);
-              window.dispatchEvent(new Event(NOTES_CHANGED_EVENT));
-              return saved;
-            },
-          },
-        );
-        appReceipts.current.set(key, { signature, promise });
-        void promise.catch(() => {
-          if (appReceipts.current.get(key)?.promise === promise)
-            appReceipts.current.delete(key);
-        });
-        if (appReceipts.current.size > 256) {
-          const first = appReceipts.current.keys().next().value;
-          if (first) appReceipts.current.delete(first);
-        }
-        return promise;
-      };
-      void handle()
-        .then(
-          (result) =>
-            invoke("control_reply", {
-              id: payload.id,
-              response: { ok: true, result },
-            }),
-          (error: unknown) =>
-            invoke("control_reply", {
-              id: payload.id,
-              response: {
-                ok: false,
-                error: error instanceof Error ? error.message : String(error),
-              },
-            }),
-        )
-        .catch(console.error);
-    });
-    return () => {
-      void listening.then((unlisten) => unlisten());
-    };
+    const changed = () => refreshBindings(value => value + 1);
+    window.addEventListener(REMOTE_HISTORY_CHANGE, changed);
+    return () => window.removeEventListener(REMOTE_HISTORY_CHANGE, changed);
   }, []);
+  const machinesKey = machines.map(machine => `${machine.id}:${machine.environmentId}`).sort().join("\n");
+  const sessionsKey = options.sessionsRef.current.map(session =>
+    `${remoteProjectFor(session.cwd)?.environmentId}:${remoteSessionFor(session.id) ?? ""}`).sort().join("\n");
+  useEffect(() => {
+    let alive = true;
+    const stops = machines.map(machine => consumeDesktopAppCommands(machine, windowId.current!, () =>
+      current.current.sessionsRef.current.flatMap(session => {
+        if (remoteProjectFor(session.cwd)?.environmentId !== machine.environmentId) return [];
+        const id = remoteSessionFor(session.id);
+        return id ? [id] : [];
+      }), async command => {
+        if (!alive) throw new Error("The workspace window is closed");
+        return revealHostSession(machine, command, current.current, () => alive);
+      }));
+    return () => { alive = false; stops.forEach(stop => stop()); };
+  }, [machinesKey, sessionsKey]);
+}
+
+export async function revealHostSession(machine: RemoteMachine, command: DesktopAppCommand,
+  options: Options, alive: () => boolean = () => true): Promise<{ sessionId: string; tabId: string }> {
+  const match = (wireId: string) => options.sessionsRef.current.find(session =>
+    remoteProjectFor(session.cwd)?.environmentId === machine.environmentId && remoteSessionFor(session.id) === wireId);
+  const source = match(command.sourceSessionId);
+  const project = source && remoteProjectFor(source.cwd);
+  if (command.action !== "sessions.reveal" || !source || !project || project.projectId !== command.projectId)
+    throw new Error("This conversation is not attached to its Host");
+  const snapshot = await loadRemoteSession(machine.id, command.sessionId);
+  if (!alive()) throw new Error("The workspace window is closed");
+  if (!match(command.sourceSessionId)) throw new Error("The source conversation is no longer open in this window");
+  if (snapshot.projectId !== command.projectId || snapshot.session.id !== command.sessionId)
+    throw new Error("This conversation is not attached to its Host");
+  const previous = match(command.sessionId);
+  const session: Session = { ...snapshot.session,
+    id: previous?.id ?? (project.local ? command.sessionId : crypto.randomUUID()), cwd: project.key,
+    executionCwd: projectPath(project, snapshot.session.executionCwd ?? snapshot.session.cwd),
+  };
+  const existingTab = options.tabsRef.current.find(tab => leafIds(tab.layout).includes(session.id));
+  let tabId = existingTab?.id;
+  let nextTabs: WorkspaceTab[] | undefined = existingTab && command.reveal
+    ? options.tabsRef.current.map(tab => tab.id === existingTab.id ? { ...tab, focusedId: session.id, diffFocused: false } : tab)
+    : undefined;
+  if (!tabId && command.placement) {
+    const anchor = match(command.placement.besideSessionId);
+    const anchorProject = anchor && remoteProjectFor(anchor.cwd);
+    const tab = anchor && options.tabsRef.current.find(entry => leafIds(entry.layout).includes(anchor.id));
+    if (!anchor || !tab || anchorProject?.projectId !== command.projectId)
+      throw new Error("The target session must be open in this project");
+    tabId = tab.id;
+    nextTabs = options.tabsRef.current.map(entry => entry.id === tab.id ? {
+      ...entry, layout: splitPane(entry.layout, anchor.id, command.placement!.direction, session.id),
+      focusedId: command.reveal ? session.id : entry.focusedId,
+      diffFocused: command.reveal ? false : entry.diffFocused,
+    } : entry);
+  }
+  rememberRemoteSession(session.id, command.sessionId, project);
+  if (project.local) sharedSessionBackend()?.rememberSession(session.id, project.key);
+  const nextSessions = [...options.sessionsRef.current.filter(entry => entry.id !== session.id), session];
+  options.sessionsRef.current = nextSessions;
+  options.setSessions(nextSessions);
+  if (nextTabs) { options.tabsRef.current = nextTabs; options.setTabs(nextTabs); }
+  if (!tabId) {
+    const tab = newTab(session.id);
+    tabId = tab.id;
+    options.appendTab(tab, project.key);
+    // appendTab may defer React's commit; retain the identity for duplicate delivery.
+    if (!options.tabsRef.current.some(entry => entry.id === tab.id))
+      options.tabsRef.current = [...options.tabsRef.current, tab];
+  }
+  if (command.reveal) options.revealTab(tabId, project.key);
+  return { sessionId: command.sessionId, tabId };
 }

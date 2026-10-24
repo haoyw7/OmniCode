@@ -1,7 +1,8 @@
 import type { BotTask } from "../../../integrations/harness/core/botAutonomy";
 import { createContext } from "react";
 import type { ClipboardEventHandler, ComponentType, DragEventHandler, ReactNode } from "react";
-import type { HostModelCatalog, RemoteAttachment, RemoteProvider } from "../../connections/model/protocol";
+import type { HostModelCatalog, RemoteAttachment } from "../../../contracts/protocol";
+import type { RemoteProvider } from "../../../contracts/provider";
 import type { BotLifecycle, BotMessage, SessionReference } from "../model/botView";
 
 /** Presentation slots keep Host state and command ownership in AssistantChat. */

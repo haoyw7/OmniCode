@@ -1,4 +1,5 @@
-import { REMOTE_PROVIDERS, type HostModelCatalog, type HostProject, type HostSession } from "../features/connections/model/protocol";
+import { REMOTE_PROVIDERS } from "../contracts/provider";
+import { type HostModelCatalog, type HostProject, type HostSession } from "../contracts/protocol";
 
 function record(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);

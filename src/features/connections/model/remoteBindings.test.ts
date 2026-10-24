@@ -1,13 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  forgetDeletedRemoteBindings,
-  forgetUnknownRemoteBindings,
-  remoteSessionFor,
-  remoteSessionResolver,
-  remoteSessionScopeFor,
-  rememberRemoteSession,
-} from "./connections";
+import { forgetDeletedRemoteBindings, forgetUnknownRemoteBindings, remoteSessionFor, remoteSessionResolver, remoteSessionScopeFor, rememberRemoteSession } from "./connections";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

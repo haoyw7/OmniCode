@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { SkillPicker } from "./SkillPicker";
 import { ompCommandsFromRpcData } from "../../../integrations/harness/providers/pi/piSkills";
-import { PLAN_COMMAND } from "../../sessions/model/plan";
+import { PLAN_COMMAND } from "../../../domain/plan";
 import { COMPACT_COMMAND } from "../../sessions/model/compact";
 import type { Skill } from "../model/skills";
 

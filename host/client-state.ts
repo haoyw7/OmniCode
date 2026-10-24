@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import type { HostStore } from "./store";
-import type { HostConnectionDefinition, HostConnections, HostEnvironmentDefinition, HostEnvironments, HostPreferences, HostStateValue, HostWorkspace, HostWorkspaceKind } from "../src/features/connections/model/hostState";
-import { parseProjectMachine, type ProjectMachine } from "../src/integrations/harness/core/machine";
-import { isSharedPreferenceKey, validateSharedPreferenceValue } from "../src/features/settings/model/sharedPreferenceSchema";
+import type { HostConnectionDefinition, HostConnections, HostEnvironmentDefinition, HostEnvironments, HostPreferences, HostStateValue, HostWorkspace, HostWorkspaceKind } from "../src/contracts/hostState";
+import { parseProjectMachine } from "../src/integrations/harness/core/machine";
+import { type ProjectMachine } from "../src/contracts/session";
+import { isSharedPreferenceKey, validateSharedPreferenceValue } from "../src/domain/sharedPreferenceSchema";
 
 const MAX_PREFERENCES_BYTES = 2 * 1024 * 1024;
 const MAX_WORKSPACE_BYTES = 2 * 1024 * 1024;

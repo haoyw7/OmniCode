@@ -1,21 +1,11 @@
 import { useSidebarListPreview } from "../useSidebarListPreview";
 import { SidebarEntryReorderContext } from "../SidebarEntryReorder";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import {
-  useAnimatedReorder,
-  type ReorderExternalDrop,
-} from "../../../shared/hooks/useAnimatedReorder";
+import { useAnimatedReorder, type ReorderExternalDrop } from "../../../shared/hooks/useAnimatedReorder";
 import { ChevronDown, ChevronRight, CircleAlert } from "../../../shared/ui/icons";
-import {
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { useLayoutEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 import type { SessionSummary } from "../../../features/sessions/data/sessionStore";
-import { TerminalSpinner } from "../../../features/sessions/ui/TerminalSpinner";
+import { TerminalSpinner } from "../../../shared/ui/TerminalSpinner";
 
 
 

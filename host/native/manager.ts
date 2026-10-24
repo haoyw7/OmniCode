@@ -1,20 +1,12 @@
 import { statSync, watch, type FSWatcher } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
 import { randomUUID } from "node:crypto";
-import type { HostSession } from "../../src/features/connections/model/protocol";
-import { DEFAULT_RUNTIME_MODE, type Block, type Session } from "../../src/features/sessions/model/session";
-import { resolveModel } from "../../src/features/sessions/model/models";
-import {
-  NATIVE_SESSION_PROVIDERS,
-  type NativeBinding,
-  type NativeSessionFile,
-  type NativeSessionProvider,
-  type NativeSourceListing,
-  type NativeSourceSummary,
-  type NativeSyncStatus,
-  type NativeTranscript,
-} from "../../src/integrations/harness/core/nativeSessions";
-import { parseNativeSession } from "../../src/integrations/harness/core/nativeSessionParser";
+import type { HostSession } from "../../src/contracts/protocol";
+import { DEFAULT_RUNTIME_MODE, type Block, type Session, type NativeBinding, type NativeSessionFile, type NativeSessionProvider, type NativeSourceListing, type NativeSourceSummary, type NativeSyncStatus, type NativeTranscript } from "../../src/contracts/session";
+import { resolveModel } from "../../src/integrations/harness/core/modelCatalog";
+import { NATIVE_SESSION_PROVIDERS } from "../../src/integrations/harness/core/nativeSessions";
+
+import { parseNativeSession } from "./parser";
 import {
   accountScoped,
   mergeNativeHistory,

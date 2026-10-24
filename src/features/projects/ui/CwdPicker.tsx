@@ -1,29 +1,17 @@
+import { useProjectLogoSource } from "../model/useProjectLogoSource";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Check, ChevronDown, ChevronRight, X } from "../../../shared/ui/icons";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { basename, pickFolders } from "../../../platform/tauri/fs";
 import { prettyCwd } from "../../../shared/lib/paths";
-import {
-  looksLikeProject,
-  projectRailItems,
-  sameProjectPath,
-  type RecentProject,
-} from "../model/recents";
-import { isChatFolder } from "../model/chatFolderPath";
+import { looksLikeProject, projectRailItems, sameProjectPath, type RecentProject } from "../model/recents";
+import { isChatFolder } from "../../../domain/chatFolderPath";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { LAYER } from "../../../shared/lib/layers";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { MenuHover } from "../../../shared/ui/MenuHover";
-import { ProjectLogoIcon } from "./ProjectLogoIcon";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
 
 type Props = {
   cwd: string;
@@ -94,6 +82,7 @@ export function CwdPicker({
   menuFooter,
   onClose,
 }: Props) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const { t: uiT } = useTranslation();
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -300,7 +289,7 @@ export function CwdPicker({
           <>
             {clearable && !shortLabel ? null : (
               <ProjectLogoIcon
-                path={projectLogoPath}
+                src={resolveProjectLogoSrc(projectLogoPath)}
                 fallbackStrokeWidth={1.5}
                 className={shortLabel ? "cwd-picker-project-icon size-3.5 shrink-0" : undefined}
               />

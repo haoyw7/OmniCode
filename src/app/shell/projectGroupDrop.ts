@@ -1,16 +1,8 @@
 import type { ReorderExternalDrop } from "../../shared/hooks/useAnimatedReorder";
 import { createDragLabel } from "../../shared/lib/drag";
 import { pathKey } from "../../shared/lib/paths";
-import {
-  loadProjectGroupAssignments,
-  loadProjectGroups,
-  setProjectGroupAssignment,
-  updateProjectGroup,
-} from "../../features/projects/model/projectGroups";
-import {
-  loadPinnedProjects,
-  savePinnedProjects,
-} from "../../features/projects/model/recents";
+import { loadProjectGroupAssignments, loadProjectGroups, setProjectGroupAssignment, updateProjectGroup } from "../../features/projects/model/projectGroups";
+import { loadPinnedProjects, savePinnedProjects } from "../../features/projects/model/recents";
 
 /** Hand a project reorder gesture to a visible group header in this sidebar. */
 export function projectGroupDrop(

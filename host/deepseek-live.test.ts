@@ -7,7 +7,9 @@ import { join } from "node:path";
 import { prepareDeepseekBridge } from "./deepseek-bridge";
 import { providerLaunch } from "./process";
 import { DeepseekEventMapper } from "../src/integrations/harness/providers/deepseek/deepseekProtocol";
-import { applyHarnessEvent } from "../src/integrations/harness/core/apply";
+import { createSessionProjection } from "../src/domain/apply";
+import { resolveModel as projectionResolveModel } from "../src/integrations/harness/core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { newSession } from "../src/features/sessions/model/session";
 import { backgroundTaskItems } from "../src/features/sessions/model/backgroundTasks";
 

@@ -1,12 +1,5 @@
-import {
-  remoteMachineFor,
-  remoteRequest,
-} from "../../connections/model/connections";
-import {
-  ensureSharedProject,
-  remoteProjectFor,
-  sharedHostMachineId,
-} from "../../connections/model/remoteProjects";
+import { remoteMachineFor, remoteRequest } from "../../connections/model/connections";
+import { ensureSharedProject, remoteProjectFor, sharedHostMachineId } from "../../connections/model/remoteProjects";
 import { delegateSession } from "./delegateSession";
 import { botErrorMessage } from "./botErrors";
 import { translate } from "../../../shared/i18n/language";

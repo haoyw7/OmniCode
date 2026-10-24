@@ -1,13 +1,7 @@
 import { Button } from "../shared/ui/forms/Button";
 import { MobileSpinner } from "./MobileSpinner";
 import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
-import {
-  Check,
-  ChevronRight,
-  Folder,
-  FolderTree,
-  GitBranch,
-} from "../shared/ui/icons";
+import { Check, ChevronRight, Folder, FolderTree, GitBranch } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { MobileSheet, SHEET_WIDTH } from "./MobileSheet";
 import type { MobileBranches, MobileWorktrees } from "./client";

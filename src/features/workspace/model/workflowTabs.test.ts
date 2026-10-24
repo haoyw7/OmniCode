@@ -1,16 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  isPreviewableTab,
-  isFilesystemTab,
-  newEditorPane,
-  newFileTab,
-  newTab,
-  newWorkflowAgentTab,
-  newWorkflowArtifactTab,
-  newWorkflowRunTab,
-  openEditorTab,
-  splitPane,
-} from "./layout";
+import { isPreviewableTab, isFilesystemTab, newEditorPane, newFileTab, newTab, newWorkflowAgentTab, newWorkflowArtifactTab, newWorkflowRunTab, openEditorTab, splitPane } from "./layout";
 
 const runTab = () => newWorkflowRunTab("Run", "/repo", {
   runId: "run",

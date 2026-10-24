@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { startMotionClock, stopMotionClock, finishMotion } from "../../../../tests/helpers/sharedMotionClock";
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Block } from "../model/session";
+import type { Block } from "../../../contracts/session";
 import { AgentTranscript } from "./AgentTranscript";
 
 let container: HTMLDivElement;

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { canCoalesceRemoteSnapshot, RemoteSnapshotReporter } from "./remoteSnapshotReporter";
-import type { HostSession } from "./protocol";
+import type { HostSession } from "../../../contracts/protocol";
 const initial: HostSession = {
   projectId: "project", revision: 1, status: "running", updatedAt: 1,
   session: { id: "session", cwd: "/repo", title: "Stream", harness: "pi", model: "pi:deepseek/deepseek-flash",

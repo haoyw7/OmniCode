@@ -1,36 +1,8 @@
 import { homeDir } from "../../../../platform/tauri/fs";
-import {
-  setHarnessModels,
-  type AgentModel,
-  type ModelSetting,
-} from "../../../../features/sessions/model/models";
-import {
-  execChild,
-  killChild,
-  resolveClaudeBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-  writeChild,
-} from "../../core/child";
-import {
-  asRecord,
-  buildClaudeSpawnArgs,
-  buildControlRequest,
-  compareSemver,
-  isClaudeInitMessage,
-  listModelsFromControlResponse,
-  MINIMUM_CLAUDE_FABLE_5_VERSION,
-  MINIMUM_CLAUDE_OPUS_4_7_VERSION,
-  MINIMUM_CLAUDE_OPUS_4_8_VERSION,
-  MINIMUM_CLAUDE_OPUS_5_5_VERSION,
-  MINIMUM_CLAUDE_OPUS_5_VERSION,
-  MINIMUM_CLAUDE_SONNET_5_VERSION,
-  parseClaudeVersion,
-  parseControlResponse,
-  parseJsonLine,
-  stringField,
-} from "./claudeProtocol";
+import { setHarnessModels } from "../../core/modelCatalog";
+import { type AgentModel, type ModelSetting } from "../../../../contracts/session";
+import { execChild, killChild, resolveClaudeBinary, spawnChild, unwatchChild, watchChild, writeChild } from "../../core/child";
+import { asRecord, buildClaudeSpawnArgs, buildControlRequest, compareSemver, isClaudeInitMessage, listModelsFromControlResponse, MINIMUM_CLAUDE_FABLE_5_VERSION, MINIMUM_CLAUDE_OPUS_4_7_VERSION, MINIMUM_CLAUDE_OPUS_4_8_VERSION, MINIMUM_CLAUDE_OPUS_5_5_VERSION, MINIMUM_CLAUDE_OPUS_5_VERSION, MINIMUM_CLAUDE_SONNET_5_VERSION, parseClaudeVersion, parseControlResponse, parseJsonLine, stringField } from "./claudeProtocol";
 
 const EFFORT_LOW_TO_ULTRATHINK: ModelSetting = {
   id: "effort",

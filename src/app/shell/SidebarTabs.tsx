@@ -3,19 +3,8 @@ import { immediateTransition, panelTransition } from "../../shared/motion/tokens
 import { useMotionPreference } from "../../shared/motion/useMotionPreference";
 import { useListReorderMotion } from "../../shared/hooks/useListReorderMotion";
 import { usePreferenceState } from "../../features/settings/model/usePreferenceState";
-import {
-  memo,
-  useId,
-  useRef,
-  startTransition,
-  useOptimistic,
-  type CSSProperties,
-} from "react";
-import {
-  loadSidebarTabOrder,
-  saveSidebarTabOrder,
-  type SidebarTabId,
-} from "../../features/settings/model/appearance";
+import { memo, useId, useRef, startTransition, useOptimistic, type CSSProperties } from "react";
+import { loadSidebarTabOrder, saveSidebarTabOrder, type SidebarTabId } from "../../features/settings/model/appearance";
 import { useAnimatedReorder } from "../../shared/hooks/useAnimatedReorder";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { formatInteger } from "../../shared/lib/numbers";

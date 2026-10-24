@@ -1,42 +1,14 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { translate as translateUi } from "../../../shared/i18n/language";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type MouseEvent,
-} from "react";
-import {
-  CircleDot,
-  CircleX,
-  ExternalLink,
-  GitCompare,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestClosed,
-  GitPullRequestDraft,
-  type IconComponent,
-} from "../../../shared/ui/icons";
+import { openExternalUrl } from "../../../platform/tauri/browser";
+import { useCallback, useEffect, useId, useRef, useState, type MouseEvent } from "react";
+import { CircleDot, CircleX, ExternalLink, GitCompare, GitMerge, GitPullRequest, GitPullRequestClosed, GitPullRequestDraft, type IconComponent } from "../../../shared/ui/icons";
 import { Popover } from "../../../shared/ui/Popover";
-import {
-  formatRelativeTime,
-  githubWorkItem,
-  githubWorkItemDetails,
-  peekGithubWorkItem,
-  peekGithubWorkItemDetails,
-  type GithubWorkItem,
-  type GithubWorkItemDetails,
-} from "../../inbox/model/githubTasks";
-import {
-  fetchLinkPreviewMetadata,
-  type GithubWorkItemLink,
-  type LinkPreviewMetadata,
-  type UserLink,
-} from "../model/linkPreview";
+import { formatRelativeTime, githubWorkItem, githubWorkItemDetails, peekGithubWorkItem, peekGithubWorkItemDetails } from "../../inbox/model/githubTasks";
+import { type GithubWorkItem, type GithubWorkItemDetails } from "../../../contracts/session";
+import { fetchLinkPreviewMetadata, type GithubWorkItemLink, type UserLink } from "../model/linkPreview";
+import type { LinkPreviewMetadata } from "../../../contracts/hostMedia";
 
 export function UserLinkPreview({
   link,
@@ -603,7 +575,7 @@ function labelColor(value: string): string {
 function openExternalLink(event: MouseEvent<HTMLAnchorElement>, url: string) {
   event.preventDefault();
   event.stopPropagation();
-  void openUrl(url).catch((error) => {
+  void openExternalUrl(url).catch((error) => {
     console.error("Failed to open web link:", error);
   });
 }

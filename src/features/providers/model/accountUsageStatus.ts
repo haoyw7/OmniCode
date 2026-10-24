@@ -1,4 +1,5 @@
-import { clampUsedPercent, exhaustedWindowResetAt, formatResetDuration, type ProviderRateLimits, type RateLimitWindow } from "./rateLimits";
+import { clampUsedPercent, exhaustedWindowResetAt, formatResetDuration } from "../../../domain/rateLimits";
+import { type ProviderRateLimits, type RateLimitWindow } from "../../../contracts/session";
 import type { ProviderAccount } from "./providerAccounts";
 
 /** At or below this much headroom an account reads as "Running low". */

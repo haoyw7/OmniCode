@@ -2,7 +2,8 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AgentMarkdown } from "./AgentMarkdown";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
 
 const actions = vi.hoisted(() => ({
   copyText: vi.fn(async () => {}),
@@ -11,26 +12,17 @@ const actions = vi.hoisted(() => ({
   revealPath: vi.fn(async () => {}),
 }));
 
-vi.mock("@tauri-apps/plugin-opener", () => ({
-  openUrl: actions.openUrl,
-}));
-
-vi.mock("../../../platform/tauri/clipboard", () => ({
-  copyText: actions.copyText,
-}));
-
-vi.mock("../../../platform/tauri/fs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../platform/tauri/fs")>()),
-  openPathWithDefaultApp: actions.openPathWithDefaultApp,
-  revealPath: actions.revealPath,
-}));
-
 let container: HTMLDivElement;
 let root: Root;
 let props: ComponentProps<typeof AgentMarkdown>;
 
 function render() {
-  act(() => root.render(createElement(AgentMarkdown, props)));
+  act(() => root.render(createElement(TranscriptPlatformContext.Provider, { value: {
+    localFiles: true, copyText: actions.copyText, copyMessage: async () => {},
+    openExternal: actions.openUrl, readBinaryFile: async () => new Uint8Array(),
+    openPathWithDefaultApp: actions.openPathWithDefaultApp, revealPath: actions.revealPath,
+    revealPathLabel: "Open Containing Folder",
+  } }, createElement(AgentMarkdown, props))));
 }
 
 function openMenu(element: Element) {
@@ -96,12 +88,7 @@ describe("AgentMarkdown file link context menu", () => {
     await pick("Open in Default App");
     expect(actions.openPathWithDefaultApp).toHaveBeenCalledWith("/repo/docs/guide.md");
 
-    const revealLabel = /Mac/.test(navigator.platform)
-      ? "Reveal in Finder"
-      : /Win/i.test(navigator.platform)
-        ? "Reveal in File Explorer"
-        : "Open Containing Folder";
-    await pick(revealLabel);
+    await pick("Open Containing Folder");
     expect(actions.revealPath).toHaveBeenCalledWith("/repo/docs/guide.md");
 
     await pick("Copy Path");

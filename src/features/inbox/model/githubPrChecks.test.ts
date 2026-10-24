@@ -1,17 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { invoke } from "@tauri-apps/api/core";
-import {
-  checkDuration,
-  countChecks,
-  describeCheckCounts,
-  fetchGithubPrChecks,
-  isHttpUrl,
-  sortChecks,
-  summarizePrChecks,
-  type GithubPrCheck,
-} from "./githubPrChecks";
+import { inboxHostCommand as invoke } from "../../connections/model/inboxHost";
+import type { GithubPrCheck } from "../../../contracts/github";
+import { checkDuration, countChecks, describeCheckCounts, fetchGithubPrChecks, isHttpUrl, sortChecks, summarizePrChecks } from "./githubPrChecks";
 
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../connections/model/inboxHost", () => ({ inboxHostCommand: vi.fn() }));
 
 const invokeMock = vi.mocked(invoke);
 

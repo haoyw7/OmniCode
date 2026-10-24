@@ -1,26 +1,8 @@
-import { readGrokSessionTitle } from "./grok";
-import {
-  bindGrokSession,
-  cancelGrokTurn,
-  compactGrokContext,
-  forgetGrokSession,
-  respondGrokApproval,
-  respondGrokQuestion,
-  sendGrokTurn,
-  steerGrokTurn,
-  stopGrokSession,
-} from "./grok";
+import { readGrokSessionTitle, bindGrokSession, cancelGrokTurn, compactGrokContext, forgetGrokSession, respondGrokApproval, respondGrokQuestion, sendGrokTurn, steerGrokTurn, stopGrokSession } from "./grok";
+
 import { refreshGrokCatalog } from "./grokCatalog";
-import {
-  generateGrokBranchName,
-  generateGrokCommitMessage,
-  generateGrokPrContent,
-} from "./grokGit";
-import {
-  runGrokTextPrompt,
-  stopGrokTextPrompt,
-  warmupGrokText,
-} from "./grokText";
+import { generateGrokBranchName, generateGrokCommitMessage, generateGrokPrContent } from "./grokGit";
+import { runGrokTextPrompt, stopGrokTextPrompt, warmupGrokText } from "./grokText";
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const grokAdapter: HarnessAdapter = {

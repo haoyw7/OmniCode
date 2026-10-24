@@ -1,20 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import {
-  findSurfacePane,
-  focusedFileTab,
-  leafIds,
-  type AppPageKind,
-  type AppViewKind,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import {
-  emptyTabVisitHistory,
-  pruneTabVisitHistory,
-  recordTabVisit,
-  tabVisitBack,
-  tabVisitForward,
-  type TabVisitHistory,
-} from "../../features/workspace/model/tabVisitHistory";
+import { findSurfacePane, focusedFileTab, leafIds, type AppPageKind, type AppViewKind, type WorkspaceTab } from "../../features/workspace/model/layout";
+import { emptyTabVisitHistory, pruneTabVisitHistory, recordTabVisit, tabVisitBack, tabVisitForward, type TabVisitHistory } from "../../features/workspace/model/tabVisitHistory";
 
 export type PageDestination = {
   tabId: string;

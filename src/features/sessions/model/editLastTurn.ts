@@ -1,11 +1,5 @@
-import type {
-  Attachment,
-  Block,
-  EditedResendRejection,
-  HarnessId,
-  Session,
-} from "./session";
-import { isOperatorUserTurn, operatorUserPrompt } from "./operatorCommand";
+import type { Attachment, Block, EditedResendRejection, HarnessId, Session } from "../../../contracts/session";
+import { isOperatorUserTurn, operatorUserPrompt } from "../../../domain/operatorCommand";
 
 /** Harnesses that can rewind provider state before resending an edited prompt. */
 export function harnessSupportsEditLastTurn(harness: HarnessId): boolean {

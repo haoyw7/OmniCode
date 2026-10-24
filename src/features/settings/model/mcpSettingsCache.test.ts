@@ -1,14 +1,18 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { McpConnection } from "./mcp";
-import {
-  clearMcpSettingsCache,
-  getCachedMcpSettings,
-  loadMcpSettings,
-  subscribeMcpSettings,
-} from "./mcpSettingsCache";
+import type { McpConnection } from "../../../contracts/mcp";
+import { clearMcpSettingsCache, getCachedMcpSettings, loadMcpSettings, subscribeMcpSettings } from "./mcpSettingsCache";
 
 const invoke = vi.hoisted(() => vi.fn());
-vi.mock("@tauri-apps/api/core", () => ({ invoke }));
+vi.mock("./mcpHost", () => ({
+  discoverMcpServers: (cwd: string) => invoke("discover", { cwd }),
+  claudeMcpList: (cwd: string) => invoke("claudeList", { cwd }),
+  piMcpList: (cwd: string) => invoke("piList", { cwd }),
+  addMcpServer: (cwd: string, input: object) => invoke("add", { cwd, ...input }),
+  loginMcpServer: (cwd: string, input: object) => invoke("login", { cwd, ...input }),
+  removeClaudeMcpServer: (cwd: string, input: object) => invoke("remove", { cwd, ...input }),
+  inspectHostMcpServer: (cwd: string, server: { provider: string; scope: string; configPath: string; name: string }) =>
+    invoke("inspect", { cwd, provider: server.provider, scope: server.scope, configPath: server.configPath, name: server.name }),
+}));
 
 const configured: McpConnection[] = [
   {
@@ -29,7 +33,7 @@ afterEach(clearMcpSettingsCache);
 it("publishes discovery before slow health and shares both requests across consumers", async () => {
   let resolveHealth!: (output: string) => void;
   invoke.mockImplementation((command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? Promise.resolve(configured)
       : new Promise((resolve) => {
           resolveHealth = resolve;
@@ -61,7 +65,7 @@ it("publishes discovery before slow health and shares both requests across consu
 
 it("loads non-Claude pickers without running Claude and lets a later Claude consumer request health", async () => {
   invoke.mockImplementation(async (command: string) =>
-    command === "mcp_discover" ? configured : "docs: local - Connected",
+    command === "discover" ? configured : "docs: local - Connected",
   );
   await loadMcpSettings("/repo", false, { claudeHealth: false });
   await loadMcpSettings("/repo", false, { claudeHealth: false });
@@ -76,7 +80,7 @@ it("loads non-Claude pickers without running Claude and lets a later Claude cons
 it("ignores health from a request superseded by refresh", async () => {
   const health: ((output: string) => void)[] = [];
   invoke.mockImplementation((command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? Promise.resolve(configured)
       : new Promise((resolve) => {
           health.push(resolve);
@@ -98,7 +102,7 @@ it("ignores health from a request superseded by refresh", async () => {
 
 it("keeps configured rows when health fails and preserves disabled status", async () => {
   invoke.mockImplementation((command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? Promise.resolve([{ ...configured[0], enabled: false }])
       : Promise.reject(new Error("Health unavailable")),
   );
@@ -136,8 +140,8 @@ const piReport = (state: string) => ({
 it("shares background Pi health without blocking discovery or another provider's health", async () => {
   let resolvePi!: (output: unknown) => void;
   invoke.mockImplementation((command: string) => {
-    if (command === "mcp_discover") return Promise.resolve([pi, ...configured]);
-    if (command === "pi_mcp_list")
+    if (command === "discover") return Promise.resolve([pi, ...configured]);
+    if (command === "piList")
       return new Promise((resolve) => {
         resolvePi = resolve;
       });
@@ -147,7 +151,7 @@ it("shares background Pi health without blocking discovery or another provider's
   expect(snapshot.servers[0].nativeState).toBe("checking");
   await loadMcpSettings("/repo");
   expect(
-    invoke.mock.calls.filter(([cmd]) => cmd === "pi_mcp_list"),
+    invoke.mock.calls.filter(([cmd]) => cmd === "piList"),
   ).toHaveLength(1);
   resolvePi(piReport("connected"));
   await vi.waitFor(() =>
@@ -162,7 +166,7 @@ it("shares background Pi health without blocking discovery or another provider's
 it("runs Pi health only for consumers that request it and ignores stale refreshes", async () => {
   const resolvers: ((output: unknown) => void)[] = [];
   invoke.mockImplementation((command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? Promise.resolve([pi])
       : new Promise((resolve) => {
           resolvers.push(resolve);
@@ -193,7 +197,7 @@ it("runs Pi health only for consumers that request it and ignores stale refreshe
 
 it("preserves Pi rows and disabled configuration when its CLI cannot report health", async () => {
   invoke.mockImplementation((command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? Promise.resolve([pi, { ...pi, name: "disabled", enabled: false }])
       : Promise.reject(new Error("Pi CLI not found")),
   );
@@ -211,7 +215,7 @@ it("preserves Pi rows and disabled configuration when its CLI cannot report heal
 
 it("retains Pi's trust note and configuration diagnostics with useful server states", async () => {
   invoke.mockImplementation(async (command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? [pi]
       : {
           ...piReport("needs-auth"),

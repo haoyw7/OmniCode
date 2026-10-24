@@ -1,5 +1,6 @@
+import { type RpcTransport } from "./hostTransport";
 import { expect, it, vi } from "vitest";
-import { MobileClient, type RpcTransport } from "./client";
+import { MobileClient } from "./client";
 import type { StorageKey } from "./storage";
 
 vi.mock("@capacitor/core", () => ({

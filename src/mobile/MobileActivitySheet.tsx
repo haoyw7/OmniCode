@@ -4,30 +4,11 @@ import { TranscriptContentMotion, useMessageArrivals } from "../features/session
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { MobileAgentSheet } from "./MobileAgentSheet";
 import type { ComponentType } from "react";
-import type { Block } from "../features/sessions/model/session";
-import {
-  isThinkingBlock,
-  isToolBlock,
-  proseSummary,
-  toolCallLabel,
-  toolCallState,
-  toolCategory,
-  workDiffStats,
-  workSummaryLine,
-  type ActivityWorkKind,
-} from "../features/sessions/model/transcriptActivity";
+import type { Block } from "../contracts/session";
+import { isThinkingBlock, isToolBlock, proseSummary, toolCallState, toolCategory, workDiffStats, workSummaryLine, type ActivityWorkKind } from "../features/sessions/model/transcriptActivity";
+import { toolCallLabel } from "../domain/toolLabel";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import {
-  Bot,
-  ChevronRight,
-  CircleX,
-  Eye,
-  Pencil,
-  Sparkles,
-  StickyNote,
-  Terminal,
-  Wrench,
-} from "../shared/ui/icons";
+import { Bot, ChevronRight, CircleX, Eye, Pencil, Sparkles, StickyNote, Terminal, Wrench } from "../shared/ui/icons";
 import { MobileSheet, MobileSheetHeader } from "./MobileSheet";
 import { MobilePageTransition } from "./MobilePageTransition";
 import { MobileToolSheet } from "./MobileToolSheet";

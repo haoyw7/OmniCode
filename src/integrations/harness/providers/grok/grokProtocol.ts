@@ -1,18 +1,12 @@
-import { promptBlocks, type PromptContentBlock } from "../../../../features/sessions/model/attachments";
-import type { AgentModel, ModelSetting, ModelSettingChoice } from "../../../../features/sessions/model/models";
-import type { Attachment, RuntimeMode, ToolPreview } from "../../../../features/sessions/model/session";
-import { normalizeTaskListStatus } from "../../../../features/sessions/model/taskList";
+import { promptBlocks, type PromptContentBlock } from "../../../../domain/attachmentPrompt";
+import type { AgentModel, ModelSetting, ModelSettingChoice, Attachment, RuntimeMode, ToolPreview, UserQuestion, UserQuestionReply } from "../../../../contracts/session";
+
+import { normalizeTaskListStatus } from "../../../../domain/taskList";
 import { acpAgentInfo } from "../../core/acpSubagents";
-import type { ApprovalDecision, HarnessEvent } from "../../core/types";
-import type { UserQuestion, UserQuestionReply } from "../../../../features/sessions/model/userQuestion";
-import { questionsFromUnknown, selectedAnswerLabels } from "../../../../features/sessions/model/userQuestion";
-import {
-  composeToolTitle,
-  extractSearchQuery,
-  extractShellCommand,
-  extractSkillName,
-  extractToolPreview,
-} from "../../core/preview";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+
+import { questionsFromUnknown, selectedAnswerLabels } from "../../../../domain/userQuestion";
+import { composeToolTitle, extractSearchQuery, extractShellCommand, extractSkillName, extractToolPreview } from "../../../../domain/preview";
 
 export const AUTH_HELP =
   "Grok Build is not signed in. Run `grok login` in a terminal, or set XAI_API_KEY.";

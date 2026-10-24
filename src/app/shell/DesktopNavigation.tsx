@@ -1,19 +1,7 @@
 import { NavigationItem } from "../../shared/ui/messaging/NavigationItem";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../shared/ui/AnimatedCollapse";
-import {
-  Bot,
-  ChevronRight,
-  Chatting,
-  CodeXml,
-  Folder,
-  Inbox,
-  IconArtworkContext,
-  Plus,
-  StickyNote,
-  Workflow,
-  Zap,
-} from "../../shared/ui/icons";
+import { Bot, ChevronRight, Chatting, CodeXml, Folder, Inbox, IconArtworkContext, Plus, StickyNote, Workflow, Zap } from "../../shared/ui/icons";
 import { useState, type ReactNode } from "react";
 import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
 import { TabVisitNav } from "./WindowChrome";

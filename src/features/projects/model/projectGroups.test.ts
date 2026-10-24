@@ -1,15 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from "vitest";
 import { pathKey } from "../../../shared/lib/paths";
-import {
-  createProjectGroup,
-  loadProjectGroupAssignments,
-  loadProjectGroups,
-  nextProjectGroupName,
-  saveProjectGroupAssignments,
-  saveProjectGroups,
-  setProjectGroupAssignment,
-} from "./projectGroups";
+import { createProjectGroup, loadProjectGroupAssignments, loadProjectGroups, nextProjectGroupName, saveProjectGroupAssignments, saveProjectGroups, setProjectGroupAssignment } from "./projectGroups";
 
 beforeEach(() => localStorage.clear());
 

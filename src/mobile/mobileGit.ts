@@ -1,4 +1,5 @@
-import type { GitDiffIndex, GitFileDiff } from "../platform/tauri/fs";
+import type { GitDiffIndex, GitFileDiff } from "../contracts/workspace";
+
 import { translate } from "../shared/i18n/language";
 import type { MobileClient } from "./client";
 

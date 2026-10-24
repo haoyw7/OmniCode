@@ -1,9 +1,4 @@
-import {
-  HighlightStyle,
-  LanguageSupport,
-  StreamLanguage,
-  type StreamParser,
-} from "@codemirror/language";
+import { HighlightStyle, LanguageSupport, StreamLanguage, type StreamParser } from "@codemirror/language";
 import type { Extension } from "@codemirror/state";
 import { tagHighlighter, tags, type Highlighter } from "@lezer/highlight";
 import type { ColorScheme } from "../../../settings/model/appearance";

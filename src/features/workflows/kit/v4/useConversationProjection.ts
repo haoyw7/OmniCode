@@ -1,8 +1,9 @@
 // OmniCode shim: ZCode's conversation projection, built from the Host session the
 // lease watches — its live `workflowRuns` and rows derived from run-card blocks.
 import { useMemo, useSyncExternalStore } from "react";
-import type { Session } from "../../../sessions/model/session";
-import type { ConversationRow, SessionConfigState, WorkflowRunsState } from "../_shims/protocol.js";
+import type { Session } from "../../../../contracts/session";
+import type { ConversationRow, SessionConfigState } from "../_shims/protocol.js";
+import type { WorkflowRunsState } from "../../../../contracts/workflow";
 import type { SessionLease } from "./sessionDataLayer.js";
 
 export type WorkflowConversationSnapshot = {

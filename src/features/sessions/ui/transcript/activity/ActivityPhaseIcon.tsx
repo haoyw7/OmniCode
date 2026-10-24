@@ -1,12 +1,4 @@
-import {
-  AiIdea,
-  MessageSquare,
-  PenLine,
-  Bot,
-  Search,
-  Terminal,
-  Wrench,
-} from "../../../../../shared/ui/icons";
+import { AiIdea, MessageSquare, PenLine, Bot, Search, Terminal, Wrench } from "../../../../../shared/ui/icons";
 import { type ActivityPhaseKind } from "../../../model/transcriptActivity";
 
 

@@ -1,9 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
-import { parseClaudeMcpList, type McpConnection } from "./mcp";
-import {
-  piMcpHealth,
-  type PiMcpList,
-} from "../../../integrations/harness/providers/pi/piMcp";
+import { parseClaudeMcpList } from "./mcp";
+import { type McpConnection } from "../../../contracts/mcp";
+import { piMcpHealth } from "../../../integrations/harness/providers/pi/piMcp";
+import { claudeMcpList, discoverMcpServers, piMcpList } from "./mcpHost";
 
 export type McpServerRow = McpConnection & { status: string };
 
@@ -88,7 +86,7 @@ export function loadMcpSettings(
 
 async function fetchMcpSettings(cwd: string): Promise<McpSettingsSnapshot> {
   try {
-    const configured = await invoke<McpConnection[]>("mcp_discover", { cwd });
+    const configured = await discoverMcpServers(cwd);
     const servers: McpServerRow[] = configured.map((server) => ({
       ...server,
       ...(server.provider === "pi"
@@ -114,7 +112,7 @@ async function fetchMcpSettings(cwd: string): Promise<McpSettingsSnapshot> {
 
 function loadPiHealth(cwd: string, discovery: Promise<McpSettingsSnapshot>) {
   if (piHealthRequests.has(cwd)) return;
-  const request = invoke<PiMcpList>("pi_mcp_list", { cwd })
+  const request = piMcpList(cwd)
     .then((report) => {
       if (requests.get(cwd) !== discovery) return;
       const snapshot = snapshots.get(cwd)!;
@@ -153,7 +151,7 @@ function loadClaudeHealth(
   discovery: Promise<McpSettingsSnapshot>,
 ) {
   if (healthRequests.has(cwd)) return;
-  const request = invoke<string>("claude_mcp_list", { cwd })
+  const request = claudeMcpList(cwd)
     .then((output) => {
       if (requests.get(cwd) !== discovery) return;
       const snapshot = snapshots.get(cwd)!;

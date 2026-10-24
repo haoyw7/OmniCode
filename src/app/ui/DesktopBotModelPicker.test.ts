@@ -4,7 +4,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { BotSettings } from "../../features/bots/ui/BotSettings";
 import { BotModelPickerContext } from "../../features/bots/ui/BotChatChrome";
-import type { HostModelCatalog, RemoteProvider } from "../../features/connections/model/protocol";
+import type { HostModelCatalog } from "../../contracts/protocol";
+import type { RemoteProvider } from "../../contracts/provider";
 import { setUiLanguage } from "../../shared/i18n/language";
 import { DesktopBotModelPicker } from "./DesktopBotModelPicker";
 

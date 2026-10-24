@@ -11,7 +11,8 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/webview", () => ({
   getCurrentWebview: () => ({ onDragDropEvent: native.listen }),
 }));
-vi.mock("../../../platform/tauri/fs", () => ({
+vi.mock("../../../platform/tauri/fs", async original => ({
+  ...await original<typeof import("../../../platform/tauri/fs")>(),
   pickFiles: vi.fn(),
   basename: (path: string) => path.split("/").pop(),
 }));

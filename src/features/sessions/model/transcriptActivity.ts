@@ -1,21 +1,12 @@
-import {
-  composeToolTitle,
-  isAgentTool,
-  isEditTool,
-  isExecuteTool,
-  isReadTool,
-  isSearchTool,
-  isWeakToolTitle,
-} from "../../../integrations/harness/core/preview";
+import { toolCallLabel } from "../../../domain/toolLabel";
+import { isFailedStatus } from '../../../domain/toolStatus';
+import { isAgentTool, isEditTool, isExecuteTool, isReadTool, isSearchTool, isWeakToolTitle } from "../../../domain/preview";
 import { leafName } from "../../connections/files/model/fileName";
-import {
-  displayPath,
-  pathKey,
-  resolveWorkspacePath,
-} from "../../../shared/lib/paths";
+import { pathKey, resolveWorkspacePath } from "../../../shared/lib/paths";
+import { displayPath } from '../../../domain/pathDisplay';
 import { INTERRUPT_MESSAGE } from "./inFlight";
-import type { Block, ToolPreview } from "./session";
-import { allModels } from "./models";
+import type { Block, ToolPreview } from "../../../contracts/session";
+import { allModels } from "../../../integrations/harness/core/modelCatalog";
 import { omniCodeWorkSummary } from "./omnicodeToolCall";
 
 export type ToolCallState = "pending" | "accepted" | "rejected";
@@ -28,17 +19,6 @@ export type TurnItem =
 
 export function needsApproval(block: Block): boolean {
   return !!block.approval && !block.approval.decided;
-}
-
-/** Statuses a provider uses for a call that did not work. */
-export function isFailedStatus(status?: string): boolean {
-  const value = status?.toLowerCase() ?? "";
-  return (
-    value === "failed" ||
-    value === "error" ||
-    value === "cancelled" ||
-    value === "canceled"
-  );
 }
 
 export function toolCallState(block: Block): ToolCallState {
@@ -61,23 +41,6 @@ export function toolCallState(block: Block): ToolCallState {
     return "accepted";
   }
   return "pending";
-}
-
-export function toolCallLabel(block: Block, cwd?: string): string {
-  const preview = block.tool?.preview;
-  const path = preview?.path
-    ? displayPath(preview.path, cwd)
-    : preview?.fileName;
-  return (
-    composeToolTitle({
-      kind: block.tool?.kind,
-      title: block.text || block.tool?.title,
-      path,
-      query: preview?.query,
-      previewKind: preview?.kind,
-      cwd,
-    }) || "Working"
-  );
 }
 
 export function isIncompleteTool(

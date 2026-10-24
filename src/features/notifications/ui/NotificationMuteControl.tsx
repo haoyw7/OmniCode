@@ -2,20 +2,13 @@ import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useRef, useState } from "react";
 import { useProjectNotificationPreferences } from "../hooks/useProjectNotificationPreferences";
-import {
-  notificationMuteActions,
-  notificationMuteDeadline,
-  notificationMuteStatus,
-} from "./notificationMuteActions";
-import { NotificationMuteDatePicker } from "./NotificationMuteDatePicker";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { notificationMuteActions, notificationMuteDeadline, notificationMuteStatus } from "../model/notificationMuteActions";
+import { NotificationMuteDatePicker } from "../../../shared/ui/NotificationMuteDatePicker";
+import { ExplorerMenu } from "../../../shared/ui/primitives/ExplorerMenu";
 import { Popover } from "../../../shared/ui/Popover";
 import { Button } from "../../../shared/ui/forms/Button";
 import { BellOff, ChevronDown } from "../../../shared/ui/icons";
-import {
-  isProjectMuted,
-  updateNotificationPreferences,
-} from "../model/notificationPreferences";
+import { isProjectMuted, updateNotificationPreferences } from "../model/notificationPreferences";
 
 type Props = {
   projectIds: readonly string[];
@@ -131,7 +124,9 @@ export function NotificationMuteControl({ projectIds, onChanged }: Props) {
         className="overflow-y-auto p-3"
       >
         <NotificationMuteDatePicker
-          projectIds={projectIds}
+          initialUntil={projectIds.length === 1 ? preferences[projectIds[0]]?.mutedUntil : undefined}
+          disabled={!projectIds.length}
+          onSave={(mutedUntil) => updateNotificationPreferences(projectIds, { mutedUntil })}
           onCancel={() => close()}
           onChanged={() => {
             close();

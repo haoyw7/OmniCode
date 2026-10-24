@@ -1,26 +1,10 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  buildCiRepairRequest,
-  type CiRepairEvidence,
-  type CiRepairRequest,
-} from "../model/ciRepair";
+import { buildCiRepairRequest, type CiRepairEvidence, type CiRepairRequest } from "../model/ciRepair";
 import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
-import {
-  Check,
-  ChevronRight,
-  LoaderCircle,
-  MessageSquare,
-  Plus,
-  Search,
-  Sparkles,
-  X,
-} from "../../../shared/ui/icons";
+import { Check, ChevronRight, LoaderCircle, MessageSquare, Plus, Search, Sparkles, X } from "../../../shared/ui/icons";
 import { useEffect, useId, useRef, useState } from "react";
-import {
-  fetchGithubCheckDetails,
-  githubActionsJobId,
-  type GithubPrCheck,
-} from "../model/githubPrChecks";
+import type { GithubPrCheck } from "../../../contracts/github";
+import { fetchGithubCheckDetails, githubActionsJobId } from "../model/githubPrChecks";
 
 export type CheckRepair = {
   onOpenSession?: (sessionId: string) => void | Promise<void>;

@@ -2,12 +2,13 @@ import { useRef, useState } from "react";
 import type { BotMessage, SessionReference } from "../model/botView";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ArrowUpRight, ChevronRight, ListChecks, LoaderCircle } from "../../../shared/ui/icons";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { HARNESS_TITLE, sessionDisplayTitle } from "../../sessions/model/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { sessionDisplayTitle } from "../../sessions/model/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
 import { Button } from "../../../shared/ui/forms/Button";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { botErrorMessage } from "../model/botErrors";
-import type { HostModelCatalog } from "../../connections/model/protocol";
+import type { HostModelCatalog } from "../../../contracts/protocol";
 import { findRemoteModel } from "../../connections/model/remoteModels";
 export function BotSessionCard({
   message,

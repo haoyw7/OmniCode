@@ -2,7 +2,8 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
-import { listDir, type FsEntry } from "../../../../platform/tauri/fs";
+import { listDir } from "../../../../platform/tauri/fs";
+import type { FsEntry } from "../../../../contracts/workspace";
 import { applyReducedMotion } from "../../../../shared/lib/reducedMotion";
 import { FileBreadcrumb } from "./FileBreadcrumb";
 import { saveExpanded, saveSelected } from "../model/fileTree";
@@ -18,7 +19,7 @@ vi.mock("../model/fileTree", () => ({
   saveSelected: vi.fn(),
   saveExpanded: vi.fn(),
 }));
-vi.mock("./FileTypeIcon", () => ({ FileTypeIcon: () => null }));
+vi.mock("../../../../shared/ui/FileTypeIcon", () => ({ FileTypeIcon: () => null }));
 let root: Root;
 let container: HTMLDivElement;
 const openFile = vi.fn();

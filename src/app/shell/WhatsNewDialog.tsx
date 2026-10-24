@@ -1,10 +1,6 @@
 import { useTranslation } from "../../shared/i18n/useTranslation";
-import {
-  formatUpdateReleaseDate,
-  presentReleaseNotes,
-  releaseNotesTitle,
-} from "../model/releaseNotes";
-import { AgentMarkdown } from "../../features/sessions/ui/AgentMarkdown";
+import { formatUpdateReleaseDate, presentReleaseNotes, releaseNotesTitle } from "../../shared/lib/releaseNotes";
+import { AgentMarkdown } from "../../shared/ui/markdown/AgentMarkdown";
 import { Modal } from "../../shared/ui/Modal";
 import { formatBuildVersion } from "../../shared/lib/buildVersion";
 

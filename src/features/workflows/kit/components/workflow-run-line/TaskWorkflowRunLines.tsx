@@ -4,27 +4,14 @@
 // 没有子代理数、没有箭头——那些进 hover tooltip。结束的 run 只剩一个中性词，颜色只留给灯。
 import { useEffect, useMemo, type MouseEvent } from "react";
 import { Workflow } from "../../../../../shared/ui/icons";
-import type {
-  SessionWorkflowActivity,
-  SessionWorkflowRunSummary,
-} from "../../_shims/protocol.js";
-import { isSessionWorkflowRunLive } from "../../_shims/protocol.js";
+import { type SessionWorkflowActivity, type SessionWorkflowRunSummary, isSessionWorkflowRunLive } from "../../_shims/protocol.js";
+
 import { cn } from "../../../../../shared/lib/cn";
 import { ControlHintTooltip } from "../../ControlHintTooltip.js";
-import {
-  STATUS_DOT,
-  readWorkflowRunStopReason,
-  workflowRunStopReasonMessageId,
-} from "../workflow-graph/run-status-presentation.js";
+import { STATUS_DOT, readWorkflowRunStopReason, workflowRunStopReasonMessageId } from "../workflow-graph/run-status-presentation.js";
 import { formatTaskRelativeTime } from "../../lib/taskListItemPresentation.js";
 import { getWorkflowRunAckStore, useWorkflowRunAcknowledged } from "../../lib/workflowRunAckStore.js";
-import {
-  foldWorkflowRunRail,
-  selectWorkflowRunLines,
-  settledWorkflowRunIds,
-  workflowRunParallelPhaseLabel,
-  type WorkflowRunRail,
-} from "../../lib/workflowRunLine.js";
+import { foldWorkflowRunRail, selectWorkflowRunLines, settledWorkflowRunIds, workflowRunParallelPhaseLabel, type WorkflowRunRail } from "../../lib/workflowRunLine.js";
 import { useWorkflowRunOpen } from "../../v4/workflowRunOpenContext.js";
 
 export interface TaskWorkflowRunLinesIntl {

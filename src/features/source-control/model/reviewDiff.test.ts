@@ -3,20 +3,7 @@ import { stageChunkText } from "../../connections/files/editor/editorGit";
 import { LINE_DIFF_CONFIG } from "./lineDiff";
 import { buildUnifiedFile } from "./unifiedDiff";
 import { formatDiffComment } from "./diffComment";
-import {
-  estimateReviewBodyHeight,
-  ReviewDiffCache,
-  prepareReviewDiff,
-  reviewCommentLine,
-  reviewDiffKey,
-  reviewFileMetadata,
-  reviewStageAnnotations,
-  virtualizeReviewDiff,
-  REVIEW_VIRTUAL_HEIGHT,
-  type ReviewDiff,
-  type ReviewLoadedDiff,
-  type ReviewScope,
-} from "./reviewDiff";
+import { estimateReviewBodyHeight, ReviewDiffCache, prepareReviewDiff, reviewCommentLine, reviewDiffKey, reviewFileMetadata, reviewStageAnnotations, virtualizeReviewDiff, REVIEW_VIRTUAL_HEIGHT, type ReviewDiff, type ReviewLoadedDiff, type ReviewScope } from "./reviewDiff";
 
 const scope: ReviewScope = {
   cwd: "/repo",

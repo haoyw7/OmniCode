@@ -3,22 +3,13 @@ import { IconButton } from "../shared/ui/forms/IconButton";
 import { lightImpact } from "./haptics";
 import { MobileSettingsGlyph } from "./MobileSettingsIcon";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  Pencil,
-  RefreshCw,
-  Trash2,
-  X,
-} from "../shared/ui/icons";
+import { Pencil, RefreshCw, Trash2, X } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { MobileSheet, type MobileSheetPoint } from "./MobileSheet";
 import { hostStatusLabel } from "./MobileHostStatus";
 import type { HostConnectionStatus } from "./client";
 import type { MobilePreferencePanel } from "./mobileSettingsRoutes";
-import {
-  CONNECTION_ICONS,
-  useConnectionAppearance,
-  type ConnectionAppearance,
-} from "./connectionAppearance";
+import { CONNECTION_ICONS, useConnectionAppearance, type ConnectionAppearance } from "./connectionAppearance";
 
 const iconNames = {
   code: "Code",

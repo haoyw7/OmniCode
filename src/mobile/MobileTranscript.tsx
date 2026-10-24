@@ -1,30 +1,24 @@
 import { executionWarningText } from "../integrations/harness/core/executionWarnings";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { QuestionForm } from "../features/sessions/ui/QuestionForm";
+import { QuestionForm } from "../shared/ui/messaging/QuestionForm";
 import { QuestionHistoryForm } from "../features/sessions/ui/QuestionHistoryForm";
-import { AgentMarkdown } from "../features/sessions/ui/AgentMarkdown";
+import { AgentMarkdown } from "../shared/ui/markdown/AgentMarkdown";
 import { PlanActions, PlanDecision } from "../features/sessions/ui/PlanPreview";
-import { questionFollowUp } from "../features/sessions/model/questionHistory";
-import { TranscriptPlatformContext } from "../features/sessions/ui/TranscriptPlatform";
+import { questionFollowUp } from "../domain/questionHistory";
+import { TranscriptPlatformContext } from "../shared/ui/markdown/TranscriptPlatform";
 import { motion } from "motion/react";
 import { popTransition, immediateTransition } from "../shared/motion/tokens";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
 import { useCollapseMotion } from "../shared/ui/AnimatedCollapse";
-import type { Block } from "../features/sessions/model/session";
-import type { WorktreeCreation } from "../features/source-control/model/worktreeCreation";
+import type { Block, WorktreeCreation, QuestionAnswer } from "../contracts/session";
+
 import { buildActivityPhases, groupTurnItems, groupTurns, isSubagentBlock, isToolBlock, toolCallState } from "../features/sessions/model/transcriptActivity";
-import type { QuestionAnswer } from "../features/sessions/model/userQuestion";
-import type { ApprovalDecision } from "../integrations/harness";
-import type { EditorNavigation } from "../features/search/model/search";
-import type {
-  HostSession,
-  HostCommand,
-} from "../features/connections/model/protocol";
-import {
-  mobileTranscriptPlatform,
-  createMobileTranscriptPlatform,
-} from "./transcriptPlatform";
+
+import type { ApprovalDecision } from "../contracts/harness";
+import type { EditorNavigation } from "../shared/lib/fileNavigation";
+import type { HostSession, HostCommand } from "../contracts/protocol";
+import { mobileTranscriptPlatform, createMobileTranscriptPlatform } from "./transcriptPlatform";
 import { MobileSheet } from "./MobileSheet";
 import { MobileSessionProgress } from "./MobileSessionProgress";
 import type { MobileGitSource } from "./mobileGit";

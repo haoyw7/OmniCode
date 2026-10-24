@@ -1,9 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  linkedSessionSeenAt,
-  markLinkedSessionUpdateSeen,
-} from "./linkedSessionSeen";
+import { linkedSessionSeenAt, markLinkedSessionUpdateSeen } from "./linkedSessionSeen";
 
 describe("linked session seen snapshots", () => {
   beforeEach(() => localStorage.clear());

@@ -2,29 +2,34 @@
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  REMINDER_OPEN,
-  REMINDERS_CHANGED,
-  type ReminderTarget,
-  type SessionReminder,
-} from "../../sessions/model/sessionReminders";
+import type { ReminderTarget, SessionReminder } from "../../../contracts/reminders";
 import { useSessionReminders } from "./useSessionReminders";
 import { updateNotificationPreferences } from "../model/notificationPreferences";
 
-const { invoke, listen, message } = vi.hoisted(() => ({
+const REMINDER_OPEN = "omnicode:reminder-open";
+const { invoke, listen, message, host, notificationsEnabled } = vi.hoisted(() => ({
   invoke: vi.fn(),
   listen: vi.fn(),
   message: vi.fn(),
+  host: { list: vi.fn(), set: vi.fn(), clear: vi.fn(), claim: vi.fn() },
+  notificationsEnabled: { value: false },
 }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ message }));
+vi.mock("../../sessions/model/sessionReminders", () => ({
+  REMINDERS_CHANGED: "omnicode:reminders-changed",
+  listReminders: host.list,
+  setReminders: host.set,
+  clearReminders: host.clear,
+  claimDueReminders: host.claim,
+}));
 vi.mock("../../settings/model/sounds", () => ({
   loadSoundsEnabled: () => false,
   SOUNDS_CHANGE_EVENT: "sounds-change",
 }));
 vi.mock("../model/notifications", () => ({
-  loadNotificationsEnabled: () => false,
+  loadNotificationsEnabled: () => notificationsEnabled.value,
   NOTIFICATIONS_CHANGE_EVENT: "notifications-change",
 }));
 
@@ -50,21 +55,9 @@ function Harness() {
   return null;
 }
 
-it("applies a path-based project mute without discovery", async () => {
-  updateNotificationPreferences(["local:/another-project"], {
-    mutedUntil: null,
-  });
-  await mount();
-  expect(api.due).toEqual([]);
-  const configuration = invoke.mock.calls
-    .filter(([command]) => command === "reminder_configure")
-    .at(-1)![1];
-  expect(configuration.preferences.projectRules[reminder.sessionId]).toEqual({
-    enabled: false,
-    after: 0,
-  });
-  expect(api.reminders).toEqual([reminder]);
-});
+const banners = () => invoke.mock.calls.filter(([command]) => command === "show_notification");
+// Delivery marks the Host claim; display and actions do not depend on it.
+const visible = (items: SessionReminder[]) => items.map(({ firedAt: _fired, ...item }) => item);
 
 async function mount() {
   await act(async () =>
@@ -78,47 +71,50 @@ async function emit(event: string) {
   });
 }
 
+async function focus() {
+  await act(async () => {
+    window.dispatchEvent(new Event("focus"));
+  });
+}
+
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
+  notificationsEnabled.value = false;
   stored = [{ ...reminder }];
   pending = null;
   listeners = new Map();
   onOpen.mockReset().mockResolvedValue(undefined);
   ensureSaved.mockReset().mockResolvedValue(undefined);
   message.mockReset();
+  host.list.mockReset().mockImplementation(async () => ({
+    reminders: stored.map((item) => ({ ...item })),
+    nextDueAt: stored
+      .filter((item) => item.firedAt === null)
+      .reduce<number | null>((min, item) => (min === null || item.dueAt < min ? item.dueAt : min), null),
+  }));
+  host.set.mockReset().mockImplementation(async (ids: string[], dueAt: number) => {
+    stored = ids.map((id) => ({ ...reminder, sessionId: id, dueAt, firedAt: null }));
+  });
+  host.clear.mockReset().mockImplementation(async (ids: string[], expected?: number) => {
+    stored = stored.filter((item) => !ids.includes(item.sessionId) || (expected != null && item.dueAt !== expected));
+  });
+  // Host claims durably: a reminder is returned to exactly one caller.
+  host.claim.mockReset().mockImplementation(async (ids: string[]) => {
+    const due = stored.filter((item) => item.firedAt === null && item.dueAt <= Date.now() && ids.includes(item.sessionId));
+    for (const item of due) item.firedAt = Date.now();
+    return due.map((item) => ({ ...item }));
+  });
   invoke
     .mockReset()
-    .mockImplementation(
-      async (command: string, args: Record<string, any> = {}) => {
-        if (command === "reminder_list")
-          return stored.map((item) => ({ ...item }));
-        if (command === "reminder_take_open") {
-          const request = pending;
-          pending = null;
-          return request;
-        }
-        if (command === "reminder_open") {
-          pending = { sessionId: args.sessionId, dueAt: args.dueAt };
-          return;
-        }
-        if (command === "reminder_set") {
-          stored = args.sessionIds.map((id: string) => ({
-            ...reminder,
-            sessionId: id,
-            dueAt: args.dueAt,
-            firedAt: null,
-          }));
-        }
-        if (command === "reminder_clear") {
-          stored = stored.filter(
-            (item) =>
-              !args.sessionIds.includes(item.sessionId) ||
-              (args.expectedDueAt != null && item.dueAt !== args.expectedDueAt),
-          );
-        }
-      },
-    );
+    .mockImplementation(async (command: string, args: Record<string, any> = {}) => {
+      if (command === "reminder_take_open") {
+        const request = pending;
+        pending = null;
+        return request;
+      }
+      if (command === "reminder_open") pending = { sessionId: args.sessionId, dueAt: args.dueAt };
+    });
   listen
     .mockReset()
     .mockImplementation(async (event: string, handler: () => void) => {
@@ -138,177 +134,117 @@ afterEach(() => {
 });
 
 describe("saved session reminders", () => {
-  it("keeps reminders actionable even when a project path no longer exists", async () => {
-    const unavailable = {
-      ...reminder,
-      sessionId: "unavailable-session",
-      cwd: "/deleted-worktree",
-    };
-    stored = [reminder, unavailable];
-
+  it("applies a path-based project mute without discovery", async () => {
+    updateNotificationPreferences(["local:/another-project"], { mutedUntil: null });
+    notificationsEnabled.value = true;
     await mount();
+    expect(api.due).toEqual([]);
+    // The muted reminder is claimed so it never replays, but shows no banner.
+    expect(host.claim).toHaveBeenCalledWith([reminder.sessionId]);
+    expect(banners()).toEqual([]);
+    expect(visible(api.reminders)).toEqual(visible([reminder]));
+  });
 
-    expect(api.reminders).toEqual([reminder, unavailable]);
-    expect(api.due).toEqual([reminder, unavailable]);
+  it("keeps reminders actionable even when a project path no longer exists", async () => {
+    const unavailable = { ...reminder, sessionId: "unavailable-session", cwd: "/deleted-worktree" };
+    stored = [{ ...reminder }, unavailable];
+    await mount();
+    expect(visible(api.reminders)).toEqual(visible([reminder, unavailable]));
+    expect(visible(api.due)).toEqual(visible([reminder, unavailable]));
     expect(api.error).toBeNull();
-    const configuration = invoke.mock.calls
-      .filter(([command]) => command === "reminder_configure")
-      .at(-1)?.[1];
-    expect(configuration.preferences.projectRules).toEqual({
-      "saved-session": { enabled: true, after: 0 },
-      "unavailable-session": { enabled: true, after: 0 },
-    });
-
     await act(async () => api.cancel([unavailable.sessionId]));
-    expect(api.reminders).toEqual([reminder]);
+    expect(visible(api.reminders)).toEqual(visible([reminder]));
     expect(api.error).toBeNull();
   });
 
-  it("serializes native configuration so a slower old update cannot overwrite a newer mute", async () => {
-    const original = invoke.getMockImplementation()!;
-    let release: () => void = () => {};
-    const configurations: Array<{
-      projectRules: Record<string, { enabled: boolean }>;
-    }> = [];
-    invoke.mockImplementation(
-      (command: string, args: Record<string, any> = {}) => {
-        if (command !== "reminder_configure") return original(command, args);
-        configurations.push(args.preferences);
-        if (configurations.length === 1)
-          return new Promise<void>((resolve) => {
-            release = resolve;
-          });
-        return Promise.resolve();
-      },
-    );
+  it("claims due reminders through Host once and shows one banner", async () => {
+    notificationsEnabled.value = true;
     await mount();
-    await act(async () =>
-      updateNotificationPreferences(["local:/another-project"], {
-        mutedUntil: null,
-      }),
-    );
-    expect(configurations).toHaveLength(1);
-    await act(async () => release());
-    expect(configurations).toHaveLength(2);
-    expect(configurations[1].projectRules[reminder.sessionId].enabled).toBe(
-      false,
-    );
+    expect(banners()).toHaveLength(1);
+    expect(banners()[0][1]).toMatchObject({
+      sessionId: `reminder:${reminder.sessionId}:${reminder.dueAt}`,
+      title: "OmniCode",
+      subtitle: reminder.title,
+      sound: false,
+    });
+    // Another refresh, window or restart finds it already claimed.
+    await act(async () => {
+      window.dispatchEvent(new Event("omnicode:reminders-changed"));
+    });
+    await focus();
+    expect(banners()).toHaveLength(1);
+  });
+
+  it("wakes at the Host's next due time without waiting for the refresh interval", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+    try {
+      notificationsEnabled.value = true;
+      stored = [{ ...reminder, dueAt: Date.now() + 5_000 }];
+      await mount();
+      expect(banners()).toHaveLength(0);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5_100);
+      });
+      expect(banners()).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("applies reminder category changes immediately without replaying an old due reminder on resume", async () => {
     await mount();
-    expect(api.due).toEqual([reminder]);
+    expect(visible(api.due)).toEqual(visible([reminder]));
     await act(async () =>
-      updateNotificationPreferences(["local:/another-project"], {
-        disabled: ["reminders"],
-      }),
+      updateNotificationPreferences(["local:/another-project"], { disabled: ["reminders"] }),
     );
     expect(api.due).toEqual([]);
-    const disabled = invoke.mock.calls
-      .filter(([command]) => command === "reminder_configure")
-      .at(-1)?.[1];
-    expect(disabled.preferences.projectRules[reminder.sessionId].enabled).toBe(
-      false,
-    );
     await act(async () =>
-      updateNotificationPreferences(["local:/another-project"], {
-        disabled: [],
-      }),
+      updateNotificationPreferences(["local:/another-project"], { disabled: [] }),
     );
     expect(api.due).toEqual([]);
-    const resumed = invoke.mock.calls
-      .filter(([command]) => command === "reminder_configure")
-      .at(-1)?.[1];
-    expect(resumed.preferences.projectRules[reminder.sessionId].enabled).toBe(
-      true,
-    );
-    expect(
-      resumed.preferences.projectRules[reminder.sessionId].after,
-    ).toBeGreaterThan(reminder.dueAt);
-  });
-
-  it("suppresses a muted project's reminders in both native delivery and in-app notices while retaining sidebar data", async () => {
-    updateNotificationPreferences(["local:/another-project"], {
-      mutedUntil: null,
-    });
-    await mount();
-    expect(api.reminders).toEqual([reminder]);
-    expect(api.due).toEqual([]);
-    expect(invoke).toHaveBeenCalledWith("reminder_configure", {
-      preferences: expect.objectContaining({
-        projectRules: {
-          "saved-session": { enabled: false, after: expect.any(Number) },
-        },
-      }),
-    });
   });
 
   it("shows missed reminders on startup even with desktop notifications off", async () => {
     await mount();
-    expect(api.due).toEqual([reminder]);
-    expect(invoke).toHaveBeenCalledWith("reminder_configure", {
-      preferences: expect.objectContaining({
-        notificationsEnabled: false,
-        sound: false,
-      }),
-    });
-    expect(listeners.get(REMINDERS_CHANGED)?.size).toBe(1);
+    expect(visible(api.due)).toEqual(visible([reminder]));
+    expect(banners()).toEqual([]);
     expect(onOpen).not.toHaveBeenCalled();
   });
 
   it("saves the conversation before scheduling and does not claim success on failure", async () => {
     await mount();
-    const failure = new Error("Save failed");
-    ensureSaved.mockRejectedValueOnce(failure);
-    await act(async () =>
-      api.schedule([reminder.sessionId], Date.now() + 60_000),
-    );
-    expect(
-      invoke.mock.calls.some(([command]) => command === "reminder_set"),
-    ).toBe(false);
-    expect(message).toHaveBeenCalledWith(
-      "Error: Save failed",
-      expect.anything(),
-    );
-    expect(api.reminders).toEqual([reminder]);
-    await act(async () =>
-      api.schedule([reminder.sessionId], Date.now() + 60_000),
-    );
+    ensureSaved.mockRejectedValueOnce(new Error("Save failed"));
+    await act(async () => api.schedule([reminder.sessionId], Date.now() + 60_000));
+    expect(host.set).not.toHaveBeenCalled();
+    expect(message).toHaveBeenCalledWith("Error: Save failed", expect.anything());
+    expect(visible(api.reminders)).toEqual(visible([reminder]));
+    await act(async () => api.schedule([reminder.sessionId], Date.now() + 60_000));
     expect(api.due).toEqual([]);
     expect(ensureSaved).toHaveBeenCalledWith([reminder.sessionId]);
   });
 
-  it("routes opening through the backend, then loads the saved session and clears its due reminder", async () => {
+  it("routes opening through the shell, then loads the saved session and clears its due reminder", async () => {
     await mount();
     await act(async () => api.open(reminder));
     expect(onOpen).not.toHaveBeenCalled();
     await emit(REMINDER_OPEN);
     expect(onOpen).toHaveBeenCalledExactlyOnceWith(reminder.sessionId);
-    expect(invoke).toHaveBeenCalledWith("reminder_clear", {
-      sessionIds: [reminder.sessionId],
-      expectedDueAt: reminder.dueAt,
-    });
+    expect(host.clear).toHaveBeenCalledWith([reminder.sessionId], reminder.dueAt);
     expect(api.due).toEqual([]);
   });
 
   it("dismisses the current due reminder when its session continues", async () => {
     await mount();
     await act(async () => api.dismissDue(reminder.sessionId));
-    expect(invoke).toHaveBeenCalledWith("reminder_clear", {
-      sessionIds: [reminder.sessionId],
-      expectedDueAt: reminder.dueAt,
-    });
+    expect(host.clear).toHaveBeenCalledWith([reminder.sessionId], reminder.dueAt);
     expect(api.due).toEqual([]);
   });
 
   it("keeps a future reminder when its session continues early", async () => {
     stored = [{ ...reminder, dueAt: Date.now() + 60_000 }];
     await mount();
-    invoke.mockClear();
     await act(async () => api.dismissDue(reminder.sessionId));
-    expect(
-      invoke.mock.calls.some(([command]) => command === "reminder_clear"),
-    ).toBe(false);
+    expect(host.clear).not.toHaveBeenCalled();
     expect(api.reminders).toEqual(stored);
   });
 
@@ -323,19 +259,16 @@ describe("saved session reminders", () => {
     onOpen.mockRejectedValue(new Error("Unavailable"));
     pending = reminder;
     await mount();
-    expect(api.due).toEqual([reminder]);
-    expect(
-      invoke.mock.calls.some(([command]) => command === "reminder_clear"),
-    ).toBe(false);
+    expect(visible(api.due)).toEqual(visible([reminder]));
+    expect(host.clear).not.toHaveBeenCalled();
   });
 
   it("updates when another window cancels and removes subscriptions on unmount", async () => {
     await mount();
     stored = [];
-    await emit(REMINDERS_CHANGED);
+    await focus();
     expect(api.reminders).toEqual([]);
     act(() => root.unmount());
-    expect(listeners.get(REMINDERS_CHANGED)?.size).toBe(0);
     expect(listeners.get(REMINDER_OPEN)?.size).toBe(0);
     root = createRoot(container);
   });

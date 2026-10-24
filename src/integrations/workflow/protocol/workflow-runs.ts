@@ -1,3 +1,4 @@
+
 // ============================================================
 // workflowRuns：dwf 引擎 run 的实时运行态 schema（snapshot.ts 的 workflowRuns 键）
 // ============================================================
@@ -508,4 +509,3 @@ export const workflowRunsStateSchema = z.object({
   revision: z.number().int().nonnegative(),
   runs: z.array(workflowRunSchema).max(WORKFLOW_RUNS_LIMITS.maxRuns),
 });
-export type WorkflowRunsState = z.infer<typeof workflowRunsStateSchema>;

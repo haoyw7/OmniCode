@@ -1,25 +1,8 @@
-import {
-  TID_WORKFLOW_DETAIL_MENU,
-  TID_WORKFLOW_DETAIL_RUN,
-  TID_WORKFLOW_ACTION_DELETE,
-  TID_WORKFLOW_ACTION_MOVE,
-  testId,
-  type OmniCodeSavedWorkflowEntry,
-} from "../../_shims/shared.js";
+import { TID_WORKFLOW_DETAIL_MENU, TID_WORKFLOW_DETAIL_RUN, TID_WORKFLOW_ACTION_DELETE, TID_WORKFLOW_ACTION_MOVE, testId, type OmniCodeSavedWorkflowEntry } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../../../../shared/ui/primitives/DropdownMenu.js";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../../../../../shared/ui/primitives/DropdownMenu.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
-import {
-  AutomationMoreHorizontalIcon,
-  AutomationRunNowIcon,
-  AutomationTrashIcon,
-} from "../AutomationDesignPrimitives.js";
+import { AutomationMoreHorizontalIcon, AutomationRunNowIcon, AutomationTrashIcon } from "../AutomationDesignPrimitives.js";
 
 interface SavedWorkflowDetailHeaderProps {
   name: string;

@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 import { act, createElement, type ComponentProps } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { newAgentTab, newEditorPane } from "../../../workspace/model/layout";
 import { newSession } from "../../../sessions/model/session";
-import { FilePane } from "./FilePane";
+import { FilePane } from "../../../../app/ui/FilePane";
 import { hostOrchestrationClient } from "../../../orchestration/model/orchestrationClient";
 import * as connections from "../../model/connections";
 

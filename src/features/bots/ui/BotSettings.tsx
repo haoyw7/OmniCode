@@ -2,47 +2,16 @@ import { Switch } from "../../../shared/ui/forms/Switch";
 import { BOT_WORKTREE_IDLE_MINUTES } from "../../../integrations/harness/core/botAutonomy";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Input } from "../../../shared/ui/forms/Input";
-import {
-  Fragment,
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ComponentType,
-  type ReactNode,
-} from "react";
-import type {
-  BotMemoryDetailProps,
-  BotSelectProps,
-} from "./BotChatChrome";
-import { BotModelPickerContext } from "./BotChatChrome";
-import {
-  BOT_PERMISSIONS,
-  BOT_PERSONA_PRESETS,
-  defaultBotPersona,
-  fullBotPolicy,
-  type BotPatch,
-  type BotPolicy,
-  type BotWatch,
-  type BotPersona,
-  type BotPersonaPreset,
-  type BotPermission,
-  type BotConfiguration,
-} from "../model/botView";
-import type {
-  HostModelCatalog,
-  HostProject,
-  RemoteProvider,
-} from "../../connections/model/protocol";
-import {
-  HARNESS_TITLE,
-  RUNTIME_MODES,
-  RUNTIME_MODE_HINT,
-  RUNTIME_MODE_LABEL,
-  type RuntimeMode,
-} from "../../sessions/model/session";
+import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { type BotMemoryDetailProps, type BotSelectProps, BotModelPickerContext } from "./BotChatChrome";
+
+import { BOT_PERMISSIONS, BOT_PERSONA_PRESETS, defaultBotPersona, fullBotPolicy, type BotPatch, type BotPolicy, type BotWatch, type BotPersona, type BotPersonaPreset, type BotPermission, type BotConfiguration } from "../model/botView";
+import type { HostModelCatalog, HostProject } from "../../../contracts/protocol";
+import type { RemoteProvider } from "../../../contracts/provider";
+import { sessionDisplayTitle } from "../../sessions/model/session";
+import { RUNTIME_MODE_HINT, RUNTIME_MODE_LABEL } from "../../../contracts/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { RUNTIME_MODES, type RuntimeMode } from "../../../contracts/session";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { reducedMotionQuery } from "../../../shared/lib/reducedMotion";
 import { BotMemoryEditor } from "./BotMemory";
@@ -52,13 +21,13 @@ import { BotImSettings } from "./BotImSettings";
 import { BotHabits, type HabitControl } from "./BotHabits";
 import type { BotHabit } from "../model/botHabits";
 import type { BotRpc } from "../model/botRpc";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { isEffortSettingId } from "../../sessions/model/models";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { isEffortSettingId } from "../../../domain/modelSettings";
 import { carryModelSettings, findRemoteModel, remoteModelControls } from "../../connections/model/remoteModels";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { followSessionProjects, isExplicitlyWatchedSession, isWatchedSession, removeWatchedSession } from "../model/botSessions";
-import { sessionDisplayTitle } from "../../sessions/model/session";
+
 import { ChevronDown, X } from "../../../shared/ui/icons";
 
 const labels: Record<string, string> = {

@@ -1,9 +1,10 @@
 import { useMemo, useSyncExternalStore } from "react";
-import type { HostSession, RemoteProvider } from "../features/connections/model/protocol";
+import type { HostSession } from "../contracts/protocol";
+import type { RemoteProvider } from "../contracts/provider";
 import { withOutgoing, type OutgoingMessage } from "../features/connections/model/outgoing";
-import { sessionComposerConfiguration } from "../features/sessions/model/composerConfiguration";
+import { sessionComposerConfiguration } from "../domain/composerConfiguration";
 import { latestPlanDecision } from "../features/sessions/model/planDecision";
-import { pendingSessionInputKey } from "../features/sessions/model/sessionActivity";
+import { pendingSessionInputKey } from "../domain/sessionActivity";
 
 type Snapshot = HostSession | undefined;
 

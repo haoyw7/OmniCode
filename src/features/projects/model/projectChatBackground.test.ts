@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  clearProjectChatBackgroundSetting,
-  loadProjectChatBackgroundSettings,
-  projectChatBackgroundImageRevision,
-  saveProjectChatBackgroundSettings,
-} from "./projectChatBackground";
+import { clearProjectChatBackgroundSetting, loadProjectChatBackgroundSettings, projectChatBackgroundImageRevision, saveProjectChatBackgroundSettings } from "./projectChatBackground";
 
 const KEY = "omnicode:project-chat-backgrounds";
 

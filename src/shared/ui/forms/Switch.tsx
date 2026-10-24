@@ -1,9 +1,5 @@
 import { motion } from "motion/react";
-import {
-  immediateTransition,
-  panelTransition,
-  motionGeometry,
-} from "../../motion/tokens";
+import { immediateTransition, panelTransition, motionGeometry } from "../../motion/tokens";
 import { useMotionPreference } from "../../motion/useMotionPreference";
 import * as React from "react";
 import { Switch as SwitchPrimitive } from "radix-ui";

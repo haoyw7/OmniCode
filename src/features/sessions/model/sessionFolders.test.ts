@@ -1,32 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { SessionSummary } from "../data/sessionStore";
-import {
-  addSessionToFolder,
-  applySessionListDrop,
-  buildSessionList,
-  createFolderWithSessions,
-  dissolveFolder,
-  folderAccent,
-  folderContaining,
-  folderShellFill,
-  loadPinnedSessionsCollapsed,
-  loadSessionFolders,
-  mergeFolderSessionSummaries,
-  placeSessionInFolder,
-  pruneSessionFolders,
-  removeSessionFromFolder,
-  renameFolder,
-  savePinnedSessionsCollapsed,
-  saveSessionFolders,
-  sessionListNavigationIds,
-  setFolderCollapsed,
-  setFolderColor,
-  setFolderCustomColor,
-  reorderSessionFolders,
-  ungroupedSessions,
-  uniqueFolderName,
-  type SessionFolder,
-} from "./sessionFolders";
+import { addSessionToFolder, applySessionListDrop, buildSessionList, createFolderWithSessions, dissolveFolder, folderAccent, folderContaining, folderShellFill, loadPinnedSessionsCollapsed, loadSessionFolders, mergeFolderSessionSummaries, placeSessionInFolder, pruneSessionFolders, removeSessionFromFolder, renameFolder, savePinnedSessionsCollapsed, saveSessionFolders, sessionListNavigationIds, setFolderCollapsed, setFolderColor, setFolderCustomColor, reorderSessionFolders, ungroupedSessions, uniqueFolderName, type SessionFolder } from "./sessionFolders";
 
 function summary(
   id: string,

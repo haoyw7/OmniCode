@@ -4,17 +4,14 @@ import {
   type ChildProcessWithoutNullStreams,
 } from "node:child_process";
 import { EventEmitter } from "node:events";
-import { readCursorSubagents } from "./cursor-subagents";
+import { readCursorSubagents, readCursorToolCalls } from "./cursor-subagents";
 import { promisify } from "node:util";
 import { isAbsolute, join } from "node:path";
 import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 import type { ChildBackend } from "../src/integrations/harness/core/child";
-import {
-  isRemoteProvider,
-  type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+import { isRemoteProvider, type RemoteProvider } from "../src/contracts/provider";
 import { providerLaunch, resolveProvider, resolveProviderRuntime } from "./process";
 import {
   MAX_PROVIDER_OUTPUT_BYTES,
@@ -280,6 +277,8 @@ export class HostChildBackend implements ChildBackend {
         return undefined as T;
       case "cursor_subagent_runs":
         return await readCursorSubagents(args) as T;
+      case "cursor_tool_calls":
+        return await readCursorToolCalls(args) as T;
       case "harness_read_text_file": {
         const path = String(args.path ?? "");
         const info = await stat(path);

@@ -2,10 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  QuickProjectIcon,
-  loadQuickProjectAppearance,
-} from "./QuickProjectIcon";
+import { QuickProjectIcon, loadQuickProjectAppearance } from "./QuickProjectIcon";
 import { projectKey, projectName } from "../../../shared/lib/paths";
 import { projectMascot } from "../../projects/model/projectMascots";
 

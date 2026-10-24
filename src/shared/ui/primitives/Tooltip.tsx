@@ -1,11 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import {
-  popInitial,
-  popAnimate,
-  popExit,
-  popTransition,
-  immediateTransition,
-} from "../../motion/tokens";
+import { popInitial, popAnimate, popExit, popTransition, immediateTransition } from "../../motion/tokens";
 import { useMotionPreference } from "../../motion/useMotionPreference";
 import { MotionPresenceItem } from "./MotionPresenceItem";
 ("use client");

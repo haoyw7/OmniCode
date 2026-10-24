@@ -1,6 +1,6 @@
 import { preferenceStorage } from "../../settings/model/sharedPreferences";
-import type { HarnessId } from "./session";
-import { HARNESSES } from "./session";
+import { type HarnessId, HARNESSES } from "../../../contracts/session";
+
 import type { SessionSummary } from "../data/sessionStore";
 
 export type SessionTimeFilter = "all" | "today" | "7d" | "30d";

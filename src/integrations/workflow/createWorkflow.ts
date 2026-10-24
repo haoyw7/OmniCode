@@ -1,3 +1,4 @@
+import type { CreateWorkflowCausalityGraph } from "../../contracts/workflow";
 // ============================================================
 // CreateWorkflow Tool - typecheck a dynamic-workflow script and start a background run
 // ============================================================
@@ -19,8 +20,6 @@ export const WorkflowAgentRuntimeSchema = z
     modelSettings: z.record(z.string(), z.string()).optional(),
   })
   .strict();
-
-export type WorkflowAgentRuntime = z.infer<typeof WorkflowAgentRuntimeSchema>;
 
 // Causality graph 是 display 通道的有界投影，但直接在工具输出边界限长：持久化的 tool
 // output 与实时 display 载荷共用同一个契约，避免两处各自演化出不同的截断语义。
@@ -224,8 +223,6 @@ export const CreateWorkflowCausalityGraphSchema = z
     truncated: z.boolean().optional(),
   })
   .strict();
-
-export type CreateWorkflowCausalityGraph = z.infer<typeof CreateWorkflowCausalityGraphSchema>;
 
 /**
  * run 的声明阶段表：因果图里**有名**的

@@ -1,22 +1,13 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronDown, ChevronRight, FileDiff } from "../../../shared/ui/icons";
 import { useEffect, useReducer, useRef, useState } from "react";
-import {
-  keepSessionChanges,
-  sessionCheckpointStatus,
-  subscribeReviewChanged,
-  undoSessionChanges,
-  type CheckpointFile,
-} from "../model/checkpoint";
+import type { CheckpointFile, CheckpointStatus } from "../../../contracts/checkpoint";
+import { keepSessionChanges, sessionCheckpointStatus, subscribeReviewChanged, undoSessionChanges } from "../model/checkpoint";
 import { invalidateProjectFiles } from "../../connections/files/model/fileIndex";
 import { invalidateWatchedFiles } from "../../connections/files/model/fileWatch";
-import {
-  basename,
-  notifyGitChanged,
-  subscribeGitChanged,
-} from "../../../platform/tauri/fs";
+import { basename, notifyGitChanged, subscribeGitChanged } from "../../../platform/tauri/fs";
 import { formatInteger } from "../../../shared/lib/numbers";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 
@@ -51,6 +42,9 @@ export function SessionReview({
   const reviewTurnId = historical ? turnId ?? recordedTurnId : recordedTurnId;
   const [hostLocked, setHostLocked] = useState(false);
   const [workspaceShared, setWorkspaceShared] = useState(false);
+  const [unavailableReason, setUnavailableReason] = useState<string>();
+  const [restore, setRestore] = useState<{ message?: string }>();
+  const [actionError, setActionError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [expanded, setExpanded] = useState(false);
@@ -60,9 +54,22 @@ export function SessionReview({
   const filesRef = useRef(files);
   filesRef.current = files;
 
+  // The Host decides what may be restored; a partly finished restore stays
+  // visible until Undo is retried, even when no file differs any more.
+  const applyStatus = (status: CheckpointStatus) => {
+    setFiles(status.files);
+    setHostLocked(!!status.undoLocked);
+    setWorkspaceShared(!!status.workspaceShared);
+    setUnavailableReason(status.undoUnavailableReason);
+    setRestore(status.restorePending ? { message: status.restoreMessage } : undefined);
+  };
+
   useEffect(() => {
     setFiles([]);
     setRecordedTurnId(undefined);
+    setUnavailableReason(undefined);
+    setRestore(undefined);
+    setActionError(undefined);
     setError(undefined);
     setExpanded(false);
     setOthersExpanded(false);
@@ -71,6 +78,7 @@ export function SessionReview({
   useEffect(() => {
     if (busy) {
       setFiles([]);
+      setRestore(undefined);
       setError(undefined);
       setLoading(false);
       return;
@@ -95,10 +103,8 @@ export function SessionReview({
         : sessionCheckpointStatus(sessionId, cwd))
         .then((status) => {
           if (stale) return;
-          setFiles(status.files);
+          applyStatus(status);
           if (status.turnId) setRecordedTurnId(status.turnId);
-          setHostLocked(!!status.undoLocked);
-          setWorkspaceShared(!!status.workspaceShared);
           setError(undefined);
           failures = 0;
         })
@@ -173,13 +179,16 @@ export function SessionReview({
   }, [secondary.length]);
 
   if (busy) return null;
-  const loadNotice = error ? (
+  const notice = error ?? actionError;
+  const loadNotice = notice ? (
     <div
       className="flex items-center gap-2 px-3 py-2 text-[11px] text-content/60"
       role="status"
-      title={error}
+      title={notice}
     >
-      <span className="flex-1">{uiT("Couldn’t load session changes")}</span>
+      <span className="flex-1">
+        {error ? uiT("Couldn’t load session changes") : uiT(notice)}
+      </span>
       <button
         type="button"
         disabled={loading}
@@ -190,7 +199,7 @@ export function SessionReview({
       </button>
     </div>
   ) : null;
-  if (files.length === 0) {
+  if (files.length === 0 && !restore) {
     // Status reads also run on focus and Git notifications. They discover
     // whether a review exists, so an empty result must not flash a loading card.
     return loadNotice ? (
@@ -204,7 +213,12 @@ export function SessionReview({
 
   const disabled = busy || historical || acting != null;
   const locked = undoLocked || hostLocked || workspaceShared;
-  const canUndoAll = !locked && attributed && own.every((file) => file.undoable);
+  // Retrying a restore only finishes the files; the Host never rewinds the
+  // conversation twice and verifies each file itself.
+  const canUndoAll = restore
+    ? !undoLocked && !hostLocked
+    : !locked && !unavailableReason && attributed && own.every((file) => file.undoable);
+  const keepBlocked = !!restore;
   const hiddenFileCount = primary.length - 3;
   const totals = sumChanges(primary);
   const externalHint = uiT(
@@ -212,8 +226,9 @@ export function SessionReview({
   );
 
   const run = (action: "keep" | "undo") => {
-    if (disabled || (action === "undo" && !canUndoAll)) return;
+    if (disabled || (action === "undo" ? !canUndoAll : keepBlocked)) return;
     setActing(action);
+    setActionError(undefined);
     const op =
       action === "keep"
         ? keepSessionChanges(sessionId, cwd)
@@ -221,14 +236,15 @@ export function SessionReview({
     const previous = filesRef.current.map((file) => file.path);
     void op
       .then((status) => {
-        setFiles(status.files);
-        setHostLocked(!!status.undoLocked);
-        setWorkspaceShared(!!status.workspaceShared);
+        applyStatus(status);
         notifyGitChanged();
         invalidateWatchedFiles(previous);
         invalidateProjectFiles(cwd);
       })
-      .catch(() => refresh())
+      .catch((reason: unknown) => {
+        setActionError(String(reason).replace(/^Error: /, ""));
+        refresh();
+      })
       .finally(() => setActing(null));
   };
   const openDiff: Props["onOpenDiff"] = (path) =>
@@ -258,7 +274,7 @@ export function SessionReview({
           </span>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[12px] font-medium text-content/80">
-              {uiT(
+              {restore && primary.length === 0 ? uiT("Undo needs to finish") : uiT(
                 attributed
                   ? primary.length === 1 ? "Changed {count} file" : "Changed {count} files"
                   : primary.length === 1 ? "Workspace changed {count} file" : "Workspace changed {count} files",
@@ -277,7 +293,7 @@ export function SessionReview({
           <div className="flex shrink-0 items-center gap-0.5">
             {!historical && (
               <>
-                {attributed ? (
+                {attributed || restore ? (
                   <button
                     type="button"
                     title={
@@ -285,8 +301,14 @@ export function SessionReview({
                         ? uiT(
                             "Keep and undo are unavailable while the session is running",
                           )
+                        : restore
+                          ? canUndoAll
+                            ? uiT("Retry restoring this turn's workspace files")
+                            : uiT("Undo is unavailable while another session is running in this project")
                         : canUndoAll
                           ? uiT("Undo all session changes")
+                          : unavailableReason
+                            ? uiT(unavailableReason)
                           : workspaceShared
                             ? uiT(
                                 "Other sessions were active in this workspace. These changes may include their edits; undo is disabled.",
@@ -303,7 +325,7 @@ export function SessionReview({
                     onClick={() => run("undo")}
                     className="h-7 rounded-md px-2.5 text-[11px] text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-35"
                   >
-                    {uiT("Undo")}
+                    {restore ? uiT("Retry Undo") : uiT("Undo")}
                   </button>
                 ) : null}
                 <button
@@ -313,9 +335,11 @@ export function SessionReview({
                       ? uiT(
                           "Keep and undo are unavailable while the session is running",
                         )
-                      : uiT("Keep all session changes and dismiss this card")
+                      : keepBlocked
+                        ? uiT("Finish restoring the conversation checkpoint before keeping changes.")
+                        : uiT("Keep all session changes and dismiss this card")
                   }
-                  disabled={disabled}
+                  disabled={disabled || keepBlocked}
                   onClick={() => run("keep")}
                   className="h-7 rounded-md px-2.5 text-[11px] text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-35"
                 >
@@ -334,19 +358,29 @@ export function SessionReview({
             </button>
           </div>
         </div>
-        {!attributed ? (
+        {restore ? (
+          <p className="px-3 pb-2 text-[11px] text-content/60" role="status" data-session-review-restore>
+            {uiT(restore.message ?? "Conversation history was rolled back. Retry Undo to finish restoring workspace files.")}
+          </p>
+        ) : !attributed ? (
           <p className="px-3 pb-2 text-[11px] text-content/50">{externalHint}</p>
+        ) : unavailableReason && !historical ? (
+          <p className="px-3 pb-2 text-[11px] text-content/60" data-session-review-unavailable>
+            {uiT(unavailableReason)}
+          </p>
         ) : workspaceShared ? (
           <p className="px-3 pb-2 text-[11px] text-content/60">
             {uiT("Other sessions were active in this workspace. These changes may include their edits; undo is disabled.")}
           </p>
         ) : null}
-        <div className="scrollbar-none max-h-64 overflow-y-auto border-t border-stroke py-1" data-session-review-border>
-          <ul>{primary.slice(0, 3).map(fileRow)}</ul>
-          <AnimatedCollapse expanded={expanded}>
-            {() => <ul>{primary.slice(3).map(fileRow)}</ul>}
-          </AnimatedCollapse>
-        </div>
+        {primary.length > 0 ? (
+          <div className="scrollbar-none max-h-64 overflow-y-auto border-t border-stroke py-1" data-session-review-border>
+            <ul>{primary.slice(0, 3).map(fileRow)}</ul>
+            <AnimatedCollapse expanded={expanded}>
+              {() => <ul>{primary.slice(3).map(fileRow)}</ul>}
+            </AnimatedCollapse>
+          </div>
+        ) : null}
         {primary.length > 3 ? (
           <button
             type="button"

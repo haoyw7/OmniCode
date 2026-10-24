@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { AcpSubagents } from "./acpSubagents";
 import { eventsFromAcpUpdate as fxEvents } from "../providers/fx/fxProtocol";
 import { eventsFromAcpUpdate as grokEvents } from "../providers/grok/grokProtocol";
-import { applyHarnessEvent } from "./apply";
+import { createSessionProjection } from "../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "./modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { newSession } from "../../../features/sessions/model/session";
-import type { HarnessEvent } from "./types";
+import type { HarnessEvent } from "../../../contracts/harness";
 
 describe.each([
   ["fx", fxEvents],

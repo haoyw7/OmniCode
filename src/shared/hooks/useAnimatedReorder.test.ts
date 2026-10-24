@@ -7,11 +7,7 @@ vi.mock("motion/react", async (importOriginal) => {
   const { motionTestDriver } = await import("../../../tests/helpers/motionDriver");
   return { ...actual, ...motionTestDriver(actual, false) };
 });
-import {
-  useAnimatedReorder,
-  type ReorderExternalDrop,
-  type ReorderOptions,
-} from "./useAnimatedReorder";
+import { useAnimatedReorder, type ReorderExternalDrop, type ReorderOptions } from "./useAnimatedReorder";
 
 const ids = ["sessions", "changes", "explorer"];
 

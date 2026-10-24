@@ -1,12 +1,8 @@
-import { translate } from "../../../shared/i18n/language";
-import type { Block } from "../../../features/sessions/model/session";
+import type { NativeSessionProvider, NativeSessionFile, NativeSyncStatus } from "../../../contracts/session";
 
-export type NativeSessionProvider =
-  | "codex"
-  | "pi"
-  | "claude"
-  | "omp"
-  | "opencode";
+
+import { translate } from "../../../shared/i18n/language";
+
 export const NATIVE_SESSION_PROVIDERS: readonly NativeSessionProvider[] = [
   "claude",
   "codex",
@@ -23,40 +19,11 @@ export const nativeProviderLabel = (provider: NativeSessionProvider): string =>
     opencode: "OpenCode",
   })[provider];
 
-export type NativeSessionFile = {
-  provider: NativeSessionProvider;
-  providerSessionId: string;
-  cwd: string;
-  /** JSONL transcript, or the shared database for `storage: "sqlite"`. */
-  path: string;
-  revision: string;
-  modifiedAt: number;
-  /** Absent in records listed before multi-provider sync. */
-  storage?: "jsonl" | "sqlite";
-  /** OmniCode provider account whose config directory owns the session. */
-  accountId?: string;
-  /** Title the agent generated or the user set in its CLI, when stored outside the transcript. */
-  title?: string;
-  /** First prompt, for lists only; never used as the conversation title. */
-  preview?: string;
-  /** Opaque Host-issued identity when the Host listed this source. */
-  sourceId?: string;
-};
-
 /** A shared database holds many conversations, so the path alone is not an identity. */
 export const nativeSourceKey = (
   file: Pick<NativeSessionFile, "path" | "providerSessionId" | "storage">,
 ): string =>
   file.storage === "sqlite" ? `${file.path}#${file.providerSessionId}` : file.path;
-
-
-export type NativeTranscript = {
-  createdAt: number;
-  blocks: Block[];
-  model?: string;
-  modelSettings: Record<string, string>;
-  title?: string;
-};
 
 type RecordValue = Record<string, unknown>;
 export const nativeRecord = (value: unknown): RecordValue =>
@@ -108,73 +75,6 @@ export function nativeText(content: unknown): string {
     })
     .join("\n");
 }
-
-export type NativeSessionHolder = {
-  pid: number;
-  command: string;
-  provider: NativeSessionProvider;
-};
-
-export type NativeSessionAccess = {
-  state: "idle" | "external" | "unknown" | "checking";
-  reason: string;
-  checkedAt: number;
-  path: string;
-  /** External CLI process that keeps the session read-only (Linux only). */
-  holder?: NativeSessionHolder;
-};
-
-
-/** Host-managed native history synchronization, separate from ownership access. */
-export type NativeSyncStatus = {
-  state: "ready" | "syncing" | "error";
-  /** Machine code: `sourceMissing`, `sourceAmbiguous`, `readFailed`, `parseFailed`, `persistFailed`, `bindingMismatch`, `diverged`, `deferred`. */
-  reason?: string;
-  /** Diagnostic text; provider and system values are preserved. */
-  message?: string;
-  /** Last source revision applied to history. */
-  revision?: string;
-  /** The source changed while the session was busy; settlement reads it. */
-  pendingChange?: boolean;
-  /** A Host turn wrote records that settlement has not absorbed yet. */
-  hostTurn?: boolean;
-  /** Next automatic retry while in `error`. */
-  retryAt?: number;
-  checkedAt: number;
-};
-
-/**
- * Identity recorded for a Host conversation started by OmniCode itself. It is
- * not a `nativeSession` link: warm process reuse continues until the source
- * changes outside a Host turn, which promotes the session to a managed link.
- */
-export type NativeBinding = {
-  provider: NativeSessionProvider;
-  providerSessionId: string;
-  accountId?: string;
-  dataDir?: string;
-  path?: string;
-  storage?: "jsonl" | "sqlite";
-  /** Source revision after the last Host turn. */
-  hostRevision?: string;
-};
-
-/** One Host-resolved native source offered for import. */
-export type NativeSourceSummary = NativeSessionFile & {
-  sourceId: string;
-  boundSessionId?: string;
-};
-
-export type NativeSourceListing = {
-  sources: NativeSourceSummary[];
-  warnings: string[];
-  scannedAt: number;
-  autoSync: boolean;
-  /** Conversations the Host manages. */
-  managedCount: number;
-  /** Last successful synchronization of any managed conversation. */
-  lastSyncedAt?: number;
-};
 
 const BLOCKING_SYNC = new Set(["diverged", "sourceMissing", "sourceAmbiguous", "bindingMismatch"]);
 

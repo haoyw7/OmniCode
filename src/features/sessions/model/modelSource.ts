@@ -1,0 +1,40 @@
+import { createContext, useContext } from "react";
+import { findModel, isCatalogLoading, modelsFor, resolveModel } from "../../../integrations/harness/core/modelCatalog";
+import type { AgentModel, HarnessId } from "../../../contracts/session";
+
+import { hasProbedHarnessAvailability, isHarnessAvailable, probeHarnessAvailability } from "../../providers/model/harnessAvailability";
+import { refreshHostModelCatalogs } from "../../providers/model/hostModelCatalog";
+
+/** Where the model picker gets its models and provider availability. The
+ * default is this computer's catalog; a remote session supplies its host's. */
+export type ModelSource = {
+  /** Present only for non-local sources; local sources use global stores. */
+  id?: string;
+  modelsFor(harness: HarnessId): AgentModel[];
+  resolve(harness: HarnessId, id?: string): AgentModel;
+  find(id: string): AgentModel | undefined;
+  available(harness: HarnessId): boolean;
+  probed(): boolean;
+  /** True while this source is still reading the harness's model list. */
+  loading?(harness: HarnessId): boolean;
+  /** Refresh availability and catalogs, when the source supports it. */
+  refresh(harnesses: HarnessId[]): void;
+};
+
+export const LOCAL_MODEL_SOURCE: ModelSource = {
+  modelsFor,
+  resolve: resolveModel,
+  find: findModel,
+  available: isHarnessAvailable,
+  probed: hasProbedHarnessAvailability,
+  loading: isCatalogLoading,
+  refresh: (harnesses) => {
+    void probeHarnessAvailability();
+    void refreshHostModelCatalogs(harnesses);
+  },
+};
+
+export const ModelSourceContext =
+  createContext<ModelSource>(LOCAL_MODEL_SOURCE);
+
+export const useModelSource = () => useContext(ModelSourceContext);

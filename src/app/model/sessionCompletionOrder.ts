@@ -1,6 +1,6 @@
 import { pathKey } from "../../shared/lib/paths";
-import { isChatFolder } from "../../features/projects/model/chatFolderPath";
-import { sessionRecencyAt } from "../../features/sessions/model/sessionActivity";
+import { isChatFolder } from "../../domain/chatFolderPath";
+import { sessionRecencyAt } from "../../domain/sessionActivity";
 import { loadSessionSidebarOrder, saveSessionSidebarOrder } from "../../features/sessions/model/sessionFolders";
 import { loadSidebarChatOrder, saveSidebarChatOrder } from "./sidebarChatOrder";
 import { loadSidebarPinnedOrder, saveSidebarPinnedOrder } from "./sidebarPinnedOrder";

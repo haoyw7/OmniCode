@@ -4,8 +4,8 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { workflowRequest } from "../../model/workflowClient";
 import { watchHostSession } from "../../model/workflowSessionWatch";
-import type { CommandAck, WorkflowRunArtifact } from "../_shims/protocol.js";
-import { BACKGROUND_WORK_CANCEL_REJECTED_FAULT_PREFIX, WORKFLOW_RUN_RESUME_REJECTED_FAULT_PREFIX } from "../_shims/protocol.js";
+import { type CommandAck, type WorkflowRunArtifact, BACKGROUND_WORK_CANCEL_REJECTED_FAULT_PREFIX, WORKFLOW_RUN_RESUME_REJECTED_FAULT_PREFIX } from "../_shims/protocol.js";
+
 import type { CommandEnvelope } from "./commandFactory.js";
 import type { PaneWorkspaceScope } from "./paneLayoutStore.js";
 import type { SessionLease } from "./sessionDataLayer.js";

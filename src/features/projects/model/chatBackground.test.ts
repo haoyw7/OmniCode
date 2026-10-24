@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  clearProjectChatBackground,
-  pickAndSaveChatBackground,
-  pickAndSaveProjectChatBackground,
-  projectChatBackgroundSrc,
-  removeChatBackground,
-} from "./chatBackground";
+import { clearProjectChatBackground, pickAndSaveChatBackground, pickAndSaveProjectChatBackground, projectChatBackgroundSrc, removeChatBackground } from "./chatBackground";
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),

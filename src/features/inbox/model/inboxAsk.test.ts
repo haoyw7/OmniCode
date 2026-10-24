@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { inboxAskKey, inboxAskPrompt } from "./inboxAsk";
-import type { InboxItem } from "./githubTasks";
+import { inboxAskKey } from "./inboxAsk";
+import type { InboxItem } from "../../../contracts/session";
 import { newSession } from "../../sessions/model/session";
 import { shouldPersistSession, upsertSession } from "../../sessions/data/sessionStore";
-import {
-  collectWorkspaceSnapshot,
-  hydrateWorkspaceSnapshot,
-  parseWorkspaceSnapshot,
-} from "../../workspace/model/workspaceSnapshot";
+import { collectWorkspaceSnapshot, hydrateWorkspaceSnapshot, parseWorkspaceSnapshot } from "../../workspace/model/workspaceSnapshot";
 import { newTab } from "../../workspace/model/layout";
 import { inFlightRefs, workspaceFromResumed } from "../../sessions/model/inFlight";
 
@@ -56,20 +52,6 @@ describe("inbox sessions", () => {
     } as InboxItem;
     expect(inboxAskKey(item)).toBe("azuredevops:platform/web:pr:12");
     expect(() => inboxAskKey({ ...item, url: "not a url" })).not.toThrow();
-  });
-
-  it("adds the remote-access instruction on follow-ups and leaves ordinary sessions alone", () => {
-    expect(inboxAskPrompt(undefined, "Change the file")).toBe(
-      "Change the file",
-    );
-    for (const text of ["Explain the PR", "What about tests?"]) {
-      const prompt = inboxAskPrompt(context, text);
-      expect(prompt).toContain(context.url);
-      expect(prompt).toContain("Do not clone repositories");
-      expect(prompt).toContain("fetch PR branches into local git");
-      expect(prompt).toContain("gh pr diff");
-      expect(prompt.endsWith(text)).toBe(true);
-    }
   });
 
   it("never persists Ask, including real messages and a running provider thread", async () => {

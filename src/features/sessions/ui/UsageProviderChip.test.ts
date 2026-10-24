@@ -5,17 +5,23 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import type { ProviderRateLimits } from "../../providers/model/rateLimits";
+import type { ProviderRateLimits } from "../../../contracts/session";
 import { projectKey } from "../../../shared/lib/paths";
 import { saveTabGroupMascot } from "../../workspace/model/tabGroups";
 import { needsProviderLogin, UsageProviderChip } from "./UsageProviderChip";
-import {
-  saveMaskEmails,
-  saveShowRemainingUsage,
-} from "../../settings/model/displayPrefs";
+import { saveMaskEmails, saveShowRemainingUsage } from "../../settings/model/displayPrefs";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => null),
+}));
+const hostIdentity = vi.hoisted(() => ({ machine: undefined as string | undefined, accounts: {} as unknown }));
+vi.mock("../../connections/model/remoteProjects", async (original) => ({
+  ...(await original<object>()),
+  sharedHostMachineId: () => hostIdentity.machine,
+}));
+vi.mock("../../connections/model/connections", async (original) => ({
+  ...(await original<object>()),
+  remoteRequest: vi.fn(async (_machine: string, method: string) => method === "providerAccounts.list" ? hostIdentity.accounts : null),
 }));
 
 const now = Date.parse("2026-09-16T12:00:00Z");
@@ -69,6 +75,8 @@ let root: Root;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.mocked(invoke).mockReset().mockResolvedValue(null);
+  hostIdentity.machine = undefined;
+  hostIdentity.accounts = {};
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -385,11 +393,8 @@ describe("UsageProviderChip", () => {
 
   it("applies email masking live, reveals independently of account switching and hides on reopening", async () => {
     saveMaskEmails(false);
-    vi.mocked(invoke).mockImplementation(async (command) =>
-      command === "provider_account_identity"
-        ? { email: "user@example.com", plan: "Pro" }
-        : null,
-    );
+    hostIdentity.machine = "host";
+    hostIdentity.accounts = { codex: [{ id: "default", label: "Main", identity: { email: "user@example.com", plan: "Pro" } }] };
     const onSelectAccount = vi.fn();
     await act(async () =>
       root.render(
@@ -405,7 +410,6 @@ describe("UsageProviderChip", () => {
               isDefault: true,
             },
           ],
-          identitySource: "local",
           onSelectAccount,
           onAddAccount: vi.fn(),
         }),

@@ -1,25 +1,12 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
-import {
-  useState,
-  type ComponentType,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useState, type ComponentType, type FormEvent, type ReactNode } from "react";
 import { prettyCwd } from "../../../shared/lib/paths";
-import { type Worktree } from "../model/worktrees";
+import type { Worktree } from "../../../contracts/worktree";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
-import {
-  CircleAlert,
-  CloudUpload,
-  FileDiff,
-  Folder,
-  GitBranch,
-  Loader,
-  MessageSquare,
-} from "../../../shared/ui/icons";
+import { CircleAlert, CloudUpload, FileDiff, Folder, GitBranch, Loader, MessageSquare } from "../../../shared/ui/icons";
 
 const TONE = {
   danger: "text-red-400",

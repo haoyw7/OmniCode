@@ -10,15 +10,7 @@ vi.mock("cuelume", () => ({
   setVolume: (...args: unknown[]) => setVolume(...args),
 }));
 
-import {
-  announceUpdateAvailable,
-  loadSoundsEnabled,
-  playCue,
-  resetSoundCues,
-  saveSoundsEnabled,
-  SOUNDS_DEFAULT,
-  SOUNDS_VOLUME,
-} from "./sounds";
+import { announceUpdateAvailable, loadSoundsEnabled, playCue, resetSoundCues, saveSoundsEnabled, SOUNDS_DEFAULT, SOUNDS_VOLUME } from "./sounds";
 import { updateNotificationPreferences } from "../../notifications/model/notificationPreferences";
 
 const KEY = "omnicode.sounds";

@@ -1,12 +1,6 @@
 import { expect, it } from "vitest";
 import { fullBotPolicy, type BotWatch } from "./botView";
-import {
-  hasBotPermission,
-  followSession,
-  followSessionProjects,
-  isWatchedSession,
-  removeWatchedSession,
-} from "./botSessions";
+import { hasBotPermission, followSession, followSessionProjects, isWatchedSession, removeWatchedSession } from "./botSessions";
 
 const watch: BotWatch = {
   id: "activity",

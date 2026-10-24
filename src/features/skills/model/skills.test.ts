@@ -11,22 +11,7 @@ vi.mock("../../../integrations/harness/core/registry", () => ({
 }));
 
 import { describe, expect, it, vi } from "vitest";
-import {
-  BUILTIN_CREATE_SKILL,
-  applySkillsToTurn,
-  blankSkillMarkdown,
-  injectSkillPrompt,
-  isValidSkillName,
-  isNativeCommandPrompt,
-  mergeCatalog,
-  rankSkills,
-  replaceSlashToken,
-  skillNamesInText,
-  skillTextParts,
-  slashTokenAt,
-  slugSkillName,
-  type Skill,
-} from "./skills";
+import { BUILTIN_CREATE_SKILL, applySkillsToTurn, blankSkillMarkdown, injectSkillPrompt, isValidSkillName, isNativeCommandPrompt, mergeCatalog, rankSkills, replaceSlashToken, skillNamesInText, skillTextParts, slashTokenAt, slugSkillName, type Skill } from "./skills";
 
 describe("native command composer behavior", () => {
   it("filters commands by alias and inserts their invocation with arguments intact", () => {

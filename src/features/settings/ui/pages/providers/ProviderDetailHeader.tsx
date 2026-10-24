@@ -3,27 +3,15 @@ import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { ArrowDownCircle, Loader, Trash2 } from "../../../../../shared/ui/icons";
-import { HarnessIcon } from "../../../../sessions/ui/HarnessIcon";
-import {
-  hasHarnessUpdate,
-  type HarnessVersionInfo,
-} from "../../../../providers/model/harnessUpdates";
-import {
-  harnessInstallUnavailableReason,
-  useHarnessInstall,
-} from "../../../../providers/model/harnessInstall";
-import {
-  runHarnessUpdate,
-  type HarnessUpdateState,
-} from "../../../../providers/ui/HarnessUpdateNotice";
-import { harnessUnavailableHint } from "../../../../../integrations/harness/core/availability";
-import { inspectHarnessBinary } from "../../../../../integrations/harness/core/child";
-import {
-  loadProviderBinaryPath,
-  providerBinaryPathChangePending,
-  saveProviderBinaryPath,
-} from "../../../../providers/model/providerBinaryPaths";
-import { HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
+import { HarnessIcon } from "../../../../../shared/ui/HarnessIcon";
+import { hasHarnessUpdate, type HarnessVersionInfo } from "../../../../providers/model/harnessUpdates";
+import { harnessInstallUnavailableReason, useHarnessInstall } from "../../../../providers/model/harnessInstall";
+import { runHarnessUpdate, type HarnessUpdateState } from "../../../../providers/model/runHarnessUpdate";
+import { harnessUnavailableHint } from "../../../../providers/model/harnessAvailability";
+import { inspectHarnessBinary } from "../../../../providers/model/hostProviderRuntime";
+import { loadProviderBinaryPath, providerBinaryPathChangePending, saveProviderBinaryPath } from "../../../../providers/model/providerBinaryPaths";
+import { HARNESS_TITLE } from "../../../../../contracts/session";
+import { type HarnessId } from "../../../../../contracts/session";
 import { ProviderCliPanel, type ProviderCliPanelKind } from "./ProviderCliPanel";
 import { binaryInspectionError } from "./providerBinaryValidation";
 

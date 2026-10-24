@@ -1,28 +1,11 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react";
-import {
-  CheckCircle,
-  CircleX,
-  LoaderCircle,
-  MessageSquare,
-  X,
-} from "../../../shared/ui/icons";
-import {
-  formatRelativeTime,
-  githubReviewStateLabel,
-  inboxPersonAvatarUrl,
-  type InboxProvider,
-} from "../model/githubTasks";
+import { openExternalUrl } from "../../../platform/tauri/browser";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { CheckCircle, CircleX, LoaderCircle, MessageSquare, X } from "../../../shared/ui/icons";
+import { formatRelativeTime, githubReviewStateLabel, inboxPersonAvatarUrl } from "../model/githubTasks";
+import { type InboxProvider } from "../../../contracts/session";
 import { MOD } from "../../../platform/tauri/platform";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
 
 export type InboxReplyTarget = {
   id: string;
@@ -426,7 +409,7 @@ function InboxComment({
                           ? uiT("Open on ADO")
                           : uiT("Open on GitHub")
                 }
-                onClick={() => void openUrl(comment.url)}
+                onClick={() => void openExternalUrl(comment.url)}
                 className="hover:text-content"
               >
                 {part}
@@ -808,7 +791,7 @@ function InboxCommitStop({
           type="button"
           title={commit.url ? uiT("Open commit") : commit.messageHeadline}
           disabled={!commit.url}
-          onClick={() => void openUrl(commit.url)}
+          onClick={() => void openExternalUrl(commit.url)}
           className="group flex h-5 w-full min-w-0 items-center gap-3 text-left text-[12px]"
         >
           <span className="min-w-0 flex-1 truncate text-content/70 group-hover:text-content group-disabled:text-content/70">

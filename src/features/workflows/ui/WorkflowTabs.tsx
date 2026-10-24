@@ -3,7 +3,7 @@
 // subagent's read-only transcript.
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { FilePaneTab, WorkflowAgentTabSource, WorkflowRunTabSource, WorkflowArtifactTabSource } from "../../workspace/model/layout";
-import { AgentTranscript } from "../../sessions/ui/AgentTranscript";
+import { useWorkflowPresentation } from "./workflowPresentation";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { WorkflowRunSidePane } from "../kit/app-shell/WorkflowRunSidePane";
 import { TooltipProvider } from "../../../shared/ui/primitives/Tooltip";
@@ -129,6 +129,7 @@ export function WorkflowAgentTabView({ file, visible, onOpenFile }: {
   visible: boolean;
   onOpenFile?: (path: string) => void;
 }) {
+  const presentation = useWorkflowPresentation();
   const { t } = useTranslation();
   const [lease, setLease] = useState<HostSessionLease | null>(null);
   const sessionId = file.workflowAgent.sessionId;
@@ -148,19 +149,10 @@ export function WorkflowAgentTabView({ file, visible, onOpenFile }: {
         {t("Workflow subagent · read-only")}
       </div>
       <div className="min-h-0 flex-1">
-        <AgentTranscript
-          blocks={session.blocks}
-          busy={!!session.busy}
-          visible={visible}
-          cwd={session.cwd}
-          harness={session.harness}
-          model={session.model}
-          modelSettings={session.modelSettings}
-          executionState={session.executionState}
-          managed
-          onApproval={(requestId, decision) => void lease?.approve(requestId, decision).catch(() => undefined)}
-          {...(onOpenFile ? { onOpenFile } : {})}
-        />
+        {presentation?.renderTranscript({ session, visible,
+          onApproval: (requestId, decision) => void lease?.approve(requestId, decision).catch(() => undefined),
+          ...(onOpenFile ? { onOpenFile } : {}),
+        })}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import type { AgentModel } from "./models";
-import { HARNESS_TITLE } from "./session";
+import type { AgentModel } from "../../../contracts/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
 
 type ModelGroup = {
   id: string;

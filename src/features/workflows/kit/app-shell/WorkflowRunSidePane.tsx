@@ -1,8 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import type {
-  WorkflowRunArtifactSummary,
-  WorkflowRunPendingQuestion,
-} from "../_shims/protocol.js";
+import type { WorkflowRunArtifactSummary, WorkflowRunPendingQuestion } from "../_shims/protocol.js";
 import type { WorkflowCausalityGraphData } from "../components/workflow-graph/types.js";
 import { buildWorkflowTimeline } from "../components/workflow-timeline/timeline-model.js";
 import { workflowSubagentModelCardLabel } from "../components/workflow-timeline/subagent-model-label.js";
@@ -10,44 +7,19 @@ import { workflowSummaryParts } from "../components/workflow-timeline/timeline-s
 import { WorkflowRunArtifactsSection } from "./WorkflowRunArtifactsSection.js";
 import { WorkflowRunPhaseList } from "./WorkflowRunPhaseList.js";
 import { WorkflowRunProvenance } from "./WorkflowRunProvenance.js";
-import {
-  WorkflowRunResultSections,
-  WorkflowRunStatusHeader,
-} from "./WorkflowRunSidePaneSections.js";
-import {
-  useWorkflowRunPaneSettings,
-  workflowRunTabScope,
-} from "./useWorkflowRunPaneSettings.js";
+import { WorkflowRunResultSections, WorkflowRunStatusHeader } from "./WorkflowRunSidePaneSections.js";
+import { useWorkflowRunPaneSettings, workflowRunTabScope } from "./useWorkflowRunPaneSettings.js";
 import { WorkflowRunSettingsPopover } from "../components/workflow-timeline/WorkflowRunSettingsPopover.js";
 import { resolveWorkflowLaunchProvenance } from "./workflowRunLaunchProvenance.js";
-import {
-  describeWorkflowRunActionRejection,
-  workflowRunActionRejectionMessageId,
-  type WorkflowRunAction,
-  type WorkflowRunActionRejection,
-} from "./workflowRunActionRejection.js";
+import { describeWorkflowRunActionRejection, workflowRunActionRejectionMessageId, type WorkflowRunAction, type WorkflowRunActionRejection } from "./workflowRunActionRejection.js";
 import { useWorkflowIntl } from "../i18n/IntlProvider.js";
-import type {
-  OpenScopedWorkflowActorSessionSideTabRequest,
-  OpenScopedWorkflowArtifactSideTabRequest,
-  OpenScopedWorkflowRunSideTabRequest,
-  OpenScopedWorkflowWorkspaceSideTabRequest,
-  WorkflowRunSidePaneTab,
-} from "../lib/workspaceSidePane.js";
+import type { OpenScopedWorkflowActorSessionSideTabRequest, OpenScopedWorkflowArtifactSideTabRequest, OpenScopedWorkflowRunSideTabRequest, OpenScopedWorkflowWorkspaceSideTabRequest, WorkflowRunSidePaneTab } from "../lib/workspaceSidePane.js";
 import { logger } from "../logger.js";
-import {
-  isWorkflowRunCancellable,
-  isWorkflowRunResumable,
-  workflowRunResultView,
-  type WorkflowActorInstance,
-} from "./workflowRunPanel.js";
+import { isWorkflowRunCancellable, isWorkflowRunResumable, workflowRunResultView, type WorkflowActorInstance } from "./workflowRunPanel.js";
 import { useDynamicWorkflowAvailability } from "../hooks/useDynamicWorkflowAvailability.js";
 import { useWorkflowRunArtifacts } from "../hooks/useWorkflowRunArtifacts.js";
 import { createCommandEnvelope } from "../v4/commandFactory.js";
-import {
-  buildWorkflowGraphByToolCallId,
-  resolveWorkflowRunGraph,
-} from "../v4/workflowRunCardJoin.js";
+import { buildWorkflowGraphByToolCallId, resolveWorkflowRunGraph } from "../v4/workflowRunCardJoin.js";
 import type { PaneWorkspaceScope } from "../v4/paneLayoutStore.js";
 import type { SessionLease } from "../v4/sessionDataLayer.js";
 import { useConversationProjection } from "../v4/useConversationProjection.js";

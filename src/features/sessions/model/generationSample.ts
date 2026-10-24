@@ -1,12 +1,6 @@
-/** Provider output tokens over matching request or observed streaming durations. */
-export type GenerationSample = {
-  outputTokens: number;
-  durationMs: number;
-  tokenSource: "provider" | "text-estimate";
-  estimator?: "text-heuristic-v1";
-  method: "request-total" | "stream-observed";
-  scope: "turn";
-};
+import type { GenerationSample } from "../../../contracts/session";
+
+
 
 export function sanitizeGenerationSample(
   value: unknown,

@@ -2,8 +2,8 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import { AgentMarkdown } from "./AgentMarkdown";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
 import { mobileTranscriptPlatform } from "../../../mobile/transcriptPlatform";
 
 const invoke = vi.hoisted(() => vi.fn());

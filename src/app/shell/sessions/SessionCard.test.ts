@@ -2,10 +2,7 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  WorkflowActivityContext,
-  type WorkflowActivityEntry,
-} from "../../../features/workflows/model/workflowActivity";
+import { WorkflowActivityContext, type WorkflowActivityEntry } from "../../../features/workflows/model/workflowActivity";
 import { SessionCard } from "./SessionCard";
 import { SessionPageCountsContext, sessionPageCounts } from "./sessionPageCounts";
 import { newTab, type LayoutNode } from "../../../features/workspace/model/layout";

@@ -17,7 +17,8 @@
 
 import { machineFs, machinePath as path } from "../../machine-io";
 import { SAVED_WORKFLOW_FILE_EXTENSION, WORKFLOW_DRAFTS_DIR } from "../../../src/integrations/workflow/savedWorkflow.js";
-import { createWorkflowPhaseNames, type CreateWorkflowCausalityGraph } from "../../../src/integrations/workflow/createWorkflow.js";
+import { createWorkflowPhaseNames } from "../../../src/integrations/workflow/createWorkflow.js";
+import { type CreateWorkflowCausalityGraph } from "../../../src/contracts/workflow";
 
 /**
  * 草稿文件名**不**保留的字符：任何 Unicode 字母 / 数字与 `_ . -` 之外的一切。

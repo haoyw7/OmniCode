@@ -1,11 +1,8 @@
 import { expect, it, vi } from "vitest";
-import {
-  REMOTE_PROVIDERS,
-  isRemoteProvider,
-  requireHostDescriptor,
-} from "../src/features/connections/model/protocol";
+import { REMOTE_PROVIDERS, isRemoteProvider } from "../src/contracts/provider";
+import { requireHostDescriptor } from "../src/client/hostProtocol";
 import { hostProviders } from "./providers";
-import { HARNESSES } from "../src/features/sessions/model/session";
+import { HARNESSES } from "../src/contracts/session";
 import { runPiTextPrompt, runOmpTextPrompt } from "../src/integrations/harness/providers/pi/piText";
 
 vi.mock("../src/integrations/harness/providers/pi/piText", () => ({

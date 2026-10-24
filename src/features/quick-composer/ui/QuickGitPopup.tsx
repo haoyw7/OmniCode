@@ -1,27 +1,16 @@
-import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import type { ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { readNativeGitPopup, finishNativeGitPopup, fitNativeGitPopup, subscribeNativeGitPopup } from "../../../platform/tauri/gitPopup";
+import type { GitBranches } from "../../../platform/tauri/fs";
 import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
-import { BranchPicker } from "../../source-control/ui/BranchPicker";
-import {
-  seedProjectBranches,
-  useProjectBranchesState,
-} from "../../source-control/hooks/useProjectBranches";
-import { WorkspacePicker } from "../../workspace/ui/WorkspacePicker";
-import {
-  QUICK_GIT_REQUEST,
-  type QuickGitRequest,
-} from "../model/quickGitPopup";
+import { seedProjectBranches } from "../../source-control/hooks/useProjectBranches";
+import { type QuickGitRequest } from "../model/quickGitPopup";
 import type { QuickWorkspace } from "../model/quickWorkspace";
 
-export function QuickGitPopup({ onShown }: { onShown: () => void }) {
+export function QuickGitPopup({ onShown, renderPicker }: {
+  onShown: () => void;
+  renderPicker: (props: { request: QuickGitRequest; onFinish: (id: string, choice?: QuickWorkspace) => Promise<void> }) => ReactNode;
+}) {
   const [request, setRequest] = useState<QuickGitRequest | null>(null);
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
@@ -41,7 +30,7 @@ export function QuickGitPopup({ onShown }: { onShown: () => void }) {
       if (errorRef.current) errorRef.current.textContent = "";
       setRequest(request);
     };
-    void listen<QuickGitRequest>(QUICK_GIT_REQUEST, ({ payload }) => {
+    void subscribeNativeGitPopup<QuickWorkspace, GitBranches>( ({ payload }) => {
       received = true;
       accept(payload);
     })
@@ -51,7 +40,7 @@ export function QuickGitPopup({ onShown }: { onShown: () => void }) {
           return;
         }
         stop = unlisten;
-        const initial = await invoke<QuickGitRequest | null>("quick_git_state");
+        const initial = await readNativeGitPopup<QuickWorkspace, GitBranches>();
         if (!received) accept(initial);
       })
       .catch(() => undefined);
@@ -68,7 +57,7 @@ export function QuickGitPopup({ onShown }: { onShown: () => void }) {
       const height = Math.ceil(host.getBoundingClientRect().height);
       if (height <= 2 || height === lastHeight) return;
       lastHeight = height;
-      void invoke("quick_git_fit", { id: request.id, height }).catch(
+      void fitNativeGitPopup(request.id, height).catch(
         () => undefined,
       );
     };
@@ -91,7 +80,7 @@ export function QuickGitPopup({ onShown }: { onShown: () => void }) {
 
   const finish = useCallback(async (id: string, choice?: QuickWorkspace) => {
     try {
-      await invoke("quick_git_complete", {
+      await finishNativeGitPopup({
         id,
         choice: choice ?? null,
         restoreFocus: true,
@@ -113,101 +102,11 @@ export function QuickGitPopup({ onShown }: { onShown: () => void }) {
         className="empty:hidden px-3 py-2 text-xs text-red-400"
       />
       {host && request ? (
-        <NativePopupHost value={host}>
-          <QuickGitPopupPicker
-            key={request.id}
-            request={request}
-            onFinish={finish}
-          />
+        <NativePopupHost key={request.id} value={host}>
+          {renderPicker({ request, onFinish: finish })}
         </NativePopupHost>
       ) : null}
     </div>
   );
 }
 
-export function QuickGitPopupPicker({
-  request,
-  onFinish,
-}: {
-  request: QuickGitRequest;
-  onFinish: (id: string, choice?: QuickWorkspace) => Promise<void>;
-}) {
-  const { t: uiT } = useTranslation();
-  const finished = useRef(false);
-  const { choice } = request;
-  const cwd = choice.tree?.path ?? choice.cwd ?? "";
-  const { branches, settled } = useProjectBranchesState(cwd, true);
-  const finish = useCallback(
-    (value?: QuickWorkspace) => {
-      if (finished.current) return;
-      finished.current = true;
-      void onFinish(request.id, value).catch(() => {
-        finished.current = false;
-      });
-    },
-    [onFinish, request.id],
-  );
-  const waiting = !settled || !branches;
-  useEffect(() => {
-    if (!waiting) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      finish();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [waiting, finish]);
-
-  // This window has its own cold branch cache. Mounting an initially open
-  // WorkspacePicker before it is enabled closes it permanently on first use.
-  // Give the native window real content to measure while Git is loading.
-  if (waiting)
-    return (
-      <div className="flex items-center gap-3 px-3 py-3 text-xs">
-        <p role="status" className="flex-1 text-content/60">
-          {settled
-            ? uiT("Couldn’t load branches for this project.")
-            : uiT("Loading branches…")}
-        </p>
-        <button
-          type="button"
-          className="rounded-md px-2 py-1 text-content/70 hover:bg-content/6"
-          onClick={() => finish()}
-        >
-          {uiT("Close")}
-        </button>
-      </div>
-    );
-  if (request.kind === "branch")
-    return (
-      <BranchPicker
-        cwd={cwd}
-        worktree={!!choice.tree && !choice.tree.isMain}
-        initialOpen
-        onDismiss={() => finish()}
-        onChange={() => finish(choice)}
-        onClose={() => finish()}
-      />
-    );
-  return (
-    <WorkspacePicker
-      cwd={cwd}
-      mode={choice.mode}
-      base={choice.base}
-      initialPicker={request.kind}
-      onModeChange={(mode, base) =>
-        finish({
-          cwd: choice.cwd,
-          mode,
-          ...(mode === "worktree" ? { base } : {}),
-        })
-      }
-      onBaseChange={(base) => finish({ ...choice, base })}
-      onSelectWorktree={async (tree) =>
-        finish({ cwd: choice.cwd, mode: "current", tree })
-      }
-      onClose={() => finish()}
-    />
-  );
-}

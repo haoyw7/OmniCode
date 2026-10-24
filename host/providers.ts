@@ -1,7 +1,8 @@
+import type { NativeCommandProvider } from "../src/contracts/nativeCommands";
 import type { HarnessBotCapabilities } from "../src/integrations/harness/core/botContext";
 import { providerBotCapabilities } from "../src/integrations/harness/providers/botCapabilities";
 import type { NativeTitleInput } from "../src/integrations/harness/core/titleCoordinator";
-import { readFamilySessionTitle } from "../src/integrations/harness/providers/pi/piFamily";
+import { readFamilySessionTitle, ompCommandProvider, respondQuestion as respondPiQuestion } from "../src/integrations/harness/providers/pi/piFamily";
 import * as codex from "../src/integrations/harness/providers/codex/codex";
 import * as claude from "../src/integrations/harness/providers/claude/claude";
 import * as cursor from "../src/integrations/harness/providers/cursor/cursor";
@@ -14,17 +15,13 @@ import * as hermes from "../src/integrations/harness/providers/hermes/hermes";
 import * as deepseek from "../src/integrations/harness/providers/deepseek/deepseek";
 import * as antigravity from "../src/integrations/harness/providers/antigravity/antigravity";
 import { workbuddyAdapter } from "../src/integrations/harness/providers/workbuddy/workbuddyAdapter";
-import type {
-  SendTurnInput,
-  CompactContextInput,
-  SteerTurnInput,
-  ApprovalDecision,
-} from "../src/integrations/harness/core/types";
-import type { UserQuestionReply } from "../src/features/sessions/model/userQuestion";
-import type { RemoteProvider } from "../src/features/connections/model/protocol";
-import type { NativeCommandProvider } from "../src/integrations/harness/core/nativeCommands";
+import type { SendTurnInput, CompactContextInput, SteerTurnInput, RewindLastTurnInput, RewindLastTurnResult } from "../src/integrations/harness/core/types";
+import type { ApprovalDecision } from "../src/contracts/harness";
+import type { UserQuestionReply } from "../src/contracts/session";
+import type { RemoteProvider } from "../src/contracts/provider";
+
 import { discoverPiCommands } from "../src/integrations/harness/providers/pi/piSkills";
-import { ompCommandProvider } from "../src/integrations/harness/providers/pi/piFamily";
+
 import { generateCodexBranchName } from "../src/integrations/harness/providers/codex/codexGit";
 import { generateClaudeBranchName } from "../src/integrations/harness/providers/claude/claudeGit";
 import { generateCursorBranchName } from "../src/integrations/harness/providers/cursor/cursorGit";
@@ -36,7 +33,7 @@ import {
   PI_FLAVOR,
   OMP_FLAVOR,
 } from "../src/integrations/harness/providers/pi/piFlavor";
-import { respondQuestion as respondPiQuestion } from "../src/integrations/harness/providers/pi/piFamily";
+
 
 export interface HostProvider {
   botCapabilities?: HarnessBotCapabilities;
@@ -47,6 +44,9 @@ export interface HostProvider {
   idleTimeoutMs?: number;
   readSessionTitle?(input: NativeTitleInput): Promise<string | null>;
   send(input: SendTurnInput): Promise<void>;
+  rewindLastTurn?(input: RewindLastTurnInput): Promise<RewindLastTurnResult>;
+  /** Verified conversation-only rewind; must never restore workspace files. */
+  checkpointRewind?(input: RewindLastTurnInput): Promise<RewindLastTurnResult>;
   compact?(input: CompactContextInput): Promise<void>;
   steer?(input: SteerTurnInput): Promise<void>;
   cancel(id: string): Promise<void>;
@@ -57,7 +57,7 @@ export interface HostProvider {
     providerId: string,
     cwd: string,
     providerAccountId?: string,
-    nativeSession?: import("../src/features/sessions/model/session").NativeSessionLink,
+    nativeSession?: import("../src/contracts/session").NativeSessionLink,
   ): void;
   approve(id: string, request: number, decision: ApprovalDecision): void;
   answer(id: string, request: number, reply: UserQuestionReply): void;
@@ -87,6 +87,8 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     botCapabilities: providerBotCapabilities("codex"),
     readSessionTitle: codex.readCodexSessionTitle,
     send: codex.sendCodexTurn,
+    rewindLastTurn: codex.rewindCodexLastTurn,
+    checkpointRewind: codex.rewindCodexLastTurn,
     steer: codex.steerCodexTurn,
     compact: codex.compactCodexContext,
     cancel: codex.cancelCodexTurn,
@@ -139,6 +141,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     generateBranchName: generateOpenCodeBranchName,
     readSessionTitle: opencode.readOpenCodeSessionTitle,
     send: opencode.sendOpenCodeTurn,
+    rewindLastTurn: opencode.rewindOpenCodeLastTurn,
     steer: opencode.steerOpenCodeTurn,
     compact: opencode.compactOpenCodeContext,
     cancel: opencode.cancelOpenCodeTurn,
@@ -153,6 +156,8 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     commands: { rawSlashCommands: true, discover: ({ cwd }) => discoverPiCommands(cwd) },
     readSessionTitle: (input) => readFamilySessionTitle(PI_FLAVOR, input),
     send: pi.sendPiTurn,
+    rewindLastTurn: pi.rewindPiLastTurn,
+    checkpointRewind: pi.rewindPiLastTurn,
     steer: pi.steerPiTurn,
     compact: pi.compactPiContext,
     cancel: pi.cancelPiTurn,
@@ -168,6 +173,8 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     commands: ompCommandProvider,
     readSessionTitle: (input) => readFamilySessionTitle(OMP_FLAVOR, input),
     send: omp.sendOmpTurn,
+    rewindLastTurn: omp.rewindOmpLastTurn,
+    checkpointRewind: omp.rewindOmpLastTurn,
     steer: omp.steerOmpTurn,
     compact: omp.compactOmpContext,
     cancel: omp.cancelOmpTurn,

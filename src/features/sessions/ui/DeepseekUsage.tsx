@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { useDeepseekAccount } from "../../providers/model/deepseekAccount";
-import type { ProviderRateLimits } from "../../providers/model/rateLimits";
+import type { ProviderRateLimits } from "../../../contracts/session";
 import { useMaskEmails } from "../../settings/model/displayPrefs";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { RefreshCw } from "../../../shared/ui/icons";
 import { PrivateEmail } from "../../../shared/ui/PrivateEmail";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 
 /** DSH's signed-in account wallets; API routes never mount this component. */
 export function DeepseekUsage({ project, render }: {

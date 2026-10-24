@@ -1,7 +1,7 @@
-import type { Attachment, Block, QueueReturnPosition } from "../../sessions/model/session";
-import { insertQueuedMessage } from "../../sessions/model/messageQueue";
+import type { Attachment, Block, QueueReturnPosition } from "../../../contracts/session";
+import { insertQueuedMessage } from "../../../domain/messageQueue";
 import type { FollowUpBehavior } from "../../settings/model/settings";
-import type { HostSession } from "./protocol";
+import type { HostSession } from "../../../contracts/protocol";
 
 /** A message on its way to the Host, shown before the Host has recorded it. */
 export type OutgoingMessage = {

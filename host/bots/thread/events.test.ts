@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { eventBriefs, importantSources } from "./events";
-import type { HostSession } from "../../../src/features/connections/model/protocol";
+import type { HostSession } from "../../../src/contracts/protocol";
 const value = (): HostSession => ({
   projectId: "p",
   revision: 1,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { sessionMessageActivityAt, sessionRecencyAt } from "./sessionActivity";
-import type { Block } from "./session";
+import { sessionMessageActivityAt, sessionRecencyAt } from "../../../domain/sessionActivity";
+import type { Block } from "../../../contracts/session";
 
 const blocks: Block[] = [
   { id: "u", role: "user", text: "Start", startedAt: 100, durationMs: 900 },

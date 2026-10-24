@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext } from "react";
 import type { SubagentTabSource } from "../../workspace/model/layout";
-import { sessionExecutionCwd, type Block, type Session } from "../model/session";
+import { sessionExecutionCwd } from "../../../domain/session";
+import { type Block, type Session } from "../../../contracts/session";
 import { subagentName } from "../model/transcriptActivity";
 
 export type OpenSubagentRequest = SubagentTabSource & {

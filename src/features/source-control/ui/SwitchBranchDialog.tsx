@@ -3,7 +3,7 @@ import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
 import { Loader, WandSparkles, X } from "../../../shared/ui/icons";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { generateCommitMessage } from "../../../integrations/harness";
+import { generateCommitMessage } from "../../providers/model/providerAuxiliary";
 import { LAYER } from "../../../shared/lib/layers";
 import { MOD } from "../../../platform/tauri/platform";
 

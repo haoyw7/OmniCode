@@ -1,9 +1,5 @@
-export const NOTE_IMAGE_PREFIX = "/note-assets/";
+import type { NoteImageAsset } from "../../contracts/notes";
 
-export type NoteImageAsset = {
-  name: string;
-  markdownPath: string;
-};
 
 export type MarkdownInsertion = {
   value: string;
@@ -56,6 +52,4 @@ export function insertNoteImagesMarkdown(
   };
 }
 
-export function isNoteImagePath(value: string): boolean {
-  return value.startsWith(NOTE_IMAGE_PREFIX);
-}
+

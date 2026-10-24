@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  blocksFromLines,
-  buildUnifiedFile,
-  expandFold,
-  foldUnifiedLines,
-  revealedFold,
-  type UnifiedLine,
-} from "./unifiedDiff";
+import { blocksFromLines, buildUnifiedFile, expandFold, foldUnifiedLines, revealedFold, type UnifiedLine } from "./unifiedDiff";
 
 describe("buildUnifiedFile", () => {
   it("marks a replacement as a delete then an add", () => {

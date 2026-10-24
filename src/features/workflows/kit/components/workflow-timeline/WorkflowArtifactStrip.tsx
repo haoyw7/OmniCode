@@ -3,11 +3,7 @@ import { ARTIFACT_CHIP_MAX_VISIBLE } from "../../app-shell/workflow-artifacts/ar
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import { PILL_STAGGER_MS } from "./WorkflowTimeline.js";
-import {
-  WorkflowArtifactPill,
-  type ArtifactPillData,
-  type ArtifactPillSize,
-} from "./WorkflowArtifactPill.js";
+import { WorkflowArtifactPill, type ArtifactPillData, type ArtifactPillSize } from "./WorkflowArtifactPill.js";
 
 /**
  * 产物条：一行产物药丸，至多三枚，

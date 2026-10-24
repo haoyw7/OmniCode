@@ -1,35 +1,15 @@
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
-import { } from "../../../shared/ui/icons";
+
 import { Fragment, useEffect, useMemo, useState } from "react";
 import type { OmniCodePermissionRequest } from "./_shims/shared.js";
 import { CodeBlock } from "./components/ai-elements/code-block.js";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "../../../shared/ui/primitives/Collapsible.js";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../shared/ui/primitives/Collapsible.js";
 import { buildWorkflowTimeline } from "./components/workflow-timeline/timeline-model.js";
 import { workflowPhasesDetail } from "./components/workflow-timeline/timeline-summary.js";
 import { WorkflowCardHeader } from "./components/workflow-timeline/WorkflowCardChrome.js";
 import { WorkflowTimeline } from "./components/workflow-timeline/WorkflowTimeline.js";
-import {
-  formatWorkflowArgValue,
-  isWorkflowAmendPredecessorLive,
-  readWorkflowAmendPredecessor,
-  readWorkflowAmendScriptInherited,
-  readWorkflowAmendTarget,
-  readWorkflowMaxConcurrency,
-  readWorkflowName,
-  readWorkflowSaved,
-  readWorkflowScript,
-  readWorkflowSubagentModel,
-  type WorkflowSavedSource,
-} from "./ToolCallBlocks/renderers/createWorkflowInput.js";
-import {
-  describeWorkflowSubagentModel,
-  workflowSubagentModelText,
-  workflowSubagentModelTooltip,
-} from "./components/workflow-timeline/subagent-model-label.js";
+import { formatWorkflowArgValue, isWorkflowAmendPredecessorLive, readWorkflowAmendPredecessor, readWorkflowAmendScriptInherited, readWorkflowAmendTarget, readWorkflowMaxConcurrency, readWorkflowName, readWorkflowSaved, readWorkflowScript, readWorkflowSubagentModel, type WorkflowSavedSource } from "./ToolCallBlocks/renderers/createWorkflowInput.js";
+import { describeWorkflowSubagentModel, workflowSubagentModelText, workflowSubagentModelTooltip } from "./components/workflow-timeline/subagent-model-label.js";
 import { useWorkflowIntl } from "./i18n/IntlProvider.js";
 import { isAmendWorkflowToolCall } from "./lib/workflowToolNames.js";
 

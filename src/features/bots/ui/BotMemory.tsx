@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ComponentType,
-  type KeyboardEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentType, type KeyboardEvent } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronRight } from "../../../shared/ui/icons";
 import { withStatusToast } from "../../../shared/ui/StatusToast";

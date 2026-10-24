@@ -2,9 +2,10 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { invalidateNotes, loadNotes, NOTES_CHANGED_EVENT, type Note, type NoteUpsert } from "../notes";
-import { NotesView } from "./NotesView";
-import { savePinnedProjects, saveProjectRailOrder } from "../../projects/model/recents";
+import { invalidateNotes, loadNotes, NOTES_CHANGED_EVENT } from "../notes";
+import { type Note, type NoteUpsert } from "../../../contracts/session";
+import { NotesPage as NotesView } from "../../../app/ui/NotesPage";
+
 import { finishMotion, startMotionClock, stopMotionClock } from "../../../../tests/helpers/sharedMotionClock";
 
 const invoke = vi.hoisted(() => vi.fn());
@@ -19,10 +20,7 @@ vi.mock("../../connections/model/connections", async (original) => ({
   ...(await original<typeof import("../../connections/model/connections")>()),
   remoteRequest: (...args: unknown[]) => assistant.rpc(...args),
 }));
-vi.mock("@tauri-apps/api/core", async (original) => ({
-  ...(await original<typeof import("@tauri-apps/api/core")>()),
-  invoke,
-}));
+vi.mock("../notesHost", () => ({ notesHostRequest: invoke }));
 vi.mock("@tauri-apps/api/webview", () => ({
   getCurrentWebview: () => ({ onDragDropEvent: async () => () => {} }),
 }));
@@ -69,8 +67,8 @@ beforeEach(() => {
   invoke.mockReset();
   invoke.mockImplementation(
     async (command: string, args?: { note: NoteUpsert }) => {
-      if (command === "notes_list") return [{ ...stored }];
-      if (command === "notes_upsert") {
+      if (command === "notes.list") return [{ ...stored }];
+      if (command === "notes.upsert") {
         stored = { ...stored, ...args!.note, updatedAt: stored.updatedAt + 1 };
         return { ...stored };
       }
@@ -148,7 +146,7 @@ it("lists assistant topics by Host and reads their Markdown without saving ordin
   act(() => typeInto(filter, "Plan"));
   await act(async () => container.querySelector<HTMLButtonElement>('button[title="Plan · Edefyn"]')!.click());
   expect(container.querySelector<HTMLInputElement>('[aria-label="Note title"]')?.value).toBe("Plan");
-  expect(invoke.mock.calls.some((call) => call[0] === "notes_upsert")).toBe(false);
+  expect(invoke.mock.calls.some((call) => call[0] === "notes.upsert")).toBe(false);
 });
 
 it("keeps available Host topics visible and ignores a late reply after switching topics", async () => {
@@ -231,7 +229,7 @@ it.each(["refocus", "unmount"] as const)(
     const saving = new Promise<void>((resolve) => { finishSave = resolve; });
     let holdSave = true;
     invoke.mockImplementation(async (command, args) => {
-      if (command === "notes_upsert" && holdSave) {
+      if (command === "notes.upsert" && holdSave) {
         holdSave = false;
         await saving;
       }
@@ -243,7 +241,7 @@ it.each(["refocus", "unmount"] as const)(
       typeInto(title, "");
     });
     await act(async () => vi.advanceTimersByTime(400));
-    expect(invoke).toHaveBeenCalledWith("notes_upsert", {
+    expect(invoke).toHaveBeenCalledWith("notes.upsert", {
       note: expect.objectContaining({ body: "Updated body." }),
     });
     if (action === "refocus") {
@@ -397,7 +395,7 @@ it("serializes title edits behind an in-flight project change", async () => {
   let inFlight = 0;
   let maximumInFlight = 0;
   invoke.mockImplementation(async (command, args) => {
-    if (command !== "notes_upsert") return save(command, args);
+    if (command !== "notes.upsert") return save(command, args);
     inFlight += 1;
     maximumInFlight = Math.max(maximumInFlight, inFlight);
     if (args.note.title === "Plan") await moving;
@@ -439,8 +437,8 @@ it("keeps newer edits after reopening a note during a project move", async () =>
   let inFlight = 0;
   let maximumInFlight = 0;
   invoke.mockImplementation(async (command, args) => {
-    if (command === "notes_list") return [{ ...stored }, { ...second }];
-    if (command !== "notes_upsert") return save(command, args);
+    if (command === "notes.list") return [{ ...stored }, { ...second }];
+    if (command !== "notes.upsert") return save(command, args);
     inFlight += 1;
     maximumInFlight = Math.max(maximumInFlight, inFlight);
     if (args.note.sourceCwd === "/work/portognjeeen") await moving;
@@ -497,9 +495,9 @@ it.each(["title", "body", "tags"] as const)(
       finishMove = resolve;
     });
     invoke.mockImplementation(async (command, args) => {
-      if (command === "notes_list") return [{ ...stored }, { ...second }];
+      if (command === "notes.list") return [{ ...stored }, { ...second }];
       if (
-        command === "notes_upsert" &&
+        command === "notes.upsert" &&
         args.note.sourceCwd === "/work/portognjeeen"
       )
         await moving;
@@ -631,9 +629,9 @@ it("keeps a completed move after returning to the note while it saves", async ()
     finishMove = resolve;
   });
   invoke.mockImplementation(async (command, args) => {
-    if (command === "notes_list") return [{ ...stored }, { ...second }];
+    if (command === "notes.list") return [{ ...stored }, { ...second }];
     if (
-      command === "notes_upsert" &&
+      command === "notes.upsert" &&
       args.note.sourceCwd === "/work/portognjeeen"
     )
       await moving;
@@ -684,7 +682,7 @@ it("clears a failed move error when the saved project is selected again", async 
 // slug, replaced once by a finalizing save with a real title.
 const upserts = () =>
   invoke.mock.calls
-    .filter(([command]) => command === "notes_upsert")
+    .filter(([command]) => command === "notes.upsert")
     .map(([, args]) => (args as { note: NoteUpsert }).note);
 
 function useSlugBackend(upsertHook?: (note: NoteUpsert) => Promise<void>) {
@@ -692,8 +690,8 @@ function useSlugBackend(upsertHook?: (note: NoteUpsert) => Promise<void>) {
     title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
   const placeholder = (title: string) => /^untitled(-\d+)?$/.test(slugify(title));
   invoke.mockImplementation(async (command: string, args?: { note: NoteUpsert }) => {
-    if (command === "notes_list") return [{ ...stored }];
-    if (command !== "notes_upsert") throw new Error(`Unexpected command: ${command}`);
+    if (command === "notes.list") return [{ ...stored }];
+    if (command !== "notes.upsert") throw new Error(`Unexpected command: ${command}`);
     const { finalizeSlug, ...note } = args!.note;
     await upsertHook?.(args!.note);
     const title = note.title.trim() || "Untitled";
@@ -781,7 +779,7 @@ it("keeps the finalization request when it fails so Retry still finalizes", asyn
 
   const ok = invoke.getMockImplementation()!;
   invoke.mockImplementation(async (command: string, args?: { note: NoteUpsert }) => {
-    if (command === "notes_upsert") throw new Error("Disk full");
+    if (command === "notes.upsert") throw new Error("Disk full");
     return ok(command, args);
   });
   await act(async () => title.blur());

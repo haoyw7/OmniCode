@@ -6,39 +6,20 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { ask } from "@tauri-apps/plugin-dialog";
-import { SettingsView, preloadSettingsSection } from "./SettingsView";
+import { SettingsView, preloadSettingsSection } from "../../../app/ui/SettingsView";
 import * as scrollWithinModule from "../../../shared/lib/scrollWithin";
-import { loginHarness } from "../../../integrations/harness/core/auth";
-import * as harnessRegistry from "../../../integrations/harness/core/registry";
-import {
-  defaultSessionChoice,
-  loadDefaultModels,
-  loadUseLastSelection,
-  resetHarnessModelOverlays,
-  saveLastModelChoice,
-  saveLastSelectedModel,
-  setHarnessModels,
-} from "../../sessions/model/models";
-import { AppViewDialog } from "../../workspace/ui/AppViewDialog";
-import {
-  refreshUiLanguage,
-  UI_LANGUAGE_KEY,
-} from "../../../shared/i18n/language";
+import { loginHarness } from "../../providers/model/providerLogin";
+import * as harnessRegistry from "../../providers/model/hostModelCatalog";
+import { defaultSessionChoice, loadDefaultModels, loadUseLastSelection, saveLastModelChoice, saveLastSelectedModel } from "../../sessions/model/models";
+import { resetHarnessModelOverlays, setHarnessModels } from "../../../integrations/harness/core/modelCatalog";
+import { AppViewDialog } from "../../../shared/ui/messaging/AppViewDialog";
+import { refreshUiLanguage, UI_LANGUAGE_KEY } from "../../../shared/i18n/language";
 import { rememberNotificationProjects } from "../../notifications/model/notificationProjects";
-import {
-  SETTINGS_INDEX,
-  SETTINGS_SECTIONS,
-  type SettingsSectionId,
-} from "../model/settings";
-import {
-  providerAccounts,
-  saveProviderAccount,
-} from "../../providers/model/providerAccounts";
-import {
-  clearCachedRateLimits,
-  setCachedRateLimits,
-} from "../../providers/model/rateLimitsCache";
-import { HARNESSES, HARNESS_TITLE, type HarnessId } from "../../sessions/model/session";
+import { SETTINGS_INDEX, SETTINGS_SECTIONS, type SettingsSectionId } from "../model/settings";
+import { providerAccounts, saveProviderAccount } from "../../providers/model/providerAccounts";
+import { clearCachedRateLimits, setCachedRateLimits } from "../../providers/model/rateLimitsCache";
+import { HARNESSES, type HarnessId } from "../../../contracts/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
 import { saveMaskEmails, saveShowRemainingUsage } from "../model/displayPrefs";
 
 const windowMock = vi.hoisted(() => ({
@@ -63,9 +44,9 @@ vi.mock("../../../platform/tauri/platform", async (original) => ({
   IS_LINUX: true,
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
-vi.mock("../../../integrations/harness/core/auth", () => ({ loginHarness: vi.fn(async () => {}) }));
+vi.mock("../../providers/model/providerLogin", () => ({ loginHarness: vi.fn(async () => {}) }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: vi.fn(async () => true) }));
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("../../providers/model/harnessAvailability", () => ({
   isHarnessAvailable: (id: string) => id === "claude" || id === "cursor",
   hasProbedHarnessAvailability: () => true,
   getHarnessAvailabilitySnapshot: () => 0,
@@ -242,7 +223,7 @@ describe("settings pages", () => {
         { id: `${harness}:cached`, harness, name: "Cached model" },
       ]);
       const refresh = vi
-        .spyOn(harnessRegistry, "refreshHarnessCatalogs")
+        .spyOn(harnessRegistry, "refreshHostModelCatalogs")
         .mockImplementation(async (ids) => {
           if ([...ids].includes(harness)) {
             setHarnessModels(harness, [

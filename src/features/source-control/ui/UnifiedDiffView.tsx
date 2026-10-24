@@ -1,54 +1,22 @@
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  FoldVertical,
-  MessageSquarePlus,
-  Undo2,
-  UnfoldVertical,
-} from "../../../shared/ui/icons";
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import { Check, ChevronDown, ChevronRight, ChevronUp, FoldVertical, MessageSquarePlus, Undo2, UnfoldVertical } from "../../../shared/ui/icons";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useColorScheme } from "../../../shared/hooks/useColorScheme";
 import { useCodeThemePalette, useCodeThemes } from "../../settings/model/codeAppearance";
 import { formatInteger } from "../../../shared/lib/numbers";
 import type { ColorScheme } from "../../settings/model/appearance";
 import { basename } from "../../../platform/tauri/fs";
-import {
-  highlightDiffFile,
-  type SyntaxToken,
-} from "../../connections/files/editor/syntaxTokens";
-import { DiffCommentComposer } from "./DiffCommentComposer";
-import {
-  expandFold,
-  type FoldReveal,
-  type UnifiedBlock,
-  type UnifiedLine,
-} from "../model/unifiedDiff";
-import {
-  flattenVisibleRows,
-  layoutRows,
-  UNIFIED_FOLD_PX,
-  UNIFIED_HUNK_PX,
-  UNIFIED_LINE_PX,
-  UNIFIED_OVERSCAN_PX,
-  windowRows,
-  type DiffViewRow,
-  type RowWindow,
-} from "../model/unifiedDiffWindow";
+import { highlightDiffFile, type SyntaxToken } from "../../connections/files/editor/syntaxTokens";
+import { DiffCommentComposer } from "../../../shared/ui/DiffCommentComposer";
+import { diffCommentLocation, formatDiffComment } from "../model/diffComment";
+import { requestAddToChat } from "../../sessions/model/quoteDraft";
+import { MOD } from "../../../platform/tauri/platform";
+import { expandFold, type FoldReveal, type UnifiedBlock, type UnifiedLine } from "../model/unifiedDiff";
+import { flattenVisibleRows, layoutRows, UNIFIED_FOLD_PX, UNIFIED_HUNK_PX, UNIFIED_LINE_PX, UNIFIED_OVERSCAN_PX, windowRows, type DiffViewRow, type RowWindow } from "../model/unifiedDiffWindow";
 
 export type UnifiedDiffFileModel = {
   id: string;
@@ -804,8 +772,10 @@ function VirtualRows({
       </div>
       <PresenceBoundary propagate>{commentTarget ? (
         <DiffCommentComposer
-          path={filePath}
-          target={commentTarget}
+          location={diffCommentLocation({ path: filePath, line: commentTarget.line })}
+          anchor={commentTarget.anchor}
+          modifierLabel={MOD}
+          onSubmit={(comment) => requestAddToChat(formatDiffComment({ path: filePath, line: commentTarget.line }, comment), "plain")}
           onDismiss={() => setCommentTarget(null)}
         />
       ) : null}</PresenceBoundary>

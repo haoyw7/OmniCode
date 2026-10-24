@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { newSession, removeSessionDraft } from "./session";
+import { newSession } from "./session";
+import { removeSessionDraft } from "../../../domain/session";
 
 describe("removeSessionDraft", () => {
   it("removes a follow-up draft without changing earlier conversation history", () => {

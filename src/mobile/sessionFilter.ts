@@ -1,4 +1,4 @@
-import type { HostSessionSummary } from "../features/connections/model/protocol";
+import type { HostSessionSummary } from "../contracts/protocol";
 import { archivedMobileSessions, sortMobileSessions } from "./sessionList";
 
 export type MobileSessionFilter =

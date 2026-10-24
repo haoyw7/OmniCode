@@ -1,12 +1,8 @@
 import { sharedHostMachineId } from "../../connections/model/remoteProjects";
 import { remoteRequest } from "../../connections/model/connections";
-import type { HostProviderAccounts } from "../../connections/model/protocol";
-import { invoke } from "@tauri-apps/api/core";
+import type { HostProviderAccounts } from "../../../contracts/protocol";
 import { useEffect, useState } from "react";
-import type {
-  ProviderAccount,
-  ProviderAccountProvider,
-} from "./providerAccounts";
+import type { ProviderAccount, ProviderAccountProvider } from "./providerAccounts";
 
 /** Identity the provider CLI cached on disk after sign-in. */
 export type ProviderAccountIdentity = {
@@ -19,28 +15,18 @@ export type ProviderAccountIdentity = {
 export async function readProviderAccountIdentity(
   provider: ProviderAccountProvider,
   accountId: string,
-  source: "host" | "local" = "host",
 ): Promise<ProviderAccountIdentity | null> {
   try {
-    const machineId = source === "host" ? sharedHostMachineId() : undefined;
-    if (machineId) {
-      const accounts = await hostIdentities(machineId);
-      if (sharedHostMachineId() !== machineId) return null;
-      // Missing metadata/old Hosts must not fall back to the desktop process.
-      return (
-        accounts[provider]?.find((account) => account.id === accountId)
-          ?.identity ?? null
-      );
-    }
-    if (source === "host") return null;
-    if (provider === "workbuddy") {
-      const accounts = await invoke<import("../../../integrations/harness/core/catalog").WorkBuddyAccount[]>("harness_workbuddy_accounts");
-      return accounts.find(account => account.id === accountId)?.identity ?? null;
-    }
-    return (await invoke<ProviderAccountIdentity | null>(
-      "provider_account_identity",
-      { provider, accountId },
-    )) ?? null;
+    // Credentials, native ones included, are read only by the Host running the CLI.
+    const machineId = sharedHostMachineId();
+    if (!machineId) return null;
+    const accounts = await hostIdentities(machineId);
+    if (sharedHostMachineId() !== machineId) return null;
+    // Missing metadata/old Hosts must not fall back to the desktop process.
+    return (
+      accounts[provider]?.find((account) => account.id === accountId)
+        ?.identity ?? null
+    );
   } catch {
     return null;
   }
@@ -83,7 +69,6 @@ export function identityKey(account: ProviderAccount): string {
 export function useProviderAccountIdentities(
   accounts: ProviderAccount[],
   refreshKey?: unknown,
-  source: "host" | "local" = "host",
 ): Record<string, ProviderAccountIdentity | null> {
   const [identities, setIdentities] = useState<
     Record<string, ProviderAccountIdentity | null>
@@ -97,7 +82,7 @@ export function useProviderAccountIdentities(
         async (account) =>
           [
             identityKey(account),
-            await readProviderAccountIdentity(account.provider, account.id, source),
+            await readProviderAccountIdentity(account.provider, account.id),
           ] as const,
       ),
     ).then((entries) => {
@@ -107,7 +92,7 @@ export function useProviderAccountIdentities(
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, refreshKey, source]);
+  }, [key, refreshKey]);
 
   return identities;
 }

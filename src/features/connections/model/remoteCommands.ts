@@ -1,7 +1,10 @@
-import { setRemoteCommandRunner } from "../../../platform/tauri/fs";
+import { setRemoteCommandRunner, setLocalWorkspaceRunner } from "../../../platform/tauri/fs";
 import { remoteMachineFor, remoteRequest } from "./connections";
-import { parseRemotePath, remotePath } from "./remoteProjects";
+import { parseRemotePath, remotePath, sharedHostEnvironment, sharedProjects, ensureSharedProject, remoteProjectFor, rememberProjectMove } from "./remoteProjects";
 import { wslPath, type WslProjectMachine } from "../../../shared/lib/wslPaths";
+import { knownProjectPaths, isLocalProject } from "../../projects/model/recents";
+import { HOST_ATTACHMENT_READ_CAPABILITY } from "../../../contracts/hostMedia";
+import { loadRemoteHostDescriptor } from "./remoteHostMetadata";
 
 /** File commands a connected machine answers exactly as this computer does
  * (see host/workspace-commands.ts). */
@@ -10,6 +13,9 @@ const HOST_COMMANDS = new Set([
   "list_project_files",
   "read_text_file",
   "read_binary_file",
+  "inspect_paths",
+  "read_file_base64",
+  "read_attachment_chunk",
   "read_file_preview",
   "write_text_file",
   "stat_files",
@@ -60,11 +66,17 @@ const PATH_RESULTS = new Set([
   "move_path",
 ]);
 /** Commands whose result entries carry a `path`. */
-const ENTRY_RESULTS = new Set(["list_dir", "list_project_files", "stat_files"]);
+const ENTRY_RESULTS = new Set(["list_dir", "list_project_files", "stat_files", "inspect_paths"]);
 
 const UNAVAILABLE = "This isn’t available for projects on another machine yet.";
 const OUTDATED =
   "Update OmniCode Host in Connections settings to use this project’s files.";
+
+async function requireAttachmentReads(command: string, machineId: string, environmentId: string) {
+  if (!["inspect_paths", "read_file_base64"].includes(command)) return;
+  const descriptor = await loadRemoteHostDescriptor(machineId, environmentId);
+  if (!descriptor.capabilities.includes(HOST_ATTACHMENT_READ_CAPABILITY)) throw new Error(OUTDATED);
+}
 
 /** Runs a file command whose paths are `remote://` paths on the machine that
  * owns them, translating paths both ways so callers never see host paths. */
@@ -103,6 +115,7 @@ export async function runRemoteCommand(
   const machine = await remoteMachineFor(env);
   if (!machine)
     throw new Error("This project’s machine isn’t connected on this computer.");
+  await requireAttachmentReads(command, machine.id, env);
   let result: unknown;
   try {
     result = await remoteRequest(machine.id, "workspace.run", {
@@ -116,6 +129,10 @@ export async function runRemoteCommand(
     throw reason;
   }
   const fromHost = (path: string) => executionMachine ? wslPath(executionMachine.distribution, path) : remotePath(env, path);
+  if (command === "rename_path" && typeof args.path === "string" && typeof result === "string") {
+    const previous = remoteProjectFor(args.path);
+    if (previous?.projectId) rememberProjectMove(previous, { id: previous.projectId, cwd: result, name: result.split(/[\\/]/).at(-1) ?? result, machine: previous.machine });
+  }
   if (PATH_RESULTS.has(command) && typeof result === "string")
     return fromHost(result);
   if (ENTRY_RESULTS.has(command) && Array.isArray(result))
@@ -182,3 +199,72 @@ export async function runRemoteCommand(
 }
 
 setRemoteCommandRunner(runRemoteCommand);
+
+const localPathKey = (path: string) => {
+  const normalized = path.replace(/\\/g, "/").replace(/\/+$/, "");
+  return /^[A-Za-z]:\//.test(normalized) || normalized.startsWith("//") ? normalized.toLowerCase() : normalized;
+};
+const localWorktrees = new Set<string>();
+
+export function ownsLocalWorkspaceCommand(command: string, args: Record<string, unknown>): boolean {
+  if (!HOST_COMMANDS.has(command)) return false;
+  // Commands with a working directory are always project operations. Pure file
+  // operations are owned only inside registered projects and their worktrees.
+  const cwd = args.cwd ?? (args.options as { cwd?: unknown } | undefined)?.cwd;
+  if (typeof cwd === "string" && cwd !== "~" && cwd.length > 0) return true;
+  const roots = [...sharedProjects().filter(p => !p.machine).map(p => localPathKey(p.cwd)),
+    ...knownProjectPaths().filter(isLocalProject).map(localPathKey), ...localWorktrees];
+  return PATH_ARGS.some(key => {
+    const values = Array.isArray(args[key]) ? args[key] as unknown[] : [args[key]];
+    return values.some(value => typeof value === "string" && roots.some(root => {
+      const path = localPathKey(value);
+      return path === root || path.startsWith(`${root}/`);
+    }));
+  });
+}
+
+export async function runLocalWorkspaceCommand(command: string, args: Record<string, unknown>): Promise<unknown> {
+  if (!HOST_COMMANDS.has(command)) throw new Error(UNAVAILABLE);
+  const environment = sharedHostEnvironment();
+  if (!environment) throw new Error("Shared conversation service is not connected");
+  const machine = await remoteMachineFor(environment);
+  if (!machine) throw new Error("Shared conversation service is not connected");
+  await requireAttachmentReads(command, machine.id, environment);
+  const cwd = args.cwd ?? (args.options as { cwd?: unknown } | undefined)?.cwd;
+  if (typeof cwd === "string" && !localWorktrees.has(localPathKey(cwd))) await ensureSharedProject(cwd);
+  if (typeof cwd !== "string") {
+    const candidates = knownProjectPaths().filter(isLocalProject);
+    const roots = new Set<string>();
+    for (const key of PATH_ARGS) for (const value of Array.isArray(args[key]) ? args[key] as unknown[] : [args[key]]) {
+      if (typeof value !== "string") continue;
+      const path = localPathKey(value);
+      const root = candidates.filter(candidate => path === localPathKey(candidate) || path.startsWith(`${localPathKey(candidate)}/`))
+        .sort((a, b) => b.length - a.length)[0];
+      if (root) roots.add(root);
+    }
+    for (const root of roots) await ensureSharedProject(root);
+  }
+  const result = await remoteRequest<unknown>(machine.id, "workspace.run", { command, args });
+  if (command === "rename_path" && typeof args.path === "string" && typeof result === "string") {
+    const previous = sharedProjects().find(project => localPathKey(project.cwd) === localPathKey(String(args.path)));
+    if (previous) rememberProjectMove(previous, { id: previous.projectId, cwd: result, name: result.split(/[\\/]/).at(-1) ?? result });
+  }
+  if (command === "git_worktrees" && result && typeof result === "object") {
+    for (const tree of (result as { worktrees: { path: string }[] }).worktrees) localWorktrees.add(localPathKey(tree.path));
+  }
+  // Host Git DTOs use relative paths; native desktop DTOs carry absolute paths.
+  const absolute = (path: string) => `${String(cwd).replace(/[\\/]+$/, "")}/${path}`;
+  if (result && typeof result === "object" && ["git_diff_index", "git_diff_files", "git_base_diff_files"].includes(command)) {
+    const index = result as { files: { path: string }[] };
+    return { ...index, files: index.files.map(file => ({ ...file, path: absolute(file.path) })) };
+  }
+  if (result && typeof result === "object" && ["git_file_diff", "git_commit_file_diff", "git_base_file_diff"].includes(command)) {
+    const diff = result as { path: string };
+    return { ...diff, path: absolute(diff.path) };
+  }
+  if (command === "git_commit_files" && Array.isArray(result))
+    return result.map(file => ({ ...file, path: absolute(file.path) }));
+  return result;
+}
+
+setLocalWorkspaceRunner(runLocalWorkspaceCommand, ownsLocalWorkspaceCommand);

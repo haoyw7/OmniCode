@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { HarnessEvent, SendTurnInput } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput } from "../../core/types";
 
 const io = vi.hoisted(() => ({
   watchers: new Map<string, { line: (line: string) => void; exit: (code: number) => void }>(),

@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Copy } from "../../../../../shared/ui/icons";
-import {
-  TID_WORKFLOW_DETAIL,
-  TID_WORKFLOW_DETAIL_SCRIPT,
-  TID_WORKFLOW_DETAIL_TAB,
-  type OmniCodeSavedWorkflowEntry,
-  type OmniCodeSavedWorkflowMeta,
-  type OmniCodeSavedWorkflowRun,
-  type OmniCodeWorkflowsGetResult,
-} from "../../_shims/shared.js";
+import { TID_WORKFLOW_DETAIL, TID_WORKFLOW_DETAIL_SCRIPT, TID_WORKFLOW_DETAIL_TAB, type OmniCodeSavedWorkflowEntry, type OmniCodeSavedWorkflowMeta, type OmniCodeSavedWorkflowRun, type OmniCodeWorkflowsGetResult } from "../../_shims/shared.js";
 import type { IOmniCodeAgentService, OmniCodeAgentSavedWorkflowTarget } from "../../_shims/services.js";
 import { CodeBlock } from "../../components/ai-elements/code-block.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
@@ -20,22 +12,11 @@ import { logger } from "../../logger.js";
 import { SettingsBreadcrumbReporter } from "../SettingsHeaderBreadcrumb.js";
 import { SETTINGS_FRAME_CONTENT_CLASSNAME } from "../SettingsPageParts.js";
 import { SettingsSegmentedTabs } from "../SettingsSegmentedTabs.js";
-import {
-  argsDeclarationToRows,
-  rowsToArgsDeclaration,
-  type SavedWorkflowArgRow,
-  type SavedWorkflowArgRowError,
-} from "./savedWorkflowArgsForm.js";
+import { argsDeclarationToRows, rowsToArgsDeclaration, type SavedWorkflowArgRow, type SavedWorkflowArgRowError } from "./savedWorkflowArgsForm.js";
 import { SavedWorkflowArtifactChips } from "./SavedWorkflowArtifactChips.js";
 import { SavedWorkflowDetailHeader } from "./SavedWorkflowDetailHeader.js";
-import {
-  SavedWorkflowMetaForm,
-  type SavedWorkflowMetaDraft,
-} from "./SavedWorkflowMetaForm.js";
-import {
-  SavedWorkflowRunHistory,
-  type SavedWorkflowRunProject,
-} from "./SavedWorkflowRunHistoryPanel.js";
+import { SavedWorkflowMetaForm, type SavedWorkflowMetaDraft } from "./SavedWorkflowMetaForm.js";
+import { SavedWorkflowRunHistory, type SavedWorkflowRunProject } from "./SavedWorkflowRunHistoryPanel.js";
 
 type DetailTab = "definition" | "history";
 

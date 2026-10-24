@@ -3,7 +3,7 @@ import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motion
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { HostDirectory } from "../features/connections/model/protocol";
+import type { HostDirectory } from "../contracts/protocol";
 import { setUiLanguage } from "../shared/i18n/language";
 import { MobileProjectPicker } from "./MobileProjectPicker";
 

@@ -1,12 +1,7 @@
-import { buildOutgoingHandoffPrompt } from "./handoff";
-import {
-  cancelHarnessTurn,
-  respondHarnessApproval,
-  respondHarnessQuestion,
-  sendHarnessTurn,
-} from "../../../integrations/harness/core/registry";
-import { mergeStream } from "../../../integrations/harness/core/streamText";
-import type { HarnessId } from "./session";
+import { buildOutgoingHandoffPrompt } from "../../../domain/handoff";
+import { cancelHarnessTurn, respondHarnessApproval, respondHarnessQuestion, sendHarnessTurn } from "../../../integrations/harness/core/registry";
+import { mergeStream } from "../../../domain/streamText";
+import type { HarnessId } from "../../../contracts/session";
 
 const HANDOFF_TIMEOUT_MS = 45_000;
 

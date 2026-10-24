@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type {
-  WorkflowRunArtifact,
-  WorkflowRunArtifactKind,
-  WorkflowRunArtifactSummary,
-  WorkflowRunArtifactVersion,
-} from "../_shims/protocol.js";
+import type { WorkflowRunArtifact, WorkflowRunArtifactKind, WorkflowRunArtifactSummary, WorkflowRunArtifactVersion } from "../_shims/protocol.js";
 import { orderArtifactsPrimaryFirst } from "../app-shell/workflow-artifacts/artifactPresentation.js";
 import { logger } from "../logger.js";
 import { useV4Conversation } from "../v4/V4ConversationContext.js";

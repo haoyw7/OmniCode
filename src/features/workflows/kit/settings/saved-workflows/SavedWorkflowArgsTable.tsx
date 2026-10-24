@@ -2,20 +2,11 @@ import { Plus, X } from "../../../../../shared/ui/icons";
 import type { OmniCodeSavedWorkflowArgType } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { Input } from "../../../../../shared/ui/forms/Input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../../../shared/ui/forms/Select.js";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../../shared/ui/forms/Select.js";
 import { Switch } from "../../../../../shared/ui/forms/Switch";
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
-import type {
-  SavedWorkflowArgRow,
-  SavedWorkflowArgRowError,
-} from "./savedWorkflowArgsForm.js";
+import type { SavedWorkflowArgRow, SavedWorkflowArgRowError } from "./savedWorkflowArgsForm.js";
 
 const ARG_TYPES: readonly OmniCodeSavedWorkflowArgType[] = ["string", "number", "boolean", "json"];
 

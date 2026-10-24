@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  INBOX_MEDIA_PREFIXES,
-  isInboxMediaUrl,
-  sniffInboxMedia,
-} from "./inboxMedia";
+import { INBOX_MEDIA_PREFIXES, isInboxMediaUrl, sniffInboxMedia } from "./inboxMedia";
 
 describe("isInboxMediaUrl", () => {
   it("allows GitHub and Linear attachment hosts", () => {
@@ -90,7 +86,10 @@ describe("sniffInboxMedia", () => {
 });
 
 const invoke = vi.hoisted(() => vi.fn());
-vi.mock("@tauri-apps/api/core", () => ({ invoke }));
+vi.mock("../../connections/model/hostMedia", () => ({
+  hostMediaScope: () => "local-host",
+  fetchHostInboxMedia: async (url: string) => new Uint8Array(await invoke("media.inbox", { url })),
+}));
 
 describe("fetchInboxMedia", () => {
   const MB = 1024 * 1024;

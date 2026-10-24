@@ -1,74 +1,22 @@
 import { usePreferenceState } from "../../../model/usePreferenceState";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { Loader, RefreshCw } from "../../../../../shared/ui/icons";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { useInlineBreakpoints } from "../../../../../shared/hooks/useInlineBreakpoints";
-import {
-  announceHarnessesRefreshed,
-  hasHarnessUpdate,
-  readHarnessVersions,
-  type HarnessVersionInfo,
-} from "../../../../providers/model/harnessUpdates";
-import {
-  getHarnessAvailabilitySnapshot,
-  isHarnessAvailable,
-  probeHarnessAvailability,
-  subscribeHarnessAvailability,
-} from "../../../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../../../integrations/harness/core/registry";
-import {
-  getModelSnapshot,
-  loadDefaultModels,
-  loadHiddenPickerProviders,
-  loadLastModelChoice,
-  loadLastSelectedModelChoice,
-  loadUseLastSelection,
-  saveDefaultModel,
-  saveLastModelChoice,
-  savePickerProviderVisible,
-  saveUseLastSelection,
-  subscribeModels,
-} from "../../../../sessions/model/models";
+import { announceHarnessesRefreshed, hasHarnessUpdate, readHarnessVersions, type HarnessVersionInfo } from "../../../../providers/model/harnessUpdates";
+import { getHarnessAvailabilitySnapshot, isHarnessAvailable, probeHarnessAvailability, subscribeHarnessAvailability } from "../../../../providers/model/harnessAvailability";
+import { refreshHostModelCatalogs } from "../../../../providers/model/hostModelCatalog";
+import { loadDefaultModels, loadHiddenPickerProviders, loadLastModelChoice, loadLastSelectedModelChoice, loadUseLastSelection, saveDefaultModel, saveLastModelChoice, savePickerProviderVisible, saveUseLastSelection } from "../../../../sessions/model/models";
+import { getModelSnapshot, subscribeModels } from "../../../../../integrations/harness/core/modelCatalog";
 import { pathKey } from "../../../../../shared/lib/paths";
 import { looksLikeProject, type RecentProject } from "../../../../projects/model/recents";
-import { HARNESSES, type HarnessId } from "../../../../sessions/model/session";
-import {
-  loadProjectProviderSettings,
-  projectProvidersRevision,
-  setProjectDefaultModel,
-  setProjectDefaultProvider,
-  setProjectProviderHidden,
-  subscribeProjectProviders,
-} from "../../../../sessions/model/projectProviders";
-import {
-  saveMaskEmails,
-  saveShowRemainingUsage,
-  useMaskEmails,
-  useShowRemainingUsage,
-} from "../../../model/displayPrefs";
-import {
-  effectiveDefaultHarness,
-  providerScopeState,
-  type ProviderDefaultsScope,
-} from "../../../model/providerDefaults";
+import { HARNESSES, type HarnessId } from "../../../../../contracts/session";
+import { loadProjectProviderSettings, projectProvidersRevision, setProjectDefaultModel, setProjectDefaultProvider, setProjectProviderHidden, subscribeProjectProviders } from "../../../../sessions/model/projectProviders";
+import { saveMaskEmails, saveShowRemainingUsage, useMaskEmails, useShowRemainingUsage } from "../../../model/displayPrefs";
+import { effectiveDefaultHarness, providerScopeState, type ProviderDefaultsScope } from "../../../model/providerDefaults";
 import { Group, RevealedSetting, Row, Toggle } from "../../settingsLayout";
-import {
-  GLOBAL_PROVIDER_SCOPE,
-  globalScopeOption,
-  LAST_SELECTION_SCOPE,
-  lastSelectionScopeOption,
-  NewSessionDefaults,
-  projectScopeOption,
-} from "./NewSessionDefaults";
+import { GLOBAL_PROVIDER_SCOPE, globalScopeOption, LAST_SELECTION_SCOPE, lastSelectionScopeOption, NewSessionDefaults, projectScopeOption } from "./NewSessionDefaults";
 import { ProviderDetail } from "./ProviderDetail";
 import { ProviderList, type ProviderListEntry } from "./ProviderList";
 import { hasProviderAccounts, useProviderAccounts } from "./useProviderAccounts";
@@ -199,7 +147,7 @@ export function ProvidersPage({
       setVersions({});
       await Promise.all([
         loadVersions(installed, true),
-        refreshHarnessCatalogs(installed, { force: true }),
+        refreshHostModelCatalogs(installed, { force: true }),
       ]);
       // Other windows' model pickers keep their own stores.
       void announceHarnessesRefreshed([...HARNESSES]).catch(() => undefined);
@@ -224,7 +172,7 @@ export function ProvidersPage({
 
   const onDefault = (harness: HarnessId, model: string) => {
     // Installed providers can be selected before their model catalog is ready.
-    if (isHarnessAvailable(harness)) void refreshHarnessCatalogs([harness]);
+    if (isHarnessAvailable(harness)) void refreshHostModelCatalogs([harness]);
     if (project) {
       setProjectDefaultProvider(project, harness, model);
       return;

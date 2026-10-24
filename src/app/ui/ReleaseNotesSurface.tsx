@@ -1,10 +1,7 @@
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
-import {
-  releaseNotesMarkdown,
-  type ReleaseNotesTabSource,
-} from "../model/releaseNotes";
-import { AgentMarkdown } from "../../features/sessions/ui/AgentMarkdown";
+import { releaseNotesMarkdown, type ReleaseNotesTabSource } from "../../shared/lib/releaseNotes";
+import { AgentMarkdown } from "../../shared/ui/markdown/AgentMarkdown";
 
 export function ReleaseNotesSurface({
   source,

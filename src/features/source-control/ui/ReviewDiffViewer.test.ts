@@ -5,10 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import type { FileDiffProps } from "@pierre/diffs/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import {
-  ADD_TO_CHAT_EVENT,
-  type AddToChatRequest,
-} from "../../sessions/model/quoteDraft";
+import { ADD_TO_CHAT_EVENT, type AddToChatRequest } from "../../sessions/model/quoteDraft";
 import { prepareReviewDiff } from "../model/reviewDiff";
 import { ReviewDiffViewer } from "./ReviewDiffViewer";
 

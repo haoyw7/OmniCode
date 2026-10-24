@@ -1,43 +1,17 @@
 import { MobileListPreview } from "./MobileListPreview";
 import { MobileSpinner } from "./MobileSpinner";
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type RefObject,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
-import {
-  Bot,
-  ChevronDown,
-  Computer,
-  File,
-  Folder,
-  Home,
-  MessageSquarePlus,
-  MoreHorizontal,
-  Pin,
-  Settings,
-  TriangleAlert,
-} from "../shared/ui/icons";
-import type {
-  HostProject,
-  HostSessionSummary,
-} from "../features/connections/model/protocol";
+import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type RefObject, type PointerEvent as ReactPointerEvent } from "react";
+import { Bot, ChevronDown, Computer, File, Folder, Home, MessageSquarePlus, MoreHorizontal, Pin, Settings, TriangleAlert } from "../shared/ui/icons";
+import type { HostProject, HostSessionSummary } from "../contracts/protocol";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../shared/ui/HarnessIcon";
 import { AnimatedCollapse, useCollapseMotion } from "../shared/ui/AnimatedCollapse";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import type { HostConnectionStatus } from "./client";
 import { MobileHostStatus } from "./MobileHostStatus";
 import { lightImpact } from "./haptics";
-import { formatMobileRelativeTime } from "./relativeTime";
+import { formatRelativeTime } from "../shared/lib/relativeTime";
 import { useMobileSessionLists, type MobileProjectHistory } from "./sessionListStore";
 import { sortMobileProjects, sortMobileSessions } from "./sessionList";
 import { useListReorderMotion } from "../shared/hooks/useListReorderMotion";
@@ -45,13 +19,7 @@ import type { MobileSheetPoint } from "./MobileSheet";
 import { animate, motion, useDragControls, useMotionValue, useTransform, type AnimationPlaybackControls } from "motion/react";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
 import { motionGeometry, immediateTransition, springs, panelTransition } from "../shared/motion/tokens";
-import {
-  canPullDrawerFrom,
-  canPushDrawerFrom,
-  clampDrawer,
-  drawerIntent,
-  settleDrawerOpen,
-} from "./drawerGesture";
+import { canPullDrawerFrom, canPushDrawerFrom, clampDrawer, drawerIntent, settleDrawerOpen } from "./drawerGesture";
 
 const MotionChevronDown = motion.create(ChevronDown);
 
@@ -524,7 +492,7 @@ function useMobileDrawerController({
             {!item.needsInput && (item.status === "running" ? (
               <MobileSpinner size={16} className="mobile-spin" aria-label={t("Working")} />
             ) : (
-              <span>{formatMobileRelativeTime(item.updatedAt, now, language)}</span>
+              <span>{formatRelativeTime(item.updatedAt, now, language)}</span>
             ))}
             {unreadIds.has(item.id) ? (
               <span

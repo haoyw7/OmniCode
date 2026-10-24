@@ -1,25 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  applyInboxFilters,
-  DEFAULT_INBOX_FILTERS,
-  filterInboxByKind,
-  filterInboxByLinearProject,
-  filterInboxByProject,
-  filterInboxByProvider,
-  filterInboxByStatus,
-  filterInboxByTime,
-  hasActiveInboxFilters,
-  inboxFetchState,
-  LINEAR_NO_PROJECT,
-  linearProjectOptions,
-  pruneInboxFilters,
-  connectableInboxSources,
-  loadInboxConnections,
-  resolveInboxSource,
-  saveInboxConnections,
-  visibleInboxSources,
-} from "./inboxFilters";
-import type { InboxItem } from "./githubTasks";
+import { applyInboxFilters, DEFAULT_INBOX_FILTERS, filterInboxByKind, filterInboxByLinearProject, filterInboxByProject, filterInboxByProvider, filterInboxByStatus, filterInboxByTime, hasActiveInboxFilters, inboxFetchState, LINEAR_NO_PROJECT, linearProjectOptions, pruneInboxFilters, connectableInboxSources, loadInboxConnections, resolveInboxSource, saveInboxConnections, visibleInboxSources } from "./inboxFilters";
+import type { InboxItem } from "../../../contracts/session";
 
 function item(
   overrides: Partial<InboxItem> & Pick<InboxItem, "number" | "updatedAt">,

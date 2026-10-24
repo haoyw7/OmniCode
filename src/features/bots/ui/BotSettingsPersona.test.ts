@@ -3,7 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { BotSettings } from "./BotSettings";
-import type { HostModelCatalog } from "../../connections/model/protocol";
+import type { HostModelCatalog } from "../../../contracts/protocol";
 import { setUiLanguage } from "../../../shared/i18n/language";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
 

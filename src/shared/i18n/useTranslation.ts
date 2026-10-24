@@ -1,10 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
-import {
-  getUiLanguage,
-  subscribeUiLanguage,
-  translate,
-  type TranslationValues,
-} from "./language";
+import { getUiLanguage, subscribeUiLanguage, translate, type TranslationValues } from "./language";
 
 export function useTranslation() {
   const language = useSyncExternalStore(

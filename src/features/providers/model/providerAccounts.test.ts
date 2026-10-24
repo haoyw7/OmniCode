@@ -1,21 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  DEFAULT_PROVIDER_ACCOUNT_ID,
-  newProviderAccount,
-  providerAccountLabel,
-  providerAccountExists,
-  providerAccounts,
-  removeProviderAccount,
-  renameProviderAccount,
-  saveProviderAccount,
-  selectedProviderAccountId,
-  selectProviderAccount,
-  rememberSharedProviderDefaults,
-  requestedProviderAccountId,
-  restoreProviderAccounts,
-  workBuddyAccountIdForModel,
-} from "./providerAccounts";
+import { DEFAULT_PROVIDER_ACCOUNT_ID } from "../../../domain/providerAccount";
+import { newProviderAccount, providerAccountLabel, providerAccountExists, providerAccounts, removeProviderAccount, renameProviderAccount, saveProviderAccount, selectedProviderAccountId, selectProviderAccount, rememberSharedProviderDefaults, requestedProviderAccountId, restoreProviderAccounts, workBuddyAccountIdForModel } from "./providerAccounts";
 
 beforeEach(() => {
   localStorage.clear();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 import { resolveToolRenderer, toolBodyText } from "./toolRenderer";
 
 function tool(text: string, patch: NonNullable<Block["tool"]> = {}): Block {

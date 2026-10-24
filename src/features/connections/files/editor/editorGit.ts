@@ -1,25 +1,6 @@
 import { Chunk, type DiffConfig } from "@codemirror/merge";
-import {
-  EditorState,
-  Facet,
-  RangeSet,
-  RangeSetBuilder,
-  StateEffect,
-  StateField,
-  Text,
-  type Extension,
-  type Transaction,
-} from "@codemirror/state";
-import {
-  Decoration,
-  EditorView,
-  GutterMarker,
-  ViewPlugin,
-  WidgetType,
-  gutter,
-  type DecorationSet,
-  type ViewUpdate,
-} from "@codemirror/view";
+import { EditorState, Facet, RangeSet, RangeSetBuilder, StateEffect, StateField, Text, type Extension, type Transaction } from "@codemirror/state";
+import { Decoration, EditorView, GutterMarker, ViewPlugin, WidgetType, gutter, type DecorationSet, type ViewUpdate } from "@codemirror/view";
 import type { UnifiedLine } from "../../../source-control/model/unifiedDiff";
 
 const DIFF_CONFIG = { scanLimit: 5_000, timeout: 100 };

@@ -1,9 +1,4 @@
-import {
-  closeHarnessSse,
-  harnessHttp,
-  openHarnessSse,
-  watchSse,
-} from "../../core/child";
+import { closeHarnessSse, harnessHttp, openHarnessSse, watchSse } from "../../core/child";
 import { asRecord } from "./opencodeProtocol";
 
 export class OpenCodeHttpError extends Error {

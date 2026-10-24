@@ -1,10 +1,12 @@
+import type { GitDiffIndex, GitFileDiff } from "../contracts/workspace";
 // @vitest-environment happy-dom
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { HostSession } from "../features/connections/model/protocol";
-import { newSession, type Block } from "../features/sessions/model/session";
-import type { GitDiffIndex, GitFileDiff } from "../platform/tauri/fs";
+import type { HostSession } from "../contracts/protocol";
+import { newSession } from "../features/sessions/model/session";
+import { type Block } from "../contracts/session";
+
 import { setUiLanguage } from "../shared/i18n/language";
 import type { MobileGitSource } from "./mobileGit";
 import { sessionChangesIndex } from "./mobileSessionChanges";
@@ -586,5 +588,36 @@ describe("mobile session changes", () => {
     expect(activeDialog().textContent).toContain("These changes may include their edits; undo is disabled.");
     expect(action("Undo")!.disabled).toBe(true);
     expect(action("Keep")!.disabled).toBe(false);
+  });
+
+  it("explains why the Host refuses to restore the turn", async () => {
+    const reason = "Only the latest conversation turn can be restored. Workspace files were not changed.";
+    const source = sessionSource();
+    source.loadIndex.mockResolvedValue(sessionChangesIndex({
+      wholeTurnUndoOnly: true, undoUnavailableReason: reason, undoLocked: true,
+      files: [{ path: "/repo/src/app.ts", relative: "src/app.ts", status: "modified",
+        additions: 2, deletions: 1, exact: true, undoable: true }],
+    }));
+    await openSessionReview(source);
+    expect(activeDialog().textContent).toContain(reason);
+    expect(action("Undo")!.disabled).toBe(true);
+    expect(action("Undo")!.title).toBe(reason);
+  });
+
+  it("retries a partly restored turn and blocks Keep until it finishes", async () => {
+    const source = sessionSource();
+    source.loadIndex.mockResolvedValue(sessionChangesIndex({
+      wholeTurnUndoOnly: true, restorePending: true,
+      restoreMessage: "Conversation history was rolled back. Retry Undo to finish restoring workspace files.",
+      files: [{ path: "/repo/src/app.ts", relative: "src/app.ts", status: "modified",
+        additions: 2, deletions: 1, exact: true, undoable: false }],
+    }));
+    await openSessionReview(source);
+    expect(activeDialog().textContent).toContain("Retry Undo to finish restoring workspace files.");
+    expect(action("Keep")!.disabled).toBe(true);
+    await click(action("Retry Undo")!);
+    await click(action("Confirm undo")!);
+    expect(source.undo).toHaveBeenCalledTimes(1);
+    expect(source.keep).not.toHaveBeenCalled();
   });
 });

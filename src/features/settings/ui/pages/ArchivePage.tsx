@@ -1,22 +1,13 @@
 import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import { usePreferenceState } from "../../model/usePreferenceState";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
-import { useEffect, useMemo, useState } from "react";
-import { HarnessIcon } from "../../../sessions/ui/HarnessIcon";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { HarnessIcon } from "../../../../shared/ui/HarnessIcon";
 import { Button } from "../../../../shared/ui/forms/Button";
-import { RemoveProjectDialog } from "../../../projects/ui/RemoveProjectDialog";
 import { prettyCwd, projectKey, projectName } from "../../../../shared/lib/paths";
-import {
-  loadArchivedProjects,
-  looksLikeProject,
-  subscribeArchivedProjects,
-  type ArchivedProject,
-} from "../../../projects/model/recents";
+import { loadArchivedProjects, looksLikeProject, subscribeArchivedProjects, type ArchivedProject } from "../../../projects/model/recents";
 import { sessionDisplayTitle } from "../../../sessions/model/session";
-import {
-  loadSessionSidebarFilters,
-  saveSessionSidebarFilters,
-} from "../../../sessions/model/sessionFilters";
+import { loadSessionSidebarFilters, saveSessionSidebarFilters } from "../../../sessions/model/sessionFilters";
 import type { SessionSummary } from "../../../sessions/data/sessionStore";
 import { loadTabGroupLabels, resolveTabGroupLabel } from "../../../workspace/model/tabGroups";
 import { Group, Row, Toggle } from "../settingsLayout";
@@ -41,6 +32,7 @@ function archivedProjectLabel(path: string): string {
 }
 
 export function ArchivePage({
+  renderRemoveProject,
   cwd,
   sessions,
   onOpenSession,
@@ -49,6 +41,7 @@ export function ArchivePage({
   onRestoreProject,
   onDeleteProject,
 }: {
+  renderRemoveProject: (props: { name: string; path: string; onCancel: () => void; onConfirm: () => void }) => ReactNode;
   cwd: string;
   sessions: SessionSummary[];
   onOpenSession: (sessionId: string) => void;
@@ -182,15 +175,15 @@ export function ArchivePage({
 
       <PresenceBoundary>
       {deleting ? (
-        <RemoveProjectDialog
-          name={archivedProjectLabel(deleting.path)}
-          path={deleting.path}
-          onCancel={() => setDeleting(null)}
-          onConfirm={() => {
+        renderRemoveProject({
+          name: archivedProjectLabel(deleting.path),
+          path: deleting.path,
+          onCancel: () => setDeleting(null),
+          onConfirm: () => {
             onDeleteProject?.(deleting.path);
             setDeleting(null);
-          }}
-        />
+          },
+        })
       ) : null}
       </PresenceBoundary>
     </>

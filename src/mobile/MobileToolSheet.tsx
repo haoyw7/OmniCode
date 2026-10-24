@@ -4,17 +4,14 @@ import { motion } from "motion/react";
 import { motionGeometry, panelTransition } from "../shared/motion/tokens";
 import { useContext, useId, useMemo, useState, type ReactNode } from "react";
 import { isLongText, ReadonlyTextView } from "../shared/ui/ReadonlyTextView";
-import { isReadTool } from "../integrations/harness/core/preview";
-import { FilePreview } from "../features/connections/files/ui/FilePreview";
-import { TranscriptPlatformContext } from "../features/sessions/ui/TranscriptPlatform";
-import {
-  editVerb,
-  toolCallLabel,
-  toolCallState,
-  toolCategory,
-} from "../features/sessions/model/transcriptActivity";
-import type { Block } from "../features/sessions/model/session";
-import { displayPath, resolveWorkspacePath } from "../shared/lib/paths";
+import { isReadTool } from "../domain/preview";
+import { FilePreview } from "../shared/ui/messaging/FilePreview";
+import { TranscriptPlatformContext } from "../shared/ui/markdown/TranscriptPlatform";
+import { editVerb, toolCallState, toolCategory } from "../features/sessions/model/transcriptActivity";
+import { toolCallLabel } from "../domain/toolLabel";
+import type { Block } from "../contracts/session";
+import { resolveWorkspacePath } from "../shared/lib/paths";
+import { displayPath } from '../domain/pathDisplay';
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { Check, ChevronRight, Copy, File as FileIcon, LoaderCircle, WrapText } from "../shared/ui/icons";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";

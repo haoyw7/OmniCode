@@ -1,29 +1,19 @@
 import { motion } from "motion/react";
-import {
-  immediateTransition,
-  motionDistance,
-  motionGeometry,
-  panelTransition,
-} from "../../../shared/motion/tokens";
+import { immediateTransition, motionDistance, motionGeometry, panelTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openExternalUrl } from "../../../platform/tauri/browser";
 import { CircleX, ExternalLink, LoaderCircle, PanelLeft } from "../../../shared/ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import {
-  githubWorkItem,
-  inboxItemKey,
-  inboxProjectsForRail,
-  peekGithubWorkItem,
-  type InboxItem,
-} from "../model/githubTasks";
+import { githubWorkItem, inboxItemKey, inboxProjectsForRail, peekGithubWorkItem } from "../model/githubTasks";
+import type { InboxItem, LinkedWorkItem } from "../../../contracts/session";
 import { type RecentProject } from "../../projects/model/recents";
-import { type LinkedWorkItem } from "../../sessions/model/session";
+
 import { type CiRepairProps, InboxDetail } from "./InboxDetail";
 import { inboxProjectOptions } from "./InboxProjectPicker";
 import { ACTION_OUTLINE } from "./inboxActions";
@@ -223,7 +213,7 @@ export function LinkedWorkItemPanel({
                 </p>
                 <button
                   type="button"
-                  onClick={() => void openUrl(target.url)}
+                  onClick={() => void openExternalUrl(target.url)}
                   className={ACTION_OUTLINE}
                 >
                   <ExternalLink className="size-3.5" />

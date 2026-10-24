@@ -1,48 +1,21 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { useProjectLogoSource } from "../../projects/model/useProjectLogoSource";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  AppWindow,
-  ChevronRight,
-  ImagePlus,
-  SquarePlus,
-  Trash2,
-  Ungroup,
-  X,
-  type IconComponent,
-} from "../../../shared/ui/icons";
-import {
-  Fragment,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from "react";
+import { AppWindow, ChevronRight, ImagePlus, SquarePlus, Trash2, Ungroup, X, type IconComponent } from "../../../shared/ui/icons";
+import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { normalizeHex } from "../../../shared/lib/colorUtils";
 import { projectKey } from "../../../shared/lib/paths";
-import {
-  clearProjectLogo,
-  pickAndSetProjectLogo,
-} from "../../projects/model/projectLogos";
-import {
-  PROJECT_MASCOTS,
-  projectMascot,
-} from "../../projects/model/projectMascots";
+import { clearProjectLogo, pickAndSetProjectLogo } from "../../projects/model/projectLogos";
+import { PROJECT_MASCOTS, projectMascot } from "../../projects/model/projectMascots";
 import { TAB_GROUP_COLORS } from "../model/tabGroups";
-import {
-  ColorPickerPopover,
-  ColorSwatchRow,
-} from "../../../shared/ui/ColorPickerPopover";
+import { ColorPickerPopover, ColorSwatchRow } from "../../../shared/ui/ColorPickerPopover";
 import { Popover } from "../../../shared/ui/Popover";
 import { MenuHover } from "../../../shared/ui/MenuHover";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
+
 import { MOD } from "../../../platform/tauri/platform";
-import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../connections/files/ui/ExplorerMenu";
+import { ExplorerMenu, type ExplorerMenuItem } from "../../../shared/ui/primitives/ExplorerMenu";
 
 export type TabGroupMenuAction =
   "new-tab" | "new-window" | "close-group" | "ungroup" | "delete-group";
@@ -161,6 +134,7 @@ export function TabGroupMenu({
   onExtraPick,
   footer,
 }: Props) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const { t: uiT } = useTranslation();
   const menuId = useId();
   const [submenu, setSubmenu] = useState<{
@@ -278,7 +252,7 @@ export function TabGroupMenu({
               className="grid size-9 shrink-0 place-items-center rounded-lg border border-content/10 bg-content/5 hover:bg-content/6"
             >
               <ProjectLogoIcon
-                path={logoPath}
+                src={resolveProjectLogoSrc(logoPath)}
                 className="size-5"
                 imageClassName="size-5"
                 fallback={ImagePlus}
@@ -345,9 +319,9 @@ export function TabGroupMenu({
                 selected={shownMascot === mascot.name}
                 onPick={() => onMascotChange(groupId, mascot.name)}
               >
-                <ProjectMascot
-                  project={groupId}
-                  name={mascot.name}
+                <Omi compact
+                  expression={projectMascot(groupId, mascot.name).name}
+                  
                   className="size-3 text-content/75"
                 />
               </MascotSwatch>

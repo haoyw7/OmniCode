@@ -1,29 +1,9 @@
 // Adapted from ZCode (Apache-2.0).
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import {
-  gitBaseDiffFiles,
-  gitBaseFileDiff,
-  gitCommitFileDiff,
-  gitCommitFiles,
-  gitDiffFiles,
-  gitFileDiff,
-  subscribeGitChanged,
-} from "../../../platform/tauri/fs";
-import {
-  sessionCheckpointStatus,
-  sessionCheckpointFileDiff,
-  subscribeReviewChanged,
-} from "../../sessions/model/checkpoint";
-import {
-  ReviewDiffCache,
-  reviewCommit,
-  reviewScopeKey,
-  WORKTREE_REVIEW_SOURCES,
-  type ReviewFile,
-  type ReviewScope,
-  type ReviewSource,
-} from "./reviewDiff";
+import { gitBaseDiffFiles, gitBaseFileDiff, gitCommitFileDiff, gitCommitFiles, gitDiffFiles, gitFileDiff, subscribeGitChanged } from "../../../platform/tauri/fs";
+import { sessionCheckpointStatus, sessionCheckpointFileDiff, subscribeReviewChanged } from "../../sessions/model/checkpoint";
+import { ReviewDiffCache, reviewCommit, reviewScopeKey, WORKTREE_REVIEW_SOURCES, type ReviewFile, type ReviewScope, type ReviewSource } from "./reviewDiff";
 
 export function useReviewSource(
   cwd: string,

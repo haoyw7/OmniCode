@@ -3,46 +3,22 @@ import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { HoverSummary, HoverSummaryRow, useHoverSummary } from "../../../shared/ui/HoverSummary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  BellOff,
-  FolderOpen,
-  Internet,
-  MessageSquare,
-  MoreHorizontal,
-  Pin,
-  PinOff,
-  Plus,
-  Settings,
-} from "../../../shared/ui/icons";
+import { BellOff, FolderOpen, Internet, MessageSquare, MoreHorizontal, Pin, PinOff, Plus, Settings } from "../../../shared/ui/icons";
 import { useContext, useEffect, type MouseEvent } from "react";
 import { useProjectDiffStats } from "../../../features/source-control/hooks/useProjectDiffStats";
 import { useTabGroupLogos } from "../../../features/projects/hooks/useTabGroupLogos";
 import { basename, type GitDiffStats } from "../../../platform/tauri/fs";
 import { formatInteger } from "../../../shared/lib/numbers";
 import { pathKey, projectKey } from "../../../shared/lib/paths";
-import {
-  loadPinnedProjects,
-  sameProjectPath,
-  savePinnedProjects,
-  type RecentProject,
-} from "../../../features/projects/model/recents";
+import { loadPinnedProjects, sameProjectPath, savePinnedProjects, type RecentProject } from "../../../features/projects/model/recents";
 import { resolveTabGroupLabel } from "../../../features/workspace/model/tabGroups";
-import { TerminalSpinner } from "../../../features/sessions/ui/TerminalSpinner";
-import {
-  useRemoteMachineOnline,
-  useRemoteMachines,
-} from "../../../features/connections/model/connections";
+import { TerminalSpinner } from "../../../shared/ui/TerminalSpinner";
+import { useRemoteMachineOnline, useRemoteMachines } from "../../../features/connections/model/connections";
 import { remoteProjectFor } from "../../../features/connections/model/remoteProjects";
 import { ProjectAvatar } from "../ProjectAvatar";
 import { projectGroupDrop } from "../projectGroupDrop";
 import { combineSidebarDrops, sidebarPinDrop, SidebarPinDropContext } from "../sidebarPinDrop";
-import {
-  nameClassName,
-  PROJECT_COLLAPSE_DURATION_MS,
-  ProjectSummaryContext,
-  type ProjectTree,
-  type SortableHandle,
-} from "./projectListShared";
+import { nameClassName, PROJECT_COLLAPSE_DURATION_MS, ProjectSummaryContext, type ProjectTree, type SortableHandle } from "./projectListShared";
 
 
 

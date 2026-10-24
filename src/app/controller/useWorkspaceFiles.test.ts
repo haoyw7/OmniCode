@@ -1,23 +1,11 @@
 // @vitest-environment happy-dom
-import {
-  act,
-  createElement,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act, createElement, useState, type Dispatch, type SetStateAction } from "react";
+import { createRoot } from "../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  newSession,
-  type Session,
-} from "../../features/sessions/model/session";
-import {
-  newFileTab,
-  newTab,
-  openEditorTab,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { newSession } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
+import { newFileTab, newTab, openEditorTab, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { useWorkspaceFiles, type WorkspaceFiles } from "./useWorkspaceFiles";
 
 const mocks = vi.hoisted(() => ({

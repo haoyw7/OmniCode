@@ -1,27 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  applyFontSize,
-  defaultAppearanceProfile,
-  enableSeparateSchemes,
-  initTypography,
-  loadFontSize,
-  loadProfile,
-  loadReducedMotion,
-  saveFontSize,
-  saveProfile,
-  saveReducedMotion,
-  saveSeparateSchemes,
-} from "./typography";
-import {
-  loadAccentColor,
-  SCHEME_CHANGE_EVENT,
-  saveAccentColor,
-} from "./appearance";
-import {
-  prefersReducedMotion,
-  reducedMotionQuery,
-} from "../../../shared/lib/reducedMotion";
+import { applyFontSize, defaultAppearanceProfile, enableSeparateSchemes, initTypography, loadFontSize, loadProfile, loadReducedMotion, saveFontSize, saveProfile, saveReducedMotion, saveSeparateSchemes } from "./typography";
+import { loadAccentColor, SCHEME_CHANGE_EVENT, saveAccentColor } from "./appearance";
+import { prefersReducedMotion, reducedMotionQuery } from "../../../shared/lib/reducedMotion";
 
 const root = () => document.documentElement;
 

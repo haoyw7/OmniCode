@@ -1,6 +1,6 @@
 import { currentMachineIO, machineFs, machinePath } from "./machine-io";
 import { homedir } from "node:os";
-import type { HostDirectory } from "../src/features/connections/model/protocol";
+import type { HostDirectory } from "../src/contracts/protocol";
 
 /** Lists host directories for the project picker without reading file contents. */
 export async function browseHostDirectories(

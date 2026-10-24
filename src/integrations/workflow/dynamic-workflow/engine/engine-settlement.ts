@@ -8,8 +8,8 @@
  */
 
 import type { EngineState } from "./engine-state.js";
-import type { RunSettlementRecord, RunStatus, RunStopReason } from "./types.js";
-import { WorkflowError } from "./types.js";
+import { type RunSettlementRecord, type RunStatus, type RunStopReason, WorkflowError } from "./types.js";
+
 
 /**
  * 沙箱脚本成功返回顶层 artifact，结算为 completed。

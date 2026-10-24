@@ -1,13 +1,9 @@
 // Sidebar run lines: each conversation's workflow runs summarized the way
 // the sessions index does, from the run state the Host projects onto it.
 import { createContext, useContext } from "react";
-import {
-  deriveSessionWorkflowActivity,
-  type BackgroundWorkSummary,
-  type SessionWorkflowActivity,
-} from "../../../integrations/workflow/protocol/sessions-index-workflow-activity";
+import { deriveSessionWorkflowActivity, type BackgroundWorkSummary, type SessionWorkflowActivity } from "../../../integrations/workflow/protocol/sessions-index-workflow-activity";
 import { remoteSessionFor } from "../../connections/model/connections";
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "../../../contracts/session";
 
 /** Every conversation with workflow runs, once each. */
 export function workflowActivityEntries(index: ReadonlyMap<string, WorkflowActivityEntry>): WorkflowActivityEntry[] {

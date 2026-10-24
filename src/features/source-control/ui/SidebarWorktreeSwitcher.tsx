@@ -6,14 +6,7 @@ import { useWorktreeFocus, type WorktreeFocus } from "../model/worktreeFocus";
 import { pathKey, prettyCwd } from "../../../shared/lib/paths";
 import { basename } from "../../../platform/tauri/fs";
 import { Popover } from "../../../shared/ui/Popover";
-import {
-  Check,
-  ChevronDown,
-  ChevronsUpDown,
-  FolderTree,
-  GitBranch,
-  Loader,
-} from "../../../shared/ui/icons";
+import { Check, ChevronDown, ChevronsUpDown, FolderTree, GitBranch, Loader } from "../../../shared/ui/icons";
 
 /** Picking a worktree narrows the sidebar and new sessions to that working copy. */
 export function SidebarWorktreeSwitcher({

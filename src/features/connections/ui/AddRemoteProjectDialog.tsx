@@ -6,13 +6,9 @@ import { Button } from "../../../shared/ui/forms/Button";
 import { ModalFooter } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { ChevronRight, Folder } from "../../../shared/ui/icons";
-import {
-  OPEN_CONNECTIONS_EVENT,
-  remoteRequest,
-  useRemoteMachines,
-} from "../model/connections";
+import { OPEN_CONNECTIONS_EVENT, remoteRequest, useRemoteMachines } from "../model/connections";
 import { rememberRemoteProject } from "../model/remoteProjects";
-import type { HostDirectory, HostProject } from "../model/protocol";
+import type { HostDirectory, HostProject } from "../../../contracts/protocol";
 
 type Props = {
   onCancel: () => void;

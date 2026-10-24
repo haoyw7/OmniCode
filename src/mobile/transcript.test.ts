@@ -4,11 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MobileTranscript } from "./MobileTranscript";
-import type {
-  HostCommand,
-  HostSession,
-} from "../features/connections/model/protocol";
-import type { Block } from "../features/sessions/model/session";
+import type { HostCommand, HostSession } from "../contracts/protocol";
+import type { Block } from "../contracts/session";
 import { saveTranscriptAnchor } from "../features/settings/model/appearance";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });

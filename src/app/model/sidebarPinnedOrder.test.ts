@@ -1,11 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it } from "vitest";
-import {
-  loadSidebarPinnedOrder,
-  orderSidebarPins,
-  reorderSidebarPins,
-  saveSidebarPinnedOrder,
-} from "./sidebarPinnedOrder";
+import { loadSidebarPinnedOrder, orderSidebarPins, reorderSidebarPins, saveSidebarPinnedOrder } from "./sidebarPinnedOrder";
 
 afterEach(() => localStorage.clear());
 

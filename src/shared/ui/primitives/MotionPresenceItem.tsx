@@ -1,15 +1,7 @@
-import {
-  cloneElement,
-  isValidElement,
-  useLayoutEffect,
-  type ReactElement,
-} from "react";
+import { cloneElement, isValidElement, useLayoutEffect, type ReactElement } from "react";
 import { usePresence } from "motion/react";
 import { useMotionPreference } from "../../motion/useMotionPreference";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../SurfaceVisibility";
 
 type Surface = ReactElement<{
   inert?: boolean;

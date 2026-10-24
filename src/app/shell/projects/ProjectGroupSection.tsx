@@ -1,3 +1,5 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../../features/projects/model/projectMascots";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useSidebarListPreview } from "../useSidebarListPreview";
@@ -10,18 +12,9 @@ import { sidebarDragPreview } from "../SidebarEntryReorder";
 import { useTabGroupLogos } from "../../../features/projects/hooks/useTabGroupLogos";
 import { pathKey } from "../../../shared/lib/paths";
 import { sameProjectPath, type RecentProject } from "../../../features/projects/model/recents";
-import {
-  projectGroupColor,
-  type ProjectGroup,
-} from "../../../features/projects/model/projectGroups";
-import { ProjectMascot } from "../../../features/projects/ui/ProjectMascot";
-import {
-  collapsedProjectHeaderSize,
-  isBusyPath,
-  nameClassName,
-  PROJECT_COLLAPSE_DURATION_MS,
-  type ProjectTree,
-} from "./projectListShared";
+import { projectGroupColor, type ProjectGroup } from "../../../features/projects/model/projectGroups";
+
+import { collapsedProjectHeaderSize, isBusyPath, nameClassName, PROJECT_COLLAPSE_DURATION_MS, type ProjectTree } from "./projectListShared";
 import { ProjectCard } from "./ProjectCard";
 
 
@@ -144,10 +137,10 @@ export function ProjectGroupSection({
                   data-group-mascot
                   className="grid size-4 place-items-center group-hover:hidden group-has-[:focus-visible]:hidden"
                 >
-                  <ProjectMascot
-                    project={group.id}
-                    color={projectGroupColor(group)}
-                    name={group.mascot ?? null}
+                  <Omi compact
+                    expression={projectMascot(group.id, group.mascot ?? null).name}
+                    style={{ color: projectGroupColor(group) || undefined }}
+                    
                     className="size-3"
                   />
                 </span>

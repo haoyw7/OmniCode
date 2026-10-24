@@ -1,7 +1,7 @@
 import { botContextPrompt, snapshotBotContext, type HarnessBotContext, type HarnessBotCapabilities } from "../src/integrations/harness/core/botContext";
 import { providerBotCapabilities } from "../src/integrations/harness/providers/botCapabilities";
 import { HostResourceGuard, HostResourceWaiter, HostResourceBusyError } from "./bots/resources";
-import { selectComposerConfiguration } from "../src/features/sessions/model/composerConfiguration";
+import { selectComposerConfiguration } from "../src/domain/composerConfiguration";
 import { createHash, randomUUID } from "node:crypto";
 import { HostOrchestration, type HostOrchestrationOptions } from "./orchestration";
 import type { BotThreadRuntime } from "./bots/thread";
@@ -11,70 +11,71 @@ import { BotTaskWorktrees } from "./bots/taskWorktrees";
 import { HostImService, type HostImOptions } from "./im-service";
 import { HostWorkflows } from "./workflows/service";
 import type { WorkflowWorkerPort } from "./workflows/driver";
-import type { ControlOutcome, ControlReceiptContext, OrchestrationRun, OrchestrationTask, WorkerPreparation } from "../src/features/orchestration/model/orchestrationRuntime";
+import type { ControlOutcome, ControlReceiptContext, WorkerPreparation } from "../src/domain/orchestrationRuntime";
+import type { OrchestrationRun, OrchestrationTask } from "../src/contracts/session";
 import { assertCheckoutAvailable, claimCheckoutResource, checkoutPath, checkoutPathsOverlap, withCheckoutOwner, withCheckoutIntegration } from "./checkout-guards";
 import type { LegacyRetirementManifest } from "./legacy-orchestration";
 import { SessionTitleCoordinator } from "../src/integrations/harness/core/titleCoordinator";
 import { TitleModelApi } from "./title-model";
-import { titleStateFor } from "../src/features/sessions/model/titlePolicy";
+import { titleStateFor } from "../src/domain/titlePolicy";
 import { ACCOUNT_PROVIDERS, desktopProviderAccounts, providerAccountDirectory, providerUsageProfile, resolveDefaultAccount } from "./provider-accounts";
 import { mkdir } from "node:fs/promises";
 import { readFileSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
-import { CHAT_ROOT, chatFolderRelativePath, isChatFolder } from "../src/features/projects/model/chatFolderPath";
-import { hostWorktreeAt, hostWorktrees, renameHostWorktreeBranch, resolveHostWorktree, resolveHostWorktreeAsync, withValidatedHostWorktree } from "./git-worktrees";
+import { CHAT_ROOT, chatFolderRelativePath, isChatFolder } from "../src/domain/chatFolderPath";
+import { createHostWorktree, hostWorktreeAt, hostWorktrees, renameHostWorktreeBranch, resolveHostWorktree, resolveHostWorktreeAsync, withValidatedHostWorktree } from "./git-worktrees";
 import { hostBranches } from "./git-branches";
-import { availableWorktreeBranch, generateWorktreeBranch } from "../src/features/source-control/model/worktreeNaming";
-import {
-  applyHarnessEvent,
-  appendSteerUser,
-  stopStreaming,
-} from "../src/integrations/harness/core/apply";
-import { canDispatchQueuedHead, dequeueQueuedMessage, insertQueuedMessage, queuedHead } from "../src/features/sessions/model/messageQueue";
-import { DEFAULT_MODEL_ID, resolveModel } from "../src/features/sessions/model/models";
-import { isVisionImage } from "../src/features/sessions/model/attachments";
-import type {
-  HarnessEvent,
-  HarnessSessionInput,
-} from "../src/integrations/harness/core/types";
-import {
-  HARNESS_LABEL,
-  RUNTIME_MODES,
-  canReplaceSessionTitle,
-  formatSessionTitle,
-  sessionDisplayTitle,
-  sessionExecutionCwd,
-  titleFromPrompt,
-  type Session,
-  type QueueReturnPosition,
-} from "../src/features/sessions/model/session";
-import { namedWorktreeBranch } from "../src/features/source-control/model/worktrees";
-import {
-  isRemoteProvider,
-  type HostCommand,
-  type HostSession,
-  type CommandReceipt,
-  type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+import { availableWorktreeBranch, generateWorktreeBranch } from "../src/domain/worktreeNaming";
+import { createSessionProjection } from "../src/domain/apply";
+import { canDispatchQueuedHead, dequeueQueuedMessage, insertQueuedMessage, queuedHead } from "../src/domain/messageQueue";
+import { DEFAULT_MODEL_ID, resolveModel } from "../src/integrations/harness/core/modelCatalog";
+import { isVisionImage } from "../src/domain/attachmentPrompt";
+import type { HarnessEvent } from "../src/contracts/harness";
+import type { HarnessSessionInput } from "../src/integrations/harness/core/types";
+import { canReplaceSessionTitle, formatSessionTitle, sessionExecutionCwd, stripSessionTitlePrefix, titleFromPrompt } from "../src/domain/session";
+import { HARNESS_LABEL } from "../src/contracts/session";
+import { RUNTIME_MODES, type Session, type QueueReturnPosition, type SubmissionMetadata, type Attachment, type UserQuestionReply } from "../src/contracts/session";
+import { namedWorktreeBranch } from "../src/domain/worktreeNaming";
+import { isRemoteProvider, type RemoteProvider } from "../src/contracts/provider";
+import { type HostCommand, type HostProject, type HostSession, type CommandReceipt } from "../src/contracts/protocol";
 import type { HostProvider } from "./providers";
 import { HostStore } from "./store";
-import { SessionCheckpoints } from "./session-checkpoints";
+import { inboxPrompt, parseInboxAsk } from "./inbox";
+import { completeSubmission, parseSubmissionMetadata, submissionBlock, submissionPrompt } from "./session-submissions";
+
+import type { BtwCommand } from "../src/contracts/submission";
+
+import { prepareBtw } from "./btw";
+import { buildBtwPrompt } from "../src/domain/btw";
+import { runHostTextPrompt, supportsHostTextPrompt } from "./provider-text";
+import { recoverCursorSubagentEvents } from "../src/integrations/harness/providers/cursor/cursorSubagents";
+import { HostProviderUsage } from "./provider-usage";
+import { HostUsageLimitResumer } from "./usage-limit-resume";
+import { SessionCheckpoints, type PreparedCheckpointUndo } from "./session-checkpoints";
+import { CheckpointRestorations, checkpointUndoReason } from "./checkpoint-restoration";
 import type { HostMachines } from "./host-machines";
 import { currentMachineIO, localMachineIO } from "./machine-io";
 import { projectMachineKey } from "../src/integrations/harness/core/machine";
-import { isEditTool } from "../src/integrations/harness/core/preview";
+import { isEditTool } from "../src/domain/preview";
 import { HostClientState } from "./client-state";
 import { HostSkills } from "./skills";
 import { HostNotes } from "./notes";
+import { HostAppService, OPERATOR_DEFAULT_PROMPT } from "./app-service";
+import { alreadyRelocated, relocatedSession, relocationTarget } from "./session-relocate";
+import { consumeOperatorCommand } from "../src/domain/operatorCommand";
+import { ANOTHER_HOST_ERROR, belongsToAnotherHost, HostAutomations, HostAutomationStore } from "./automations";
+import { parseWslPath } from "../src/shared/lib/wslPaths";
+import { HostReminders } from "./reminders";
+import type { Automation, AutomationRun } from "../src/contracts/automations";
 import { NativeSessionGuard, nativeAccessMessage, type NativeLease } from "./native-access";
 import { NativeSessionManager, nativeHolding, type NativeManagerOptions } from "./native/manager";
 import { migrateNativeLink, restoreImportedNativeActivity } from "./native/migrate";
 import { parseRemoteAttachments, resolveAttachments, saveGeneratedImageAttachment } from "./attachments";
-import type { Attachment } from "../src/features/sessions/model/session";
-import { parsePersistedWorktreeCreation } from "../src/features/source-control/model/worktreeCreation";
-import type { UserQuestionReply } from "../src/features/sessions/model/userQuestion";
-import { providerQuestionReply, questionFollowUp, recordQuestionAnswer } from "../src/features/sessions/model/questionHistory";
+
+import { parsePersistedWorktreeCreation } from "../src/domain/worktreeCreation";
+
+import { providerQuestionReply, questionFollowUp, recordQuestionAnswer } from "../src/domain/questionHistory";
 import {
   appendReadyHandoff,
   buildDeterministicHandoff,
@@ -82,11 +83,14 @@ import {
   pendingHandoff,
   userMessagesAfterHandoff,
   wrapHandoffPrompt,
-} from "../src/features/sessions/model/handoff";
+} from "../src/domain/handoff";
 
 // Streamed output is written in batches. Anything a user may need to act on
 // (approvals, questions, errors, completion) is written immediately.
 const FLUSH_MS = 120;
+const { applyHarnessEvent, appendSteerUser, stopStreaming } = createSessionProjection({
+  now: Date.now, createId: randomUUID, modelName: (harness, model) => resolveModel(harness, model).name,
+});
 const BATCHED = new Set<string>([
   "message.delta",
   "reasoning.delta",
@@ -191,6 +195,7 @@ export function parseCommand(input: unknown): HostCommand {
       type: "create",
       commandId,
       projectId: text(v.projectId, "project ID"),
+      ...(v.inboxAsk !== undefined ? { inboxAsk: parseInboxAsk(v.inboxAsk) } : {}),
       ...(v.executionCwd !== undefined
         ? { executionCwd: text(v.executionCwd, "working copy", 4096) }
         : {}),
@@ -209,6 +214,26 @@ export function parseCommand(input: unknown): HostCommand {
     };
   }
   const sessionId = text(v.sessionId, "session ID");
+  if (v.type === "editPlan") return { type: "editPlan", commandId, sessionId,
+    blockId: text(v.blockId, "plan ID"), text: text(v.text, "plan text", 256_000) };
+  if (v.type === "usageLimit") {
+    if (v.action === "dismiss" || v.action === "resume") return { type: "usageLimit", commandId, sessionId, action: v.action };
+    if (v.action === "resumeAtReset" && typeof v.enabled === "boolean") return { type: "usageLimit", commandId, sessionId, action: "resumeAtReset", enabled: v.enabled };
+    throw new Error("Invalid usage limit action");
+  }
+  if (v.type === "btw") {
+    const base = { type: "btw" as const, commandId, sessionId,
+      userBlockId: text(v.userBlockId, "source turn ID"), threadId: text(v.threadId, "side conversation ID") };
+    if (v.action === "send") return { ...base, action: "send",
+      sourceEndBlockId: text(v.sourceEndBlockId, "source end ID"), messageId: text(v.messageId, "side message ID"),
+      text: text(v.text, "side question", 256_000),
+      ...(v.model !== undefined ? { model: text(v.model, "model", 200) } : {}),
+      ...(v.modelSettings !== undefined ? { modelSettings: modelSettings(v.modelSettings) } : {}),
+    };
+    if (v.action === "configure") return { ...base, action: "configure", model: text(v.model, "model", 200), modelSettings: modelSettings(v.modelSettings) };
+    if (v.action === "stop" || v.action === "delete" || v.action === "retry") return { ...base, action: v.action };
+    throw new Error("Invalid side conversation action");
+  }
   if (v.type === "orchestration") {
     const projectId = text(v.projectId, "project ID");
     if (v.action === "editProposal" || v.action === "confirmProposal") {
@@ -218,7 +243,7 @@ export function parseCommand(input: unknown): HostCommand {
       if (!v.edit || typeof v.edit !== "object" || Array.isArray(v.edit)) throw new Error("Invalid proposal edits");
       const edit = v.edit as Record<string, unknown>;
       if (!Number.isInteger(edit.maxWorkers) || Number(edit.maxWorkers) < 1 || Number(edit.maxWorkers) > 4 || !Array.isArray(edit.tasks)) throw new Error("Invalid proposal edits");
-      return { ...base, action: v.action, edit: { maxWorkers: Number(edit.maxWorkers), tasks: edit.tasks as import("../src/features/orchestration/model/orchestrationPlan").ProposedTask[] } };
+      return { ...base, action: v.action, edit: { maxWorkers: Number(edit.maxWorkers), tasks: edit.tasks as import("../src/contracts/session").ProposedTask[] } };
     }
     if (!["resume", "stop", "cancelTask"].includes(String(v.action))) throw new Error("Invalid orchestration action");
     return { type: "orchestration", commandId, sessionId, projectId, action: v.action as "resume" | "stop" | "cancelTask", orchestrationId: text(v.orchestrationId, "orchestration ID"), ...(v.action === "cancelTask" ? { taskId: text(v.taskId, "task ID") } : {}) };
@@ -266,7 +291,7 @@ export function parseCommand(input: unknown): HostCommand {
       v.text.includes("\0") ||
       (!v.text.trim() &&
         attachments.length === 0 &&
-        !(v.type === "send" && (v.draftBlockId !== undefined || v.queuedMessageId !== undefined)))
+        !(v.type === "send" && (v.draftBlockId !== undefined || v.queuedMessageId !== undefined || v.noteCard != null || v.handoffCard != null)))
     )
       throw new Error("Invalid prompt");
     if (
@@ -305,6 +330,7 @@ export function parseCommand(input: unknown): HostCommand {
       type: v.type,
       commandId,
       sessionId,
+      ...(v.type === "send" ? parseSubmissionMetadata(v) : {}),
       ...(questionAnswer ? { questionAnswer } : {}),
       text: v.text,
       ...(attachments.length ? { attachments } : {}),
@@ -365,7 +391,8 @@ export class HostEngine {
   readonly assistant: BotThreadRuntime;
   readonly im: HostImService;
   readonly workflows: HostWorkflows;
-  authorizeAssistantQueued?: (origin: import("../src/features/sessions/model/session").TurnOrigin, projectId: string, sessionId: string) => boolean;
+  readonly app: HostAppService;
+  authorizeAssistantQueued?: (origin: import("../src/contracts/session").TurnOrigin, projectId: string, sessionId: string) => boolean;
   readonly orchestration: HostOrchestration;
   readonly ready: Promise<void>;
   private managedCompletions = new Map<string, (outcome: ControlOutcome) => void>();
@@ -401,6 +428,11 @@ export class HostEngine {
   >();
   private retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private closing = false;
+  private readonly btwRuns = new Map<string, { sessionId: string; controller: AbortController; done: Promise<void>; flush?: () => void }>();
+  private readonly runText: typeof runHostTextPrompt;
+  private readonly cursorRecoveries = new Map<string, string>();
+  readonly providerUsage: Pick<HostProviderUsage, "read"> & Partial<Pick<HostProviderUsage, "consumeReset">>;
+  private usageResumer?: HostUsageLimitResumer;
   private readonly resourceWaiter: HostResourceWaiter;
   private readonly titles: SessionTitleCoordinator;
   readonly titleModel: TitleModelApi;
@@ -413,8 +445,13 @@ export class HostEngine {
   /** Host owner of native histories: sources, sync, watching and turn settlement. */
   readonly nativeSessions: NativeSessionManager;
   readonly notes: HostNotes;
+  readonly automations: HostAutomations;
+  readonly reminders: HostReminders;
   /** Keep/Undo checkpoints for edits made by ordinary Host conversations. */
   readonly checkpoints: SessionCheckpoints;
+  private readonly checkpointRestorations: CheckpointRestorations;
+  private readonly checkpointRestores = new Set<string>();
+  private checkpointResume: Promise<unknown> = Promise.resolve();
   readonly machines?: HostMachines;
   readonly botTaskWorktrees: BotTaskWorktrees;
   /** Paths of structured edits that started in each running turn, by tool call. */
@@ -431,9 +468,11 @@ export class HostEngine {
     readonly store: HostStore,
     private readonly providers: Partial<Record<RemoteProvider, HostProvider>>,
     private readonly skills = new HostSkills(),
-    options: HostOrchestrationOptions & { native?: NativeManagerOptions; im?: HostImOptions; machines?: HostMachines } = {},
+    options: HostOrchestrationOptions & { native?: NativeManagerOptions; im?: HostImOptions; machines?: HostMachines; runText?: typeof runHostTextPrompt; usage?: Pick<HostProviderUsage, "read"> & Partial<Pick<HostProviderUsage, "consumeReset">> } = {},
   ) {
     this.machines = options.machines;
+    this.runText = options.runText ?? runHostTextPrompt;
+    this.providerUsage = options.usage ?? new HostProviderUsage(join(dirname(store.attachmentDir), "desktop-owner.json"));
     if (this.machines) this.providers = this.machines.providers(providers);
     this.machines?.configureNotice((id, warnings) => {
       if (this.store.sessionIfExists(id)) this.mutateManaged(id, value => ({ ...value, executionWarnings: warnings }), { type: "session.executionWarnings" }, false);
@@ -445,8 +484,25 @@ export class HostEngine {
       value.session.harness, value.session.harness, buildDeterministicHandoff(value.session)) }));
     this.clientState = new HostClientState(store);
     this.notes = new HostNotes(dirname(store.attachmentDir), () => this.desktopDirectory());
+    this.automations = new HostAutomations(new HostAutomationStore(dirname(store.attachmentDir), () => this.desktopDirectory()), {
+      launch: (automation, run) => this.launchAutomation(automation, run),
+      outcome: (sessionId) => {
+        const value = this.store.sessionIfExists(sessionId);
+        if (!value) return { status: "failed", error: "The automation conversation was removed." };
+        if (value.status === "running" || value.session.queuedMessages?.length) return { status: "running" };
+        const outcome = value.session.blocks.findLast(block => block.role === "user")?.turnOutcome;
+        if (value.status === "interrupted") return { status: "cancelled", error: outcome?.error ?? "Host stopped while the automation was running." };
+        return { status: outcome?.status === "failed" ? "failed" : outcome?.status === "cancelled" ? "cancelled" : "succeeded", error: outcome?.error };
+      },
+    });
+    this.reminders = new HostReminders(dirname(store.attachmentDir), (id) => {
+      const value = this.store.sessionIfExists(id);
+      return value && { title: value.session.title, harness: value.session.harness, cwd: value.session.cwd,
+        saved: !value.session.inboxAsk && value.session.blocks.some(block => block.role === "user") };
+    }, () => this.desktopDirectory());
     this.resourceWaiter = new HostResourceWaiter(store);
     this.checkpoints = new SessionCheckpoints(join(dirname(store.attachmentDir), "checkpoints"));
+    this.checkpointRestorations = new CheckpointRestorations(store);
     this.nativeSessions = new NativeSessionManager({
       store,
       guard: this.native,
@@ -455,7 +511,7 @@ export class HostEngine {
       create: (value) => this.store.transaction(() => this.store.save(value, { type: "native.imported" })),
       openProject: (cwd) => this.openProject(cwd),
       canSteer: (provider) => !!this.providers[provider as RemoteProvider]?.steer,
-      busy: (id) => this.running.has(id),
+      busy: (id) => this.running.has(id) || this.checkpointRestores.has(id) || this.checkpointRestorations.pending(id),
       dispatch: (id) => this.dispatchQueue(id),
       stopProvider: async (id) => {
         const parked = this.parked.get(id);
@@ -482,6 +538,7 @@ export class HostEngine {
     });
     // Provider dispatch is not transactional with SQLite. Never replay a send
     // automatically after a crash; its external effects may already exist.
+    const usageSessions: Session[] = [];
     for (const stored of store.scanSessions()) {
       const restoredActivity = stored.session.nativeSession &&
         stored.updatedAt > stored.session.nativeSession.updatedAt
@@ -492,9 +549,17 @@ export class HostEngine {
         : stored;
       // Native links from older clients become managed once; sync has no fallbacks.
       const migrated = migrateNativeLink(current);
-      const value = migrated
+      let value = migrated
         ? store.transaction(() => store.save({ ...migrated, revision: migrated.revision + 1 }, { type: "native.migrated" }))
         : current;
+      if (value.session.blocks.some(block => block.btwThreads?.some(thread => thread.status === "running"))) {
+        value = this.save({ ...value, session: { ...value.session, blocks: value.session.blocks.map(block => !block.btwThreads ? block : {
+          ...block, btwThreads: block.btwThreads.map(thread => thread.status !== "running" ? thread : {
+            ...thread, status: "error" as const, pendingBlocks: undefined,
+            error: "Host restarted. This side conversation was interrupted.",
+          }),
+        }) } }, { type: "session.btwInterrupted" });
+      }
       const interrupted = value.status === "running";
       const recovered = interrupted
         ? this.settled(
@@ -532,6 +597,7 @@ export class HostEngine {
       }
       // Native conversations bind under the writer lease when a turn starts.
       if (value.session.providerSessionId && !value.session.nativeSession) this.bindRetainedSession(value.session);
+      if (value.session.usageLimit) usageSessions.push(this.store.session(value.session.id).session);
     }
     this.orchestration = new HostOrchestration(store, {
       machineIO: (id) => {
@@ -569,6 +635,20 @@ export class HostEngine {
       ...(options.entry ? { entry: options.entry } : {}),
       ...(options.node ? { node: options.node } : {}),
     });
+    this.app = new HostAppService({
+      store, notes: this.notes, providers: () => Object.keys(this.providers) as RemoteProvider[],
+      session: (id) => this.store.sessionIfExists(id), command: (raw) => this.command(raw),
+      inProject: (projectId, operation) => {
+        const machine = store.project(projectId).machine;
+        if (machine && !this.machines) throw new Error("The execution machine is unavailable");
+        return this.machines ? this.machines.run(machine, operation) : operation();
+      },
+      assertProjectWrite: (projectId) => this.assertProjectWrite(projectId),
+      assertWorkspaceWrite: (path) => this.assertWorkspaceWrite(path),
+      dataDir: dirname(store.attachmentDir),
+      ...(options.entry ? { entry: options.entry } : {}),
+      ...(options.node ? { node: options.node } : {}),
+    });
     this.botTaskWorktrees = new BotTaskWorktrees(store,
       (projectId, operation) => {
         const machine = store.project(projectId).machine;
@@ -585,8 +665,21 @@ export class HostEngine {
     this.bots = new BotManager(this, Object.keys(providers) as RemoteProvider[], this.orchestration.ready, options);
     this.assistant = this.bots.defaultAssistant;
     this.im = new HostImService(store, this.assistant, options.im);
-    this.ready = Promise.all([this.bots.ready, this.im.ready]).then(() => undefined);
+    this.usageResumer = new HostUsageLimitResumer({
+      read: id => this.store.sessionIfExists(id)?.session,
+      lookup: session => this.providerUsage.read({ provider: session.harness, accountId: session.providerAccountId }),
+      setReset: (id, expected, resetsAt) => {
+        if (this.closing) return;
+        this.mutateManaged(id, current => current.session.usageLimit !== expected ? current : ({ ...current,
+          session: { ...current.session, usageLimit: { ...expected, resetsAt } },
+        }), { type: "session.usageReset" }, false);
+      },
+      resume: (id, resetsAt) => this.commandAsync({ type: "usageLimit", action: "resume", commandId: `usage-resume:${id}:${resetsAt}`, sessionId: id }),
+    });
+    for (const session of usageSessions) this.usageResumer.observe(session);
+    this.ready = Promise.all([this.bots.ready, this.im.ready, this.workflows.ready]).then(() => { if (!this.closing) { this.usageResumer?.start(); this.automations.start(); } });
     this.nativeSessions.start();
+    this.checkpointResume = this.ready.then(() => this.closing ? undefined : this.resumeCheckpointRestorations());
   }
 
   private bindRetainedSession(session: Session): void {
@@ -664,6 +757,56 @@ export class HostEngine {
     if (value.session.providerSessionId) this.bindRetainedSession({ ...value.session, cwd });
   }
 
+  /** Start an automation inside Host, using durable command ids across retries. */
+  /** WSL definitions carry their machine identity; the same path on Windows is a different project. */
+  automationProject(cwd: string): HostProject | Promise<HostProject> {
+    if (belongsToAnotherHost({ cwd })) throw new Error(ANOTHER_HOST_ERROR);
+    const wsl = parseWslPath(cwd);
+    const known = this.store.projects().find(project => wsl
+      ? project.machine?.kind === "wsl" && project.machine.distribution === wsl.machine.distribution && project.cwd === wsl.hostPath
+      : !project.machine && project.cwd === cwd);
+    if (known) return known;
+    if (!wsl) return this.openProject(cwd);
+    if (!this.machines) throw new Error("WSL projects are not available on this Host.");
+    return this.machines.prepare(wsl.machine).then(() => this.machines!.run(wsl.machine, () => this.openProject(wsl.hostPath)));
+  }
+
+  private async launchAutomation(automation: Automation, run: AutomationRun): Promise<string> {
+    const project = await this.automationProject(automation.cwd);
+    await this.machines?.prepare(project.machine);
+    const launch = async () => {
+      let value = automation.reuseSession && automation.lastSessionId ? this.store.sessionIfExists(automation.lastSessionId) : undefined;
+      if (value && (value.projectId !== project.id || value.status === "running" || value.session.harness !== automation.harness || value.session.worktreeRemoved || automation.workspaceMode === "worktree" ||
+        sessionExecutionCwd(value.session) !== (automation.workspaceMode === "existing" ? automation.executionCwd : project.cwd))) value = undefined;
+      const commandId = `automation-create:${run.id}`;
+      const branch = `oc/${run.id.replace(/-/g, "").slice(0, 8)}`;
+      let executionCwd = automation.workspaceMode === "existing" ? automation.executionCwd : undefined;
+      if (automation.workspaceMode === "worktree") {
+        this.assertProjectWrite(project.id);
+        this.assertWorkspaceWrite(project.cwd);
+        const release = claimCheckoutResource(this.store, `automation-worktree:${run.id}`, project.cwd);
+        try {
+          const trees = await hostWorktrees(project.cwd);
+          executionCwd = trees.worktrees.find(tree => tree.branch === branch && !tree.missing)?.path ??
+            (await createHostWorktree(project.cwd, branch, "HEAD", false)).path;
+        } finally { release(); }
+      }
+      const receipt = value ? { sessionId: value.session.id } : await this.commandAsync({ type: "create", commandId, projectId: project.id,
+        harness: automation.harness, model: automation.model, modelSettings: automation.modelSettings, runtimeMode: automation.runtimeMode,
+        ...(executionCwd ? { executionCwd } : {}),
+        ...(automation.workspaceMode === "worktree" ? { autoWorktreeBranch: branch } : {}),
+      });
+      const sessionId = receipt.sessionId;
+      this.mutateManaged(sessionId, entry => ({ ...entry, session: { ...entry.session, automationId: automation.id,
+        title: run.trigger === "event" ? entry.session.title : automation.name,
+        ...(run.trigger !== "event" ? { titleState: { source: "manual", epoch: 0, purpose: "initial", fallbackAttempted: false } as const } : {}) } }), { type: "automation.launch", automationId: automation.id, runId: run.id });
+      this.command({ type: "configure", commandId: `automation-configure:${run.id}`, sessionId, model: automation.model, modelSettings: automation.modelSettings ?? {}, runtimeMode: automation.runtimeMode });
+      this.command({ type: "send", commandId: `automation-send:${run.id}`, sessionId, text: run.prompt ?? automation.prompt, ...(run.trigger === "event" ? { refreshTitle: true } : {}) });
+      return sessionId;
+    };
+    return this.machines ? this.machines.run(project.machine, launch) : launch();
+  }
+
   /** A visible conversation that a saved workflow launched from the sidebar runs in. */
   private async createWorkflowLaunchSession(cwd: string, title: string, runtime?: { harness?: string; model?: string }): Promise<string> {
     const project = this.store.projects().find(entry => entry.cwd === cwd && projectMachineKey(entry.machine) === currentMachineIO().key) ?? await this.openProject(cwd);
@@ -695,7 +838,7 @@ export class HostEngine {
     if (value.session.providerSessionId) this.bindRetainedSession({ ...value.session, cwd });
   }
 
-  private submitManaged(id: string, prompt: string, done: (outcome: ControlOutcome) => void, origin?: import("../src/features/sessions/model/session").TurnOrigin): void {
+  private submitManaged(id: string, prompt: string, done: (outcome: ControlOutcome) => void, origin?: import("../src/contracts/session").TurnOrigin): void {
     try {
       if (this.managedCompletions.has(id)) throw new Error("The managed worker already has a pending turn");
       const value = this.store.session(id);
@@ -716,6 +859,56 @@ export class HostEngine {
     await provider.stop(id);
     if (active) await active.done;
     this.checkoutReleases.get(id)?.(); this.checkoutReleases.delete(id);
+  }
+
+  /** Reattach a conversation whose worktree was deleted; its ID and history stay unchanged. */
+  async relocateSession(sessionId: string, projectId: unknown, path: string): Promise<{ revision: number; executionCwd: string; branch?: string }> {
+    const value = this.store.session(sessionId);
+    if (value.projectId !== projectId) throw new Error("Session does not belong to this project");
+    this.orchestration.assertSessionWrite(sessionId, "metadata");
+    const project = this.store.project(value.projectId);
+    const tree = await (project.machine && this.machines
+      ? this.machines.run(project.machine, () => relocationTarget(project.cwd, path))
+      : relocationTarget(project.cwd, path));
+    const result = (saved: HostSession) => ({ revision: saved.revision, executionCwd: sessionExecutionCwd(saved.session),
+      ...(saved.session.branch ? { branch: saved.session.branch } : {}) });
+    // A retried request after success is a no-op, not a second handoff.
+    if (alreadyRelocated(value, tree)) return result(value);
+    if (!value.session.worktreeRemoved) throw new Error("Only a conversation whose worktree was deleted can be reattached here.");
+    if (value.status === "running" || this.running.has(sessionId) || [...this.btwRuns.values()].some(run => run.sessionId === sessionId))
+      throw new Error("Wait for this session to finish before changing working copies.");
+    if (this.checkpointRestores.has(sessionId) || this.checkpointRestorations.pending(sessionId))
+      throw new Error("Finish restoring the conversation checkpoint before changing working copies.");
+    this.orchestration.assertCheckout(tree.path);
+    await this.stopManaged(sessionId);
+    await this.cleanPreviousProviders(sessionId);
+    this.boundSessions.delete(sessionId);
+    this.nativeSessions.detach(sessionId);
+    this.native.forget(sessionId);
+    const latest = this.store.session(sessionId);
+    if (latest.revision !== value.revision || this.running.has(sessionId))
+      throw new Error("The session changed. Try selecting the working copy again.");
+    const saved = this.save(relocatedSession(latest, tree), { type: "session.relocated", path: tree.path }, false);
+    const live = this.live.get(sessionId);
+    if (live) live.value = saved;
+    return result(saved);
+  }
+
+  /** Called under withIdleProject before changing a project's filesystem identity. */
+  async releaseProjectBindings(projectId: string): Promise<void> {
+    const values = this.currentValues().filter(value => value.projectId === projectId);
+    if (values.some(value => this.checkpointRestores.has(value.session.id) || this.checkpointRestorations.pending(value.session.id)))
+      throw new Error("Finish restoring the conversation checkpoint before moving this project.");
+    if (values.some(value => value.status === "running" || this.running.has(value.session.id)) ||
+        [...this.btwRuns.values()].some(run => values.some(value => value.session.id === run.sessionId)))
+      throw new Error("Wait for project conversations to finish");
+    for (const value of values) {
+      await this.stopManaged(value.session.id);
+      await this.cleanPreviousProviders(value.session.id);
+      this.boundSessions.delete(value.session.id);
+      this.nativeSessions.detach(value.session.id);
+      this.native.forget(value.session.id);
+    }
   }
 
   private async steerManaged(id: string, prompt: string, receipt?: ControlReceiptContext): Promise<void> {
@@ -761,6 +954,11 @@ export class HostEngine {
 
   async deleteSession(id: string) {
     this.orchestration.assertSessionWrite(id, "delete");
+    if (this.checkpointRestores.has(id) || this.checkpointRestorations.pending(id))
+      throw new Error("Finish restoring the conversation checkpoint before deleting this conversation.");
+    const sideRuns = [...this.btwRuns.values()].filter(run => run.sessionId === id);
+    for (const run of sideRuns) run.controller.abort();
+    await Promise.all(sideRuns.map(run => run.done));
     await this.orchestration.scheduler.deleteSession(id, async () => {
       this.store.deleteSession(id);
       this.store.db.prepare("DELETE FROM orchestration_runs WHERE lead_id=?").run(id);
@@ -837,7 +1035,18 @@ export class HostEngine {
         if (this.checkpointStatusReads.get(sessionId) === read) this.checkpointStatusReads.delete(sessionId);
       }
       const locked = status.files.length > 0 && this.otherRunningCheckout(sessionId, sessionExecutionCwd(session));
-      return locked ? { ...status, undoLocked: true } : status;
+      const recovery = this.checkpointRestorations.read<PreparedCheckpointUndo>(sessionId);
+      const restoring = recovery && recovery.phase !== "completed";
+      if (restoring && (recovery.phase === "provider-rewound" || recovery.phase === "workspace-failed"))
+        return { ...status, wholeTurnUndoOnly: true, restorePending: true,
+          restoreMessage: "Conversation history was rolled back. Retry Undo to finish restoring workspace files.",
+          ...(locked || this.checkpointRestores.has(sessionId) ? { undoLocked: true } : {}) };
+      const unavailable = restoring
+        ? "Conversation rollback could not be confirmed. Restore is paused to protect the workspace."
+        : status.files.length ? checkpointUndoReason(this.store.session(sessionId).session, status, this.provider(session.harness)) : undefined;
+      return { ...status, wholeTurnUndoOnly: true,
+        ...(unavailable ? { undoUnavailableReason: unavailable } : {}),
+        ...(locked || unavailable || this.checkpointRestores.has(sessionId) ? { undoLocked: true } : {}) };
     }
     if (action === "diff") {
       if (typeof path !== "string") throw new Error("Invalid workspace path");
@@ -849,10 +1058,119 @@ export class HostEngine {
     if (value.status === "running" || this.running.has(sessionId))
       throw new Error("Keep and undo are unavailable while the session is running");
     this.checkpointStatusReads.delete(sessionId);
-    if (action === "keep") return this.checkpoints.keep(sessionId, sessionExecutionCwd(session), path);
+    if (action === "keep") {
+      if (this.checkpointRestores.has(sessionId) || this.checkpointRestorations.pending(sessionId))
+        throw new Error("Finish restoring the conversation checkpoint before keeping changes.");
+      return this.checkpoints.keep(sessionId, sessionExecutionCwd(session), path);
+    }
+    if (path !== undefined) throw new Error("This provider can only roll back a complete conversation turn. Use Undo all.");
     if (this.otherRunningCheckout(sessionId, sessionExecutionCwd(session)))
       throw new Error("Undo is unavailable while another session is running in this project");
-    return withCheckoutIntegration(this.store, [sessionExecutionCwd(session)], () => this.checkpoints.undo(sessionId, sessionExecutionCwd(session), path));
+    return this.restoreCheckpoint(sessionId);
+  }
+
+  private async restoreCheckpoint(sessionId: string): Promise<import("../src/contracts/checkpoint").CheckpointStatus> {
+    if (this.checkpointRestores.has(sessionId)) throw new Error("This conversation checkpoint is already being restored.");
+    this.checkpointRestores.add(sessionId);
+    let lease: NativeLease | undefined;
+    try {
+      await this.stopManaged(sessionId);
+      await this.cleanPreviousProviders(sessionId);
+      const cwd = sessionExecutionCwd(this.store.session(sessionId).session);
+      return await withCheckoutIntegration(this.store, [cwd], async () => {
+        if (this.otherRunningCheckout(sessionId, cwd)) throw new Error("Undo is unavailable while another session is running in this project");
+        let journal = this.checkpointRestorations.read<PreparedCheckpointUndo>(sessionId);
+        if (journal?.phase === "prepared" || journal?.phase === "provider-uncertain")
+          throw new Error("Conversation rollback could not be confirmed. Restore is paused to protect the workspace.");
+        if (!journal || journal.phase === "completed") {
+          const before = this.store.session(sessionId).session;
+          const provider = this.provider(before.harness);
+          const status = await this.checkpoints.status(sessionId, cwd);
+          if (!status.files.length) return status;
+          const reason = checkpointUndoReason(before, status, provider);
+          if (reason) throw new Error(reason);
+          const prepared = await this.checkpoints.prepareUndo(sessionId, cwd);
+          if (prepared.turnId !== status.turnId) throw new Error("The conversation checkpoint changed. Refresh its review before restoring.");
+          if (before.nativeSession) lease = await this.native.acquire(sessionId, before.nativeSession, cwd);
+          this.boundSessions.delete(sessionId);
+          this.bindRetainedSession(before);
+          journal = { phase: "prepared", turnId: prepared.turnId, prepared, before, createdAt: Date.now(), providerEvents: [] };
+          this.checkpointRestorations.write(sessionId, journal);
+          const start = before.blocks.findIndex(block => block.role === "user" && block.checkpointTurnId === prepared.turnId);
+          journal.phase = "provider-uncertain";
+          this.checkpointRestorations.write(sessionId, journal);
+          try {
+            const recording = journal;
+            const rewound = await provider.checkpointRewind!({
+              sessionId, cwd, model: before.model, modelSettings: before.modelSettings,
+              runtimeMode: before.runtimeMode, providerAccountId: before.providerAccountId,
+              providerTurnId: before.blocks[start].providerTurnId,
+              ...(before.nativeSession ? { nativeSession: before.nativeSession } : {}),
+              onEvent: event => {
+                recording.providerEvents.push(event);
+                this.checkpointRestorations.write(sessionId, recording);
+              },
+            });
+            if (rewound.submitted) throw new Error("The provider unexpectedly submitted a replacement turn during rollback.");
+            await provider.stop(sessionId);
+            let projection = { ...before, blocks: before.blocks.slice(0, start), pendingQuestion: undefined,
+              usageLimit: undefined, context: undefined, executionState: undefined, busy: false } as Session;
+            for (const event of journal.providerEvents) projection = applyHarnessEvent(projection, event);
+            projection = stopStreaming(projection);
+            if (projection.providerSessionId !== before.providerSessionId)
+              projection = { ...projection, nativeSession: undefined, nativeSyncStatus: undefined };
+            const latest = this.store.session(sessionId);
+            journal.phase = "provider-rewound";
+            this.store.transaction(() => {
+              this.save({ ...latest, nativeBinding: undefined, nativeStatus: undefined, session: projection }, { type: "checkpoint.providerRewound", turnId: journal!.turnId });
+              this.checkpointRestorations.write(sessionId, journal!);
+            });
+            this.nativeSessions.detach(sessionId);
+            this.native.forget(sessionId);
+            this.boundSessions.delete(sessionId);
+          } catch (error) {
+            journal.error = error instanceof Error ? error.message : String(error);
+            this.checkpointRestorations.write(sessionId, journal);
+            throw error;
+          }
+        }
+        try {
+          const result = await this.checkpoints.applyUndo(journal.prepared);
+          // The plan records its result, so a crash here still finishes on retry.
+          this.checkpointRestorations.clear(sessionId);
+          await this.checkpoints.discardUndo(journal.prepared).catch(() => undefined);
+          return { ...result, wholeTurnUndoOnly: true };
+        } catch (error) {
+          journal.phase = "workspace-failed";
+          journal.error = error instanceof Error ? error.message : String(error);
+          this.checkpointRestorations.write(sessionId, journal);
+          throw new Error("Conversation history was rolled back. Retry Undo to finish restoring workspace files.");
+        }
+      });
+    } finally {
+      await this.provider(this.store.session(sessionId).session.harness).stop(sessionId).catch(() => undefined);
+      await lease?.release();
+      this.checkpointRestores.delete(sessionId);
+    }
+  }
+
+  /** After a restart, finish restorations whose provider rollback is durable.
+   * A journal stopped before the provider call is discarded; an uncertain
+   * provider rollback stays blocked with its evidence. */
+  private resumeCheckpointRestorations(): Promise<unknown> {
+    return Promise.allSettled(this.checkpointRestorations.sessions().map(async sessionId => {
+      const journal = this.checkpointRestorations.read<PreparedCheckpointUndo>(sessionId);
+      if (!journal || !this.store.sessionIfExists(sessionId)) return;
+      if (journal.phase === "prepared" || journal.phase === "completed") {
+        this.checkpointRestorations.clear(sessionId);
+        await this.checkpoints.discardUndo(journal.prepared).catch(() => undefined);
+        return;
+      }
+      if (journal.phase !== "provider-rewound" && journal.phase !== "workspace-failed") return;
+      const resume = () => this.restoreCheckpoint(sessionId);
+      await (this.machines ? this.machines.forSession(sessionId, resume) : resume()).catch(error =>
+        console.error("Could not finish restoring a conversation checkpoint:", error instanceof Error ? error.message : error));
+    }));
   }
 
   /** Native bootstrap only: device RPC never exposes retirement. */
@@ -982,12 +1300,14 @@ export class HostEngine {
   }
 
   private save(value: HostSession, event: unknown, touchActivity = true): HostSession {
-    return this.store.transaction(() =>
+    const saved = this.store.transaction(() =>
       this.store.save(
         { ...value, revision: value.revision + 1, updatedAt: touchActivity ? Date.now() : value.updatedAt },
         event,
       ),
     );
+    this.usageResumer?.observe(saved.session);
+    return saved;
   }
 
   async stopBackgroundTask(id: string, taskId: string): Promise<void> {
@@ -1108,7 +1428,7 @@ export class HostEngine {
     return { ...capability, limitations: [...capability.limitations] };
   }
 
-  assistantCommand(raw: unknown, origin?: import("../src/features/sessions/model/session").TurnOrigin, botContext?: HarnessBotContext): CommandReceipt {
+  assistantCommand(raw: unknown, origin?: import("../src/contracts/session").TurnOrigin, botContext?: HarnessBotContext): CommandReceipt {
     const snapshot = botContext && snapshotBotContext(botContext);
     if (snapshot) {
       const command = parseCommand(raw);
@@ -1124,7 +1444,7 @@ export class HostEngine {
   }
 
   /** All provider runtime modes can write; shared tasks therefore serialize too. */
-  assistantAdmission(value: HostSession, origin?: import("../src/features/sessions/model/session").TurnOrigin): string | undefined {
+  assistantAdmission(value: HostSession, origin?: import("../src/contracts/session").TurnOrigin): string | undefined {
     if (!origin || value.session.assistantOwnerId) return;
     const running = this.store.runningSessionDirectories().map(entry => this.store.session(entry.id))
       .filter(entry => !entry.session.assistantOwnerId && entry.session.id !== value.session.id);
@@ -1162,7 +1482,7 @@ export class HostEngine {
 
   /** Update trusted sender display metadata without changing provider text. */
   refreshAssistantSenderName(assistantId: string, assistantName: string): void {
-    const needsName = (origin: import("../src/features/sessions/model/session").TurnOrigin | undefined) =>
+    const needsName = (origin: import("../src/contracts/session").TurnOrigin | undefined) =>
       origin?.kind === "assistant" && origin.assistantId === assistantId && origin.assistantName !== assistantName;
     for (const candidate of this.currentValues()) {
       if (!candidate.session.blocks.some(block => needsName(block.origin)) &&
@@ -1170,7 +1490,7 @@ export class HostEngine {
       const id = candidate.session.id;
       this.flush(id);
       const value = this.store.session(id);
-      const update = <T extends { origin?: import("../src/features/sessions/model/session").TurnOrigin }>(item: T): T =>
+      const update = <T extends { origin?: import("../src/contracts/session").TurnOrigin }>(item: T): T =>
         needsName(item.origin) ? { ...item, origin: { ...item.origin!, assistantName } } : item;
       const saved = this.save({ ...value, session: { ...value.session,
         blocks: value.session.blocks.map(update),
@@ -1189,7 +1509,7 @@ export class HostEngine {
     this.bindRetainedSession(this.store.session(id).session);
   }
 
-  async assistantSteer(id: string, runId: string, prompt: string, origin: import("../src/features/sessions/model/session").TurnOrigin, authorize: () => boolean): Promise<{ steered: true }> {
+  async assistantSteer(id: string, runId: string, prompt: string, origin: import("../src/contracts/session").TurnOrigin, authorize: () => boolean): Promise<{ steered: true }> {
     this.flush(id);
     const value = this.store.session(id), active = this.running.get(id), provider = this.provider(value.session.harness);
     this.orchestration.assertSessionWrite(id, "send");
@@ -1225,7 +1545,7 @@ export class HostEngine {
         blocks: [...handedOff.blocks, ...previous.blocks.filter((block) => block.draft)],
         harness,
         title: titleStateFor(previous).source !== "manual" && previous.title.startsWith(`${HARNESS_LABEL[outgoing]} · `)
-          ? formatSessionTitle(harness, sessionDisplayTitle(previous.title, outgoing))
+          ? formatSessionTitle(harness, stripSessionTitlePrefix(previous.title, outgoing))
           : previous.title,
         providerSessionId: undefined,
         providerAccountId,
@@ -1249,6 +1569,8 @@ export class HostEngine {
    * starts a fresh provider thread with a recap.
    */
   async switchProviderAccount(id: string, requested: string): Promise<HostSession> {
+    if (this.checkpointRestores.has(id) || this.checkpointRestorations.pending(id))
+      throw new Error("Finish restoring the conversation checkpoint before switching provider accounts.");
     this.flush(id);
     const value = this.store.session(id);
     const harness = value.session.harness;
@@ -1330,23 +1652,30 @@ export class HostEngine {
     void this.cleanPreviousProviders(sessionId).catch(() => undefined);
   }
 
-  private applyCommand(raw: unknown, managed: boolean, controlReceipt?: ControlReceiptContext, origin?: import("../src/features/sessions/model/session").TurnOrigin, botContext?: HarnessBotContext, remoteControl = false, remoteControlDevice?: HostSession["remoteControlDevice"]): CommandReceipt {
+  private applyCommand(raw: unknown, managed: boolean, controlReceipt?: ControlReceiptContext, origin?: import("../src/contracts/session").TurnOrigin, botContext?: HarnessBotContext, remoteControl = false, remoteControlDevice?: HostSession["remoteControlDevice"]): CommandReceipt {
     if (this.closing) throw new Error("Host is stopping");
-    const command = parseCommand(raw);
-    if (command.type === "orchestration") {
-      this.flush(command.sessionId);
-      const receipt = this.orchestration.accept(command);
-      const live = this.live.get(command.sessionId);
-      if (live) live.value = this.store.session(command.sessionId);
+    const requested = parseCommand(raw);
+    if (requested.type === "orchestration") {
+      this.flush(requested.sessionId);
+      const receipt = this.orchestration.accept(requested);
+      const live = this.live.get(requested.sessionId);
+      if (live) live.value = this.store.session(requested.sessionId);
       return receipt;
     }
     const signature = createHash("sha256")
-      .update(JSON.stringify(botContext ? { command, origin, botContext } : origin ? { command, origin } : command))
+      .update(JSON.stringify(botContext ? { command: requested, origin, botContext } : origin ? { command: requested, origin } : requested))
       .digest("hex");
-    const previous = this.store.receipt(command.commandId, signature);
+    const previous = this.store.receipt(requested.commandId, signature);
     if (previous) return previous;
+    if (requested.type !== "create" && (this.checkpointRestores.has(requested.sessionId) || this.checkpointRestorations.pending(requested.sessionId)))
+      throw new Error("Finish restoring the conversation checkpoint before continuing this conversation.");
+    const resumeUsageLimit = requested.type === "usageLimit" && requested.action === "resume";
+    const command: HostCommand = requested.type === "usageLimit" && requested.action === "resume"
+      ? { type: "send", commandId: requested.commandId, sessionId: requested.sessionId, text: "Continue from where you left off." }
+      : requested;
     // Commands apply to the latest state, including batched stream output.
     if (command.type !== "create") this.flush(command.sessionId);
+    if (command.type === "btw") this.btwRuns.get(`${command.sessionId}:${command.threadId}`)?.flush?.();
     let effect: ((saved: HostSession) => void) | undefined;
     let switchFrom: RemoteProvider | undefined;
     let questionReply: import("../src/integrations/harness/core/types").SendTurnInput["questionReply"];
@@ -1385,6 +1714,7 @@ export class HostEngine {
             model: command.model,
             runtimeMode: command.runtimeMode,
             modelSettings: command.modelSettings ?? {},
+            ...(command.inboxAsk ? { inboxAsk: command.inboxAsk } : {}),
             ...(providerAccountId
               ? { providerAccountId }
               : {}),
@@ -1398,6 +1728,8 @@ export class HostEngine {
         };
       } else {
         value = this.store.session(command.sessionId);
+        if (resumeUsageLimit && (!value.session.usageLimit || value.status === "running" || this.running.has(command.sessionId)))
+          throw new Error("This conversation cannot resume a usage limit now");
         if (command.type === "send" && !value.session.assistantOwnerId) {
           this.botTaskWorktrees.touch(value.session.id);
           if ((command.draftBlockId || command.planBlockId || command.queuedMessageId) && this.assistantAdmission(value, origin))
@@ -1421,6 +1753,17 @@ export class HostEngine {
           throw new Error("Wait for the branch switch to finish");
         if (command.type !== "cancel" && this.switchingAccounts.has(command.sessionId))
           throw new Error("Wait for the account switch to finish");
+        if (command.type === "send" && command.buildTarget) {
+          if (command.intent !== "build" || value.status === "running" || this.running.has(command.sessionId))
+            throw new Error("The approved plan cannot change provider during a turn");
+          const target = command.buildTarget;
+          this.provider(target.harness);
+          if (target.harness !== value.session.harness) {
+            switchFrom = value.session.harness as RemoteProvider;
+            value = this.switchSessionHarness(value, target.harness as RemoteProvider);
+          }
+          value = { ...value, session: { ...value.session, ...target, pendingConfiguration: undefined } };
+        }
         if (command.type === "send" && value.status !== "running" && value.session.pendingConfiguration) {
           if (this.running.has(command.sessionId))
             throw new Error("Wait for the current turn before changing settings");
@@ -1430,6 +1773,11 @@ export class HostEngine {
           value = { ...value, session: { ...value.session, ...configuration, pendingConfiguration: undefined } };
         }
         const provider = this.provider(value.session.harness);
+        if (command.type === "send" && command.resendEdited &&
+            (!provider.rewindLastTurn || value.status === "running" || value.session.pendingQuestion ||
+              value.session.queuedMessages?.length || value.session.editingQueuedMessageId || value.session.inboxAsk ||
+              command.draftBlockId || command.planBlockId || command.queuedMessageId || command.intent && command.intent !== "default"))
+          throw new Error("This turn cannot be edited now");
         if (command.type === "send" && command.questionAnswer) {
           const prompt = questionFollowUp(value.session, command.questionAnswer);
           questionReply = providerQuestionReply(value.session, command.questionAnswer);
@@ -1437,7 +1785,31 @@ export class HostEngine {
           command.text = prompt;
           command.followUpBehavior = "steer";
         }
-        if (command.type === "configure") {
+        if (command.type === "editPlan") {
+          const plan = value.session.blocks.find(block => block.id === command.blockId && block.role === "plan");
+          if (value.status === "running" || !plan || plan.streaming || ["streaming", "building", "built"].includes(plan.plan?.status ?? ""))
+            throw new Error("This plan cannot be edited now");
+          const originalText = plan.plan?.originalText ?? plan.text;
+          value = { ...value, session: { ...value.session, blocks: value.session.blocks.map(block => block !== plan ? block : {
+            ...block, text: command.text, plan: { ...block.plan, status: "ready" as const, originalText, edited: command.text !== originalText },
+          }) } };
+        } else if (command.type === "usageLimit") {
+          if (!value.session.usageLimit && command.action !== "dismiss") throw new Error("This conversation has no usage limit");
+          value = { ...value, session: { ...value.session, usageLimit: command.action === "dismiss" ? undefined
+            : { ...value.session.usageLimit!, resumeAtReset: command.action === "resumeAtReset" && command.enabled } } };
+        } else if (command.type === "btw") {
+          value = { ...value, session: prepareBtw(value.session, command) };
+          const thread = value.session.blocks.find(block => block.id === command.userBlockId)?.btwThreads?.find(thread => thread.id === command.threadId);
+          if ((command.action === "send" || command.action === "retry") && (!thread?.harness || !supportsHostTextPrompt(thread.harness)))
+            throw new Error("This provider does not support side conversations");
+          effect = saved => {
+            const key = `${command.sessionId}:${command.threadId}`;
+            if (command.action === "stop" || command.action === "delete") {
+              this.btwRuns.get(key)?.controller.abort();
+              this.btwRuns.delete(key);
+            } else if (command.action === "send" || command.action === "retry") this.runBtw(saved, command);
+          };
+        } else if (command.type === "configure") {
           if (value.status === "running" || this.running.has(command.sessionId))
             throw new Error(
               "Wait for the current turn before changing settings",
@@ -1471,6 +1843,7 @@ export class HostEngine {
           };
         } else if (
           command.type === "send" &&
+          !resumeUsageLimit &&
           !command.queuedMessageId &&
           !command.draftBlockId &&
           !command.planBlockId &&
@@ -1494,6 +1867,7 @@ export class HostEngine {
             session: {
               ...value.session,
               queuedMessages: insertQueuedMessage(value.session, {
+                ...parseSubmissionMetadata(command as unknown as Record<string, unknown>),
                 id: command.commandId,
                 text: command.text,
                 attachments,
@@ -1585,10 +1959,18 @@ export class HostEngine {
               session: dequeueQueuedMessage(value.session, queued.id),
             };
           }
+          const operator = command.type === "send" ? consumeOperatorCommand(queued?.text ?? command.text) : undefined;
+          if (operator?.matched && ((command.type === "send" ? (queued?.intent ?? command.intent ?? "default") : "default") !== "default" || value.session.orchestrationLeadId ||
+              value.session.inboxAsk || !this.app.accepts(value) ||
+              ["active", "paused"].includes(this.orchestration.scheduler.run(value.session.id)?.status ?? "")))
+            throw new Error("Use /operator from a regular session turn, outside an orchestration run.");
           const prompt =
             command.type === "compact"
               ? "/compact"
+              : operator?.matched ? operator.text.trim() || OPERATOR_DEFAULT_PROMPT
               : (queued?.text ?? command.text);
+          const context: SubmissionMetadata = command.type === "send" ? queued ?? command : {};
+          const rawPrompt = !operator?.matched && !!provider.commands?.rawSlashCommands && /^\s*\/\S+/.test(prompt);
           const intent =
             command.type === "send"
               ? queued?.intent === "plan" || queued?.intent === "build"
@@ -1627,6 +2009,23 @@ export class HostEngine {
                 resolveAttachments(this.store, command.attachments ?? []))
               : [];
           const runId = randomUUID();
+          let edited: { blockIds: string[]; providerTurnId?: string } | undefined;
+          if (command.type === "send" && command.resendEdited) {
+            let start = value.session.blocks.findLastIndex(block => block.role === "user" && !block.internal && !block.draft);
+            const previous = value.session.blocks[start];
+            if (!previous || previous.secondOpinion || previous.noteCard || previous.ciContext ||
+                value.session.blocks.some(block => block.role === "handoff") ||
+                value.session.harness === "codex" && !previous.providerTurnId)
+              throw new Error("This turn cannot be edited");
+            if (value.session.harness === "codex" && previous.providerTurnId) {
+              for (let index = start - 1; index >= 0; index--) {
+                const block = value.session.blocks[index];
+                if (block.role === "user" && block.providerTurnId !== previous.providerTurnId) break;
+                if (block.role === "user" && !block.internal && !block.draft) start = index;
+              }
+            }
+            edited = { blockIds: value.session.blocks.slice(start).map(block => block.id), providerTurnId: previous.providerTurnId };
+          }
           const firstTurn =
             command.type === "send" &&
             !value.session.blocks.some((block) => !block.draft);
@@ -1648,6 +2047,8 @@ export class HostEngine {
             session: {
               ...value.session,
               busy: true,
+              usageLimit: undefined,
+              ...(resumeUsageLimit ? { queueStatus: value.session.queuedMessages?.length ? "active" as const : undefined } : {}),
               executionState: { runId, phase: "starting", since: Date.now() },
               pendingQuestion: undefined,
               titleState: value.session.titleState ?? (firstTurn && placeholderTitle ? titleStateFor(value.session) : undefined),
@@ -1675,6 +2076,8 @@ export class HostEngine {
                   role: "user",
                   origin: queued?.origin ?? origin,
                   text: prompt,
+                  ...submissionBlock(prompt, context, rawPrompt),
+                  ...(operator?.matched ? { omnicode: true } : {}),
                   ...(attachments.length ? { attachments } : {}),
                   ...(command.type === "send" && command.worktreeCreation
                     ? { worktreeCreation: command.worktreeCreation }
@@ -1696,12 +2099,13 @@ export class HostEngine {
           effect = (saved) => {
             this.run(
               saved,
-              command.type === "compact" ? null : prompt,
+              command.type === "compact" ? null : submissionPrompt(prompt, context, rawPrompt),
               intent,
               attachments,
               command.type === "send" ? command.retryProposalBlockId : undefined,
               botContext,
               questionReply,
+              edited,
             );
             if (firstTurn && command.type === "send") {
               this.generateFirstTurnNames(saved, prompt, placeholderTitle, command.refreshTitle);
@@ -1806,13 +2210,127 @@ export class HostEngine {
     if (switchFrom) this.finishHarnessSwitch(saved.session.id, switchFrom);
     // A receipt means durable host acceptance, not provider completion.
     effect?.(saved);
+    this.usageResumer?.observe(saved.session);
     return receipt;
+  }
+
+  private runBtw(value: HostSession, command: BtwCommand): void {
+    if (this.machines && currentMachineIO().key !== projectMachineKey(this.store.project(value.projectId).machine))
+      return this.machines.forSession(value.session.id, () => this.runBtw(value, command));
+    const key = `${value.session.id}:${command.threadId}`;
+    const controller = new AbortController();
+    const active = { sessionId: value.session.id, controller, done: Promise.resolve() };
+    this.btwRuns.set(key, active);
+    let thread = value.session.blocks.find(block => block.id === command.userBlockId)!.btwThreads!.find(thread => thread.id === command.threadId)!;
+    const user = thread.messages.at(-1)!;
+    const harness = thread.harness!;
+    const model = thread.model ?? value.session.model;
+    let projection: Session = { ...value.session, id: `btw:${thread.id}`, harness, model,
+      blocks: [{ id: user.id, role: "user", text: user.text, startedAt: user.createdAt }],
+      busy: true, pendingQuestion: undefined, providerSessionId: thread.providerThreadId };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const valid = () => this.btwRuns.get(key) === active && !!this.store.sessionIfExists(value.session.id);
+    const persist = () => {
+      if (timer) clearTimeout(timer);
+      timer = undefined;
+      if (!valid()) return;
+      this.mutateManaged(value.session.id, current => ({ ...current,
+        session: { ...current.session, blocks: current.session.blocks.map(block => block.id === command.userBlockId
+          ? { ...block, btwThreads: block.btwThreads?.map(entry => entry.id === thread.id ? thread : entry) } : block) },
+      }), { type: "session.btw", threadId: thread.id }, false);
+    };
+    this.btwRuns.get(key)!.flush = persist;
+    const onEvent = (event: HarnessEvent) => {
+      if (!valid() || controller.signal.aborted) return;
+      if (event.type === "image.generated" && "data" in event) {
+        try {
+          const attachment = saveGeneratedImageAttachment(this.store, event.data, event.name, event.mimeType?.trim().toLowerCase());
+          event = { type: "image.generated", itemId: event.itemId, path: attachment.path!,
+            name: attachment.name, mimeType: attachment.mimeType, size: attachment.size, attachment,
+            ...(event.agentCallId ? { agentCallId: event.agentCallId } : {}), ...(event.alt ? { alt: event.alt } : {}) };
+        } catch (error) {
+          event = { type: "session.error", message: `Could not save generated image: ${error instanceof Error ? error.message : String(error)}` };
+        }
+      }
+      projection = applyHarnessEvent(projection, event);
+      thread = { ...thread, updatedAt: Date.now(), pendingBlocks: projection.blocks.slice(1) };
+      if (!timer) {
+        timer = setTimeout(() => {
+          try { persist(); } catch (error) { controller.abort(); console.error("Could not persist side conversation:", error); }
+        }, FLUSH_MS);
+        timer.unref();
+      }
+    };
+    active.done = Promise.resolve().then(async () => {
+      let result = "";
+      let failure: string | undefined;
+      try {
+        result = await this.runText({ harness, cwd: sessionExecutionCwd(value.session),
+          model, modelSettings: thread.modelSettings, providerAccountId: value.session.providerAccountId,
+          prompt: buildBtwPrompt({ blocks: value.session.blocks, thread, cwd: sessionExecutionCwd(value.session) }),
+          signal: controller.signal, timeoutMs: 120_000, ephemeral: false,
+          threadId: thread.providerThreadId,
+          onThreadId: id => { if (valid()) { thread = { ...thread, providerThreadId: id }; persist(); } },
+          onEvent,
+        });
+      } catch (error) { failure = error instanceof Error ? error.message : String(error); }
+      if (!valid()) return;
+      projection = applyHarnessEvent(projection, { type: "message.completed" });
+      projection = applyHarnessEvent(projection, { type: "reasoning.completed" });
+      projection = stopStreaming(projection);
+      const blocks = projection.blocks.slice(1);
+      const answer = result || blocks.filter(block => block.role === "assistant").map(block => block.text).join("\n");
+      thread = { ...thread, updatedAt: Date.now(), status: failure && !controller.signal.aborted ? "error" : "ready",
+        error: controller.signal.aborted ? undefined : failure, pendingBlocks: undefined,
+        messages: [...thread.messages, ...(answer || blocks.length ? [{ id: randomUUID(), role: "assistant" as const, text: answer,
+          createdAt: Date.now(), ...(blocks.length ? { blocks } : {}) }] : [])],
+      };
+      persist();
+    }).catch(error => console.error("Could not persist side conversation:", error)).finally(() => {
+      if (timer) clearTimeout(timer);
+      if (this.btwRuns.get(key) === active) this.btwRuns.delete(key);
+    });
+  }
+
+  /** Reading a projection may recover persisted child history; folding stays here. */
+  touchSession(id: string): void {
+    this.nativeSessions.touch(id);
+    const value = this.store.sessionIfExists(id);
+    const providerId = value?.session.providerSessionId;
+    if (!value || value.session.harness !== "cursor" || !providerId || value.status === "running" || this.cursorRecoveries.get(id) === providerId) return;
+    this.cursorRecoveries.set(id, providerId);
+    const recover = async () => {
+      const events = await recoverCursorSubagentEvents(value.session);
+      const latest = this.store.sessionIfExists(id);
+      if (this.closing || !events.length || !latest || latest.session.harness !== "cursor" || latest.session.providerSessionId !== providerId) return;
+      this.mutateManaged(id, current => ({ ...current,
+        session: events.reduce((session, event) => applyHarnessEvent(session, event), current.session),
+      }), { type: "session.subagentsRecovered" }, false);
+    };
+    void Promise.resolve().then(() => this.machines ? this.machines.forSession(id, recover) : recover()).catch(error => {
+      this.cursorRecoveries.delete(id);
+      console.error("Could not recover Cursor subagents:", error);
+    });
+  }
+
+  commandOutcome(sessionId: string, commandId: string, projectId?: string) {
+    const value = this.store.session(text(sessionId, "session ID"));
+    const id = text(commandId, "command ID");
+    if (projectId !== undefined && value.projectId !== projectId) throw new Error("Session does not belong to this project");
+    const block = value.session.blocks.find(block => block.id === id && block.role === "user");
+    const queued = value.session.queuedMessages?.some(row => row.id === id);
+    const base = { sessionId, commandId: id, revision: value.revision };
+    if (block || queued) return { ...base, ...(block?.turnOutcome ? { outcome: block.turnOutcome } : {}) };
+    const row = this.store.db.prepare("SELECT receipt FROM receipts WHERE id=?").get(id);
+    if (!row || (JSON.parse(String(row.receipt)) as CommandReceipt).sessionId !== sessionId)
+      throw new Error("Submission not found");
+    return { ...base, outcome: { status: "cancelled" as const, text: "", error: "The submitted message was removed." } };
   }
 
   private queueCommand(
     value: HostSession,
     command: Extract<HostCommand, { type: "queue" }>,
-    origin?: import("../src/features/sessions/model/session").TurnOrigin,
+    origin?: import("../src/contracts/session").TurnOrigin,
   ): HostSession {
     const { session } = value;
     const row = session.queuedMessages?.find(
@@ -2004,7 +2522,8 @@ export class HostEngine {
     active.controls = active.controls.then(async () => {
       try {
         const provider = this.provider(session.harness);
-        const prepared = await this.skills.prepare(row.text, { harness: session.harness as RemoteProvider, cwd: sessionExecutionCwd(session), sessionId: session.id }, provider);
+        const raw = !!provider.commands?.rawSlashCommands && /^\s*\/\S+/.test(row.text);
+        const prepared = await this.skills.prepare(submissionPrompt(row.text, row, raw), { harness: session.harness as RemoteProvider, cwd: sessionExecutionCwd(session), sessionId: session.id }, provider);
         if (active.cancelled || active.finishing || this.closing) throw new Error("Turn stopped before the queued message could be steered");
         if (row.origin && !this.authorizeAssistantQueued?.(row.origin, value.projectId, value.session.id)) throw new Error("Assistant permission was revoked");
         await provider.steer!({
@@ -2013,7 +2532,8 @@ export class HostEngine {
           cwd: sessionExecutionCwd(session),
           model: session.model,
           modelSettings: session.modelSettings,
-          text: prepared,
+          text: provider.commands?.rawSlashCommands && /^\s*\/\S+/.test(row.text)
+            ? prepared : inboxPrompt(session.inboxAsk, prepared),
           attachments: this.providerAttachments(row.attachments),
         });
         this.flush(session.id);
@@ -2025,6 +2545,7 @@ export class HostEngine {
           id: row.id,
           sentAt: Date.now(),
           origin: row.origin,
+          ...submissionBlock(row.text, row, raw),
         };
         const saved = this.save({ ...latest, queueSteeringId: undefined, session: steered }, { type: "queue.steered", messageId });
         const live = this.live.get(session.id);
@@ -2159,10 +2680,11 @@ export class HostEngine {
     retryProposalBlockId?: string,
     botContext?: HarnessBotContext,
     questionReply?: import("../src/integrations/harness/core/types").SendTurnInput["questionReply"],
+    edited?: { blockIds: string[]; providerTurnId?: string },
   ): void {
     const { session, runId } = value;
     if (this.machines && currentMachineIO().key !== projectMachineKey(this.store.project(value.projectId).machine))
-      return this.machines.forSession(session.id, () => this.run(value, prompt, intent, attachments, retryProposalBlockId, botContext, questionReply));
+      return this.machines.forSession(session.id, () => this.run(value, prompt, intent, attachments, retryProposalBlockId, botContext, questionReply, edited));
     const parked = this.parked.get(session.id);
     if (parked) { clearTimeout(parked.timer); this.parked.delete(session.id); }
     const provider = this.provider(session.harness);
@@ -2195,6 +2717,8 @@ export class HostEngine {
       .then(() => withCheckoutOwner(this.store, resourceOwner, async () => {
         let error: string | undefined;
         let checkpointTurn: string | undefined;
+        let providerRewound = false;
+        let providerAccepted = false;
         try {
           this.executionPhase(session.id, runId!, "starting");
           await this.cleanPreviousProviders(session.id);
@@ -2211,7 +2735,11 @@ export class HostEngine {
             const rawCommand = provider.commands?.rawSlashCommands && /^\s*\/\S+/.test(prompt ?? "");
             const handoff = prompt === null || rawCommand ? null : pendingHandoff(session);
             const priorRequests = handoff ? userMessagesAfterHandoff(session).slice(0, -1) : [];
-            const turnPrompt = intent === "orchestrate" ? await this.orchestration.preparePlanning(value, prompt!, retryProposalBlockId) : prompt === null ? null : this.workflows.prompt(session.id, this.orchestration.prompt(session.id, prompt));
+            const plannedPrompt = intent === "orchestrate" ? await this.orchestration.preparePlanning(value, prompt!, retryProposalBlockId) : prompt === null ? null : this.workflows.prompt(session.id, this.orchestration.prompt(session.id, prompt));
+            const operatorTurn = session.blocks.findLast((block) => block.role === "user" && !block.draft);
+            // Only the turn that enabled /operator carries the CLI instructions.
+            const turnPrompt = plannedPrompt !== null && operatorTurn?.omnicode && operatorTurn.checkpointTurnId === runId
+              ? await this.app.prompt(plannedPrompt) : plannedPrompt;
             const input: HarnessSessionInput = {
               sessionId: session.id,
               botContext,
@@ -2236,6 +2764,17 @@ export class HostEngine {
               this.bindRetainedSession(prepared);
               input.nativeSession = prepared.nativeSession;
             }
+            let rewindSubmitted = false;
+            if (edited && !active.cancelled && !this.closing) {
+              const rewind = await provider.rewindLastTurn!({ ...input, providerTurnId: edited.providerTurnId });
+              providerRewound = true;
+              providerAccepted = rewind.submitted;
+              rewindSubmitted = rewind.submitted;
+              const replaced = new Set(edited.blockIds);
+              this.mutateManaged(session.id, current => ({ ...current, session: {
+                ...current.session, blocks: current.session.blocks.filter(block => !replaced.has(block.id)),
+              } }), { type: "session.editedResend", commandId: session.blocks.at(-1)?.id }, false);
+            }
             if (prompt === null) await provider.compact!(input);
             else {
               if (this.checkpointed(session)) {
@@ -2244,14 +2783,17 @@ export class HostEngine {
                 checkpointTurn = runId!;
               }
               const prepared = await this.skills.prepare(turnPrompt!, { harness: session.harness as RemoteProvider, cwd: sessionExecutionCwd(session), sessionId: session.id }, provider);
-              if (!this.closing && !active.cancelled) await provider.send({
+              if (!this.closing && !active.cancelled && !rewindSubmitted) await provider.send({
                 ...input,
                 ...(questionReply ? { questionReply } : {}),
                 onAccepted: () => {
+                  providerAccepted = true;
                   if (this.live.get(session.id)?.value.session.executionState?.phase === "starting")
                     this.executionPhase(session.id, runId!, "awaiting-response");
                 },
-                text: providerText(handoff ? wrapHandoffPrompt(handoff.text, handoff.from, prepared, priorRequests) : prepared),
+                text: providerText(handoff
+                  ? wrapHandoffPrompt(handoff.text, handoff.from, inboxPrompt(session.inboxAsk, prepared), priorRequests)
+                  : rawCommand ? prepared : inboxPrompt(session.inboxAsk, prepared)),
                 attachments: attachments?.map((file) =>
                   session.harness !== "codex" &&
                   isVisionImage(file.mimeType) &&
@@ -2337,9 +2879,22 @@ export class HostEngine {
               : active.cancelled
               ? "Stopped by you."
               : error;
+          const start = session.blocks.findLast(block => block.role === "user")!;
+          const resultBlocks = latest.session.blocks.slice(latest.session.blocks.findIndex(block => block.id === start.id));
+          const result = resultBlocks.filter(block => block.role === "assistant").map(block => block.text).join("\n");
+          const metrics = resultBlocks.findLast(block => block.role === "user")?.turnMetrics;
+          const failure = error ?? (active.failed ? resultBlocks.findLast(block => block.notice === "error")?.text ?? "The provider failed to complete this turn." : undefined);
+          const completed = completeSubmission(latest.session, start.id, {
+            status: active.cancelled || this.closing ? "cancelled" : failure || active.persistenceFailed ? "failed" : "completed",
+            text: result,
+            ...(failure || active.persistenceFailed ? { error: failure ?? message } : {}),
+            ...(metrics ? { metrics } : {}),
+            toolCalls: resultBlocks.filter(block => block.role === "tool").length,
+            ...(edited && !providerAccepted && (failure || active.cancelled || active.persistenceFailed || this.closing) ? { providerRewound } : {}),
+          });
           this.save(
             this.settled(
-              latest,
+              { ...latest, session: completed },
               this.closing || active.persistenceFailed ? "interrupted" : "idle",
               message,
             ),
@@ -2496,7 +3051,12 @@ export class HostEngine {
     message?: string,
     endedAt = Date.now(),
   ): HostSession {
-    const stopped = stopStreaming(value.session, endedAt);
+    let stopped = stopStreaming(value.session, endedAt);
+    if (status === "interrupted") {
+      const start = stopped.blocks.find(block => block.role === "user" && block.checkpointTurnId === value.runId)
+        ?? stopped.blocks.findLast(block => block.role === "user" && !block.turnOutcome);
+      if (start) stopped = completeSubmission(stopped, start.id, { status: "failed", text: "", error: message ?? "Host interrupted this turn." });
+    }
     const session = {
       ...stopped,
       executionState: undefined,
@@ -2545,7 +3105,14 @@ export class HostEngine {
 
   async close(): Promise<void> {
     this.closing = true;
+    await this.automations.close();
+    await this.checkpointResume.catch(() => undefined);
+    this.usageResumer?.close();
+    await this.ready.catch(() => undefined);
+    for (const run of this.btwRuns.values()) run.controller.abort();
+    await Promise.all([...this.btwRuns.values()].map(run => run.done));
     await this.botTaskWorktrees.close();
+    await this.app.close();
     for (const active of this.running.values()) active.abort.abort();
     this.resourceWaiter.close();
     this.nativeSessions.close();
@@ -2556,6 +3123,7 @@ export class HostEngine {
     this.titles.close();
     this.skills.close();
     this.notes.close();
+    this.reminders.close();
     await Promise.allSettled([...this.providerStops.keys()].map(id => this.cleanPreviousProviders(id)));
     await Promise.all([...this.parked.entries()].map(async ([id, entry]) => { clearTimeout(entry.timer); await this.provider(entry.harness).stop(id); }));
     this.parked.clear();

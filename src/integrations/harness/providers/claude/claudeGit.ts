@@ -1,17 +1,5 @@
-import {
-  gitRangeContext,
-  gitStagedContext,
-} from "../../../../platform/tauri/fs";
-import {
-  buildBranchNamePrompt,
-  buildCommitMessagePrompt,
-  buildPrContentPrompt,
-  formatCommitMessage,
-  parseBranchName,
-  parseCommitMessage,
-  parsePrContent,
-  type PrContent,
-} from "../../../../features/source-control/model/gitText";
+import { gitRangeContext, gitStagedContext } from "../../../../platform/tauri/fs";
+import { buildBranchNamePrompt, buildCommitMessagePrompt, buildPrContentPrompt, formatCommitMessage, parseBranchName, parseCommitMessage, parsePrContent, type PrContent } from "../../../../domain/gitText";
 import { runClaudeTextPrompt } from "./claudeText";
 
 const GIT_TIMEOUT_MS = 90_000;

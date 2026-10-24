@@ -37,7 +37,7 @@ vi.mock("./piClient", () => ({
 }));
 
 import { bindPiSession, compactPiContext, stopPiSession, sendPiTurn, cancelPiTurn, respondPiQuestion, steerPiTurn } from "./pi";
-import type { HarnessEvent } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
 import { sendTurn as sendFamilyTurn } from "./piFamily";
 import { PI_FLAVOR } from "./piFlavor";
 

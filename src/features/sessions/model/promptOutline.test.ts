@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  activePromptId,
-  barLift,
-  previewLines,
-  promptPreview,
-} from "./promptOutline";
-import type { Block } from "./session";
+import { activePromptId, barLift, previewLines, promptPreview } from "./promptOutline";
+import type { Block } from "../../../contracts/session";
 
 const viewport = { top: 100, bottom: 500 };
 

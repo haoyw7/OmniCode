@@ -1,30 +1,5 @@
-export type McpServer = { name: string; status: string };
+import type { McpServer, McpConnection } from "../../../contracts/mcp";
 
-export type McpNativeState =
-  | "connected"
-  | "needs-auth"
-  | "failed"
-  | "disabled"
-  | "connecting"
-  | "disconnected"
-  | "closed"
-  | "checking"
-  | "unavailable"
-  | "not-loaded"
-  | "overridden";
-
-export type McpConnection = {
-  provider:
-    "claude" | "claude_desktop" | "codex" | "cursor" | "opencode" | "pi";
-  name: string;
-  scope: "local" | "project" | "user";
-  configPath: string;
-  transport: string;
-  enabled?: boolean;
-  nativeState?: McpNativeState;
-  toolCount?: number;
-  statusDetail?: string;
-};
 
 export const MCP_PROVIDER_LABELS: Record<McpConnection["provider"], string> = {
   claude: "Claude Code",

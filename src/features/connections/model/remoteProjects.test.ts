@@ -1,12 +1,28 @@
 // @vitest-environment happy-dom
 import { expect, it } from "vitest";
-import {
-  remotePath,
-  remoteProjectFor,
-  remoteSessionGitCwd,
-  configureSharedHost,
-  sharedProjects,
-} from "./remoteProjects";
+import { remotePath, remoteProjectFor, remoteSessionGitCwd, configureSharedHost, sharedProjects, sessionUsesHost, rememberProjectMove } from "./remoteProjects";
+
+it("keeps nested Host project IDs while rebasing the local project cache", () => {
+  configureSharedHost("env", [{ id: "root", cwd: "/old", name: "old" }, { id: "child", cwd: "/old/nested", name: "nested" }]);
+  rememberProjectMove(remoteProjectFor("/old")!, { id: "root", cwd: "/new", name: "new" });
+  expect(remoteProjectFor("/new")?.projectId).toBe("root");
+  expect(remoteProjectFor("/new/nested")?.projectId).toBe("child");
+  expect(sharedProjects().some(project => project.cwd.startsWith("/old"))).toBe(false);
+  configureSharedHost(undefined, []);
+});
+
+it("keeps project ownership on the Host before startup and after disconnect", () => {
+  for (const environment of [undefined, "desktop", undefined]) {
+    configureSharedHost(environment, []);
+    for (const cwd of ["/repo", "C:\\repo", "wsl://Ubuntu/home/dev/repo", "remote://unknown/repo"])
+      expect(sessionUsesHost({ cwd })).toBe(true);
+    expect(sessionUsesHost({ cwd: "~" })).toBe(false);
+    expect(sessionUsesHost({ cwd: "" })).toBe(false);
+    expect(sessionUsesHost({ cwd: "/repo", inboxAsk: {
+      key: "github:issue", title: "Issue", url: "https://example.com/issue", provider: "github",
+    } })).toBe(true);
+  }
+});
 
 it("keeps equal Linux paths in different distributions distinct under the shared Host", () => {
   configureSharedHost("desktop", [

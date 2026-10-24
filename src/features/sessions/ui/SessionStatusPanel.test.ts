@@ -2,14 +2,11 @@
 import { act, createElement, createRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Block } from "../model/session";
-import {
-  SessionHeaderActionsContext,
-  type SessionHeaderActions,
-} from "../../workspace/ui/SessionHeaderActions";
+import type { Block, ContextUsage } from "../../../contracts/session";
+import { SessionHeaderActionsContext, type SessionHeaderActions } from "../../workspace/model/SessionHeaderActions";
 import { railFits, SessionStatusPanel } from "./SessionStatusPanel";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import type { ContextUsage } from "../model/contextUsage";
+
 import { loadStatusCardOrder, saveStatusCardOrder, saveStatusCardsVisible, STATUS_CARD_IDS } from "../model/statusCardOrder";
 import { useRemoteMachines } from "../../connections/model/connections";
 import { configureSharedHost } from "../../connections/model/remoteProjects";

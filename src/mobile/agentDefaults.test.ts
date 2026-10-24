@@ -1,24 +1,11 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from "vitest";
-import type {
-  HostModelCatalog,
-  RemoteProvider,
-} from "../features/connections/model/protocol";
-import { RUNTIME_MODES, type RuntimeMode } from "../features/sessions/model/session";
-import { LAST_SELECTED_MODEL, saveLastSelectedModel, saveUseLastSelection } from "../features/sessions/model/models";
-import {
-  accountChoices,
-  configurationForAgent,
-  confirmLegacyAccounts,
-  defaultConfiguration,
-  defaultProviderAccount,
-  loadMobileAgentDefaults,
-  loadMobileProjectDefaults,
-  saveMobileAgentDefaults,
-  withDefaultAccount,
-  withDefaultConfiguration,
-  type MobileAgentDefaults,
-} from "./agentDefaults";
+import type { HostModelCatalog } from "../contracts/protocol";
+import type { RemoteProvider } from "../contracts/provider";
+import { RUNTIME_MODES, type RuntimeMode } from "../contracts/session";
+import { saveLastSelectedModel, saveUseLastSelection } from "../features/sessions/model/models";
+import { LAST_SELECTED_MODEL } from "../integrations/harness/core/modelCatalog";
+import { accountChoices, configurationForAgent, confirmLegacyAccounts, defaultConfiguration, defaultProviderAccount, loadMobileAgentDefaults, loadMobileProjectDefaults, saveMobileAgentDefaults, withDefaultAccount, withDefaultConfiguration, type MobileAgentDefaults } from "./agentDefaults";
 import { activatePreferenceStore, SharedPreferenceStore } from "../features/settings/model/sharedPreferences";
 
 const catalog: HostModelCatalog = {

@@ -2,28 +2,13 @@
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  newSession,
-  sessionExecutionCwd,
-  type Session,
-} from "../../features/sessions/model/session";
-import {
-  setWorktreeFocus,
-  useWorktreeFocus,
-  worktreeFocus,
-  type WorktreeFocus,
-} from "../../features/source-control/model/worktreeFocus";
-import {
-  sessionInWorktree,
-  type Worktree,
-} from "../../features/source-control/model/worktrees";
-import {
-  leafIds,
-  newAppViewWorkspaceTab,
-  newTab,
-  splitPane,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { newSession } from "../../features/sessions/model/session";
+import { sessionExecutionCwd } from "../../domain/session";
+import { type Session } from "../../contracts/session";
+import { setWorktreeFocus, useWorktreeFocus, worktreeFocus, type WorktreeFocus } from "../../features/source-control/model/worktreeFocus";
+import type { Worktree } from "../../contracts/worktree";
+import { sessionInWorktree } from "../../features/source-control/model/worktrees";
+import { leafIds, newAppViewWorkspaceTab, newTab, splitPane, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { useWorkspaceNavigation } from "./useWorkspaceNavigation";
 
 const project = "/navigation-project";

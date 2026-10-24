@@ -1,54 +1,26 @@
 import { sanitizeGenerationSample } from "../model/generationSample";
-import { manualSessionTitle, sanitizeTitleState } from "../model/titlePolicy";
-import { sessionMessageActivityAt } from "../model/sessionActivity";
+import { manualSessionTitle, sanitizeTitleState } from "../../../domain/titlePolicy";
+import { sessionMessageActivityAt } from "../../../domain/sessionActivity";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  isWeakToolTitle,
-  titleFromToolInput,
-} from "../../../integrations/harness/core/preview";
+import { isWeakToolTitle, titleFromToolInput } from "../../../domain/preview";
 import { codexCommandPresentation } from "../../../integrations/harness/providers/codex/codexProtocol";
-import { recoverCursorSubagents } from "../../../integrations/harness/providers/cursor/cursorSubagents";
 import { persistableAttachment } from "../model/attachments";
-import { parsePersistedWorktreeCreation } from "../../source-control/model/worktreeCreation";
-import { restoreQuestionRecord, questionTranscriptText } from "../model/questionHistory";
-import type { ContextUsage } from "../model/contextUsage";
+import { parsePersistedWorktreeCreation } from "../../../domain/worktreeCreation";
+import { restoreQuestionRecord, questionTranscriptText } from "../../../domain/questionHistory";
+import { type ContextUsage, type AgentRunMeta, type AgentStep, type Block, type BtwMessage, type BtwThread, type GeneratedImageMeta, type HarnessId, type HandoffMeta, type HandoffStatus, type InterjectionMeta, type LinkedWorkItem, type RuntimeMode, type RemoteControlDevice, type SecondOpinionMeta, type Session, type TaskListMeta, type PlanBlockMeta, type TurnModel, type TurnMetrics, HARNESSES, RUNTIME_MODES } from "../../../contracts/session";
 import { restoreContextBreakdown } from "../../../integrations/harness/core/contextUsage";
-import { isRemoteProjectPath, normalizeProjectPath } from "../../projects/model/recents";
-import {
-  claudeShellCommands,
-  ompActiveAssistantTexts,
-  ompSessionInterjections,
-} from "../../../platform/tauri/fs";
-import {
-  backfillOmpInterjections,
-  ompStatusSplitTexts,
-} from "../model/ompInterjections";
-import type {
-  AgentRunMeta,
-  AgentStep,
-  Block,
-  BtwMessage,
-  BtwThread,
-  GeneratedImageMeta,
-  HarnessId,
-  HandoffMeta,
-  HandoffStatus,
-  InterjectionMeta,
-  LinkedWorkItem,
-  RuntimeMode,
-  RemoteControlDevice,
-  SecondOpinionMeta,
-  Session,
-  TaskListMeta,
-  PlanBlockMeta,
-  TurnModel,
-  TurnMetrics,
-} from "../model/session";
+import { isRemoteProjectPath } from "../../projects/model/recents";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
+import { claudeShellCommands, ompActiveAssistantTexts, ompSessionInterjections } from "../../../platform/tauri/fs";
+import { backfillOmpInterjections, ompStatusSplitTexts } from "../model/ompInterjections";
 
-import { HARNESSES, RUNTIME_MODES } from "../model/session";
-import { sharedSessionBackend } from "./sharedSessionBackend";
 
-import { restoreOrchestrationProposal } from "../../orchestration/model/orchestrationPlan";
+
+import { sharedSessionBackend, type SharedSessionBackend } from "./sharedSessionBackend";
+import { rebaseSharedProject, sessionUsesHost } from "../../connections/model/remoteProjects";
+import { recordLocalExecution } from "../../../shared/lib/localExecutionDiagnostics";
+
+import { restoreOrchestrationProposal } from "../../../domain/orchestrationPlan";
 
 import type { OrchestrationSummary } from "../../orchestration/model/orchestrationSummary";
 
@@ -139,6 +111,7 @@ type SessionUpsertPayload = {
 export function shouldPersistSession(session: Session): boolean {
   return (
     !session.inboxAsk &&
+    !sessionUsesHost(session) &&
     !isRemoteProjectPath(session.cwd) &&
     !sharedSessionBackend()?.ownsProject(session.cwd) &&
     session.cwd !== "~" &&
@@ -343,7 +316,7 @@ function isStaleBlocksError(error: unknown): boolean {
   return String(error).includes("stale-blocks");
 }
 
-async function writeSession(session: Session): Promise<SessionSummary> {
+async function writeSession(session: Session): Promise<SessionSummary | null> {
   const tokens = session.blocks.map(blockToken);
   const written = writtenTranscripts.get(session.id);
   const reusable =
@@ -354,11 +327,14 @@ async function writeSession(session: Session): Promise<SessionSummary> {
       : 0;
   const meta = persistableMeta(session);
   const attempt = async (from: number) => {
+    // Recheck retries too: the Host may take ownership while invoke is pending.
+    if (!shouldPersistSession(session)) return null;
     const { blocks, kept } = persistBlocks(session, from);
     const keptBefore = from > 0 ? written!.keptBefore.slice(0, from + 1) : [0];
     for (const each of kept) {
       keptBefore.push(keptBefore[keptBefore.length - 1] + (each ? 1 : 0));
     }
+    recordLocalExecution("session_upsert", { sessionId: session.id, cwd: session.cwd });
     const summary = await invoke<SessionSummary>("session_upsert", {
       session: { ...meta, blocks: withoutDeletedLeads(blocks) },
       ...(from > 0
@@ -423,7 +399,8 @@ export async function upsertSession(
     sessionWriteLeadById.delete(session.id);
   }
   const summary = await enqueueSessionWrite(session.id, async () => {
-    if (deletedSessionIds.has(session.id)) return null;
+    // Ownership can change while an older native write is still in flight.
+    if (!shouldPersistSession(session) || deletedSessionIds.has(session.id)) return null;
     return writeSession(session);
   });
   return summary ? normalizeSummary(summary) : null;
@@ -446,9 +423,18 @@ export async function persistManualSessionTitle(session: Session, title: string)
     const hostId = remoteSessionFor(session.id);
     if (project && hostId) {
       const machine = await remoteMachineFor(project.environmentId);
-      if (machine) await remoteRequest(machine.id, "sessions.update", { projectId: project.projectId, sessionId: hostId, title });
+      if (machine) {
+        await remoteRequest(machine.id, "sessions.update", { projectId: project.projectId, sessionId: hostId, title });
+        return updated;
+      }
+    }
+    if (session.blocks.some((block) => block.role === "user")) {
+      throw new Error("Conversation changes must be saved by the Host");
     }
     return updated;
+  }
+  if (sessionUsesHost(session) && session.blocks.some((block) => block.role === "user")) {
+    throw new Error("Conversation changes must be saved by the Host");
   }
   await upsertSession(updated);
   return updated;
@@ -494,10 +480,7 @@ export function rebaseProjectSessions(
   fromCwd: string,
   toCwd: string,
 ): Promise<void> {
-  return invoke<void>("session_rebase_project", {
-    fromCwd: normalizeProjectPath(fromCwd),
-    toCwd: normalizeProjectPath(toCwd),
-  });
+  return rebaseSharedProject(normalizeProjectPath(fromCwd), normalizeProjectPath(toCwd));
 }
 
 export async function listLinkedSessions(): Promise<SessionSummary[]> {
@@ -602,7 +585,7 @@ export async function getSession(sessionId: string): Promise<Session | null> {
     }
   }
   if (session.harness !== "omp" || !session.providerSessionId) {
-    return recoverCursorSubagents(session);
+    return session;
   }
   try {
     const anchors = await ompSessionInterjections(session.providerSessionId);
@@ -702,6 +685,25 @@ export function backfillCodexShellCommands(blocks: Block[]): Block[] {
   return changed ? repaired : blocks;
 }
 
+/** Legacy rows stay readable when preparation fails, but never become writable again.
+ * Resolve ownership inside queued operations as well, since the Host can finish
+ * preparation while an earlier native operation is pending. */
+async function mutateSessionRecord(
+  sessionId: string,
+  native: () => Promise<void>,
+  host: (backend: SharedSessionBackend) => Promise<void>,
+): Promise<void> {
+  let shared = sharedSessionBackend();
+  if (shared?.ownsSession(sessionId)) return host(shared);
+  const record = await invoke<SessionRecord | null>("session_get", { sessionId });
+  shared = sharedSessionBackend();
+  if (shared?.ownsSession(sessionId)) return host(shared);
+  if (record && (sessionUsesHost(record) || isRemoteProjectPath(record.cwd))) {
+    throw new Error("Conversation changes must be saved by the Host");
+  }
+  await native();
+}
+
 export async function deleteSession(
   sessionId: string,
   imagePaths: string[] = [],
@@ -722,8 +724,9 @@ export async function deleteSession(
       )
       .map(([, pending]) => pending);
     if (pendingWrites.length > 0) await Promise.all(pendingWrites);
-    await enqueueSessionWrite(sessionId, () =>
-      invoke<void>("session_delete", { sessionId, imagePaths }),
+    await enqueueSessionWrite(sessionId, () => mutateSessionRecord(sessionId,
+      () => invoke<void>("session_delete", { sessionId, imagePaths }),
+      (backend) => backend.delete(sessionId)),
     );
     const tombstone = setTimeout(() => deletedSessionIds.delete(sessionId), 60_000);
     if (typeof tombstone === "object") tombstone.unref();
@@ -739,8 +742,9 @@ export async function discardDraftSessionRecord(
 ): Promise<void> {
   const shared = sharedSessionBackend();
   if (shared?.ownsSession(sessionId)) return shared.delete(sessionId);
-  await enqueueSessionWrite(sessionId, () =>
-    invoke<void>("session_delete", { sessionId, imagePaths: [] }),
+  await enqueueSessionWrite(sessionId, () => mutateSessionRecord(sessionId,
+    () => invoke<void>("session_delete", { sessionId, imagePaths: [] }),
+    (backend) => backend.delete(sessionId)),
   );
 }
 
@@ -750,8 +754,9 @@ export async function setSessionArchived(
 ): Promise<void> {
   const shared = sharedSessionBackend();
   if (shared?.ownsSession(sessionId)) return shared.update(sessionId, { archived });
-  await enqueueSessionWrite(sessionId, () =>
-    invoke<void>("session_set_archived", { sessionId, archived }),
+  await enqueueSessionWrite(sessionId, () => mutateSessionRecord(sessionId,
+    () => invoke<void>("session_set_archived", { sessionId, archived }),
+    (backend) => backend.update(sessionId, { archived })),
   );
 }
 
@@ -761,7 +766,9 @@ export async function setSessionPinned(
 ): Promise<void> {
   const shared = sharedSessionBackend();
   if (shared?.ownsSession(sessionId)) return shared.update(sessionId, { pinned });
-  await invoke<void>("session_set_pinned", { sessionId, pinned });
+  await mutateSessionRecord(sessionId,
+    () => invoke<void>("session_set_pinned", { sessionId, pinned }),
+    (backend) => backend.update(sessionId, { pinned }));
 }
 
 export async function setSessionLinkedWorkItem(
@@ -771,11 +778,12 @@ export async function setSessionLinkedWorkItem(
   const linkedWorkItem = sanitizeLinkedWorkItem(value);
   const shared = sharedSessionBackend();
   if (shared?.ownsSession(sessionId)) return shared.update(sessionId, { linkedWorkItem: linkedWorkItem ?? null });
-  await enqueueSessionWrite(sessionId, () =>
-    invoke<void>("session_set_linked_work_item", {
+  await enqueueSessionWrite(sessionId, () => mutateSessionRecord(sessionId,
+    () => invoke<void>("session_set_linked_work_item", {
       sessionId,
       linkedWorkItem: linkedWorkItem ?? null,
     }),
+    (backend) => backend.update(sessionId, { linkedWorkItem: linkedWorkItem ?? null })),
   );
 }
 

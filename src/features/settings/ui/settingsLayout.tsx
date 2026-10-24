@@ -1,21 +1,7 @@
 import { motion, useIsPresent } from "motion/react";
-import {
-  immediateTransition,
-  motionDistance,
-  panelTransition,
-} from "../../../shared/motion/tokens";
+import { immediateTransition, motionDistance, panelTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
-import {
-  createContext,
-  forwardRef,
-  useContext,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { createContext, forwardRef, useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
 import { playCue } from "../model/sounds";

@@ -1,9 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
-import {
-  MAX_ATTACHMENTS,
-  persistableAttachment,
-} from "../../sessions/model/attachments";
-import type { Attachment } from "../../sessions/model/session";
+import { stageDesktopAttachment } from "../../../platform/tauri/attachmentStaging";
+import { MAX_ATTACHMENTS, persistableAttachment } from "../../sessions/model/attachments";
+import type { Attachment } from "../../../contracts/session";
 
 /** Paths survive the handoff to another webview; blob URLs do not. */
 export async function storeQuickAttachments(
@@ -13,10 +10,7 @@ export async function storeQuickAttachments(
     files.map(async (file) => {
       if (file.path) return file;
       if (!file.data) throw new Error(`Could not attach ${file.name}.`);
-      const path = await invoke<string>("write_attachment", {
-        name: file.name,
-        data: file.data,
-      });
+      const path = await stageDesktopAttachment(file.name, file.data);
       return { ...file, path };
     }),
   );

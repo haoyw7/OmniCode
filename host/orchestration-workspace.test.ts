@@ -13,11 +13,8 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import type { HostSession } from "../src/features/connections/model/protocol";
-import type {
-  OrchestrationRun,
-  OrchestrationTask,
-} from "../src/features/orchestration/model/orchestrationState";
+import type { HostSession } from "../src/contracts/protocol";
+import type { OrchestrationRun, OrchestrationTask } from "../src/contracts/session";
 import { HostOrchestrationWorkspace } from "./orchestration-workspace";
 import { claimCheckoutResource, claimCheckoutWrite } from "./checkout-guards";
 import { HostStore } from "./store";

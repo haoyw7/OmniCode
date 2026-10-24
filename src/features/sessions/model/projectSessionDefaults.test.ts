@@ -1,15 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  newSession,
-  newSessionForProject,
-  retargetSessionToProject,
-  type Session,
-} from "./session";
-import {
-  setProjectDefaultModel,
-  setProjectDefaultProvider,
-  setProjectProviderHidden,
-} from "./projectProviders";
+import { newSession, newSessionForProject, retargetSessionToProject } from "./session";
+import { type Session } from "../../../contracts/session";
+import { setProjectDefaultModel, setProjectDefaultProvider, setProjectProviderHidden } from "./projectProviders";
 
 describe("newSessionForProject", () => {
   beforeEach(() => {

@@ -1,20 +1,6 @@
 import { preferenceStorage } from "./sharedPreferences";
-import {
-  ALT,
-  IS_LINUX,
-  IS_MAC,
-  IS_WIN,
-  MOD,
-  SHIFT,
-} from "../../../platform/tauri/platform";
-import {
-  canonicalShortcut,
-  isGlobalShortcut,
-  QUICK_COMPOSER_DEFAULT_SHORTCUT,
-  quickComposerShortcutLabel,
-  shortcutFromKeyEvent,
-  shortcutTokens,
-} from "../../quick-composer/model/quickComposerShortcut";
+import { ALT, IS_LINUX, IS_MAC, IS_WIN, MOD, SHIFT } from "../../../platform/tauri/platform";
+import { canonicalShortcut, isGlobalShortcut, QUICK_COMPOSER_DEFAULT_SHORTCUT, quickComposerShortcutLabel, shortcutFromKeyEvent, shortcutTokens } from "../../quick-composer/model/quickComposerShortcut";
 import { readFlag, writeFlag } from "./storageFlags";
 import { translate } from "../../../shared/i18n/language";
 

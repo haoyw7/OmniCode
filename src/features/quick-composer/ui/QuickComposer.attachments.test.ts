@@ -1,6 +1,8 @@
+import { quickComposerPresentation } from "../../../app/ui/quickComposerPresentation";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { QuickComposer } from "./QuickComposer";
@@ -29,6 +31,9 @@ vi.mock("../../../platform/tauri/fs", () => ({
   basename: (path: string) => path.split("/").pop(),
   subscribeGitChanged: () => () => {},
   gitBranches: async () => null,
+  // A system-picked file outside registered projects keeps native reading.
+  workspacePathOwner: () => "native-picker",
+  invokeWorkspace: (command: string, args?: Record<string, unknown>) => invoke(command, args),
 }));
 vi.mock("./useQuickPickerMotion", () => ({ useQuickPickerMotion: () => {} }));
 vi.mock("./QuickProjectIcon", () => ({
@@ -83,7 +88,7 @@ beforeEach(async () => {
   document.body.append(container);
   root = createRoot(container);
   await act(async () =>
-    root.render(createElement(QuickComposer, { onShown: () => {} })),
+    root.render(createElement(QuickComposer, { presentation: quickComposerPresentation, onShown: () => {} })),
   );
 });
 afterEach(() => {

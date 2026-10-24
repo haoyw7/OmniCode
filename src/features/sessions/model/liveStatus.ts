@@ -1,4 +1,4 @@
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 import { formatLiveElapsed } from "./liveAgents";
 import { isToolBlock, toolCallState } from "./transcriptActivity";
 

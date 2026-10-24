@@ -1,14 +1,8 @@
-import {
-  isAgentTool,
-  isEditTool,
-  isExecuteTool,
-  isReadTool,
-  isSearchTool,
-  isSkillTool,
-} from "../../../integrations/harness/core/preview";
+import { isAgentTool, isEditTool, isExecuteTool, isReadTool, isSearchTool, isSkillTool } from "../../../domain/preview";
 import { omniCodeToolCall } from "./omnicodeToolCall";
-import type { Block } from "./session";
-import { toolCallLabel, toolCallState } from "./transcriptActivity";
+import type { Block } from "../../../contracts/session";
+import { toolCallLabel } from "../../../domain/toolLabel";
+import { toolCallState } from "./transcriptActivity";
 
 /**
  * Which row draws a tool call. Every row shares one layout; the kind only

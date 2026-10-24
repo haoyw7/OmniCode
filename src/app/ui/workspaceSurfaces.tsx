@@ -15,7 +15,7 @@ export const SearchView = lazySurface(
 
 export const SettingsView = lazySurface(
   async () => {
-    const module = await import("../../features/settings/ui/SettingsView");
+    const module = await import("./SettingsView");
     await module.preloadSettingsSection(loadSettingsSection());
     return { default: module.SettingsView };
   },
@@ -37,8 +37,8 @@ export const LinkedWorkItemPanel = lazySurface(async () => {
 
 export const NotesView = lazySurface(
   async () => {
-    const module = await import("../../features/notes/ui/NotesView");
-    return { default: module.NotesView };
+    const module = await import("./NotesPage");
+    return { default: module.NotesPage };
   },
   { suspense: false },
 );
@@ -46,8 +46,8 @@ export const NotesView = lazySurface(
 export const AutomationsView = lazySurface(
   async () => {
     const module =
-      await import("../../features/automations/ui/AutomationsView");
-    return { default: module.AutomationsView };
+      await import("./AutomationsPage");
+    return { default: module.AutomationsPage };
   },
   { suspense: false },
 );

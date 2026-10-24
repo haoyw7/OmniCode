@@ -3,7 +3,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useProjectBackgroundEffect } from "./useProjectBackgroundEffect";
+import { useProjectBackgroundEffect } from "../model/useProjectBackgroundEffect";
 import { prepareNewThreadBackgroundEffect } from "../../settings/model/newThreadBackgroundEffects";
 import type { NewThreadBackgroundEffect } from "../../settings/model/appearance";
 

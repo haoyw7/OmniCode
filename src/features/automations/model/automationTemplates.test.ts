@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SUPPORTED_INBOX_TRIGGER_EVENTS } from "./automationEvents";
-import {
-  AUTOMATION_TEMPLATE_CATEGORIES,
-  AUTOMATION_TEMPLATES,
-  templatesForCategory,
-} from "./automationTemplates";
+import { SUPPORTED_INBOX_TRIGGER_EVENTS } from "../../../domain/automationInbox";
+import { AUTOMATION_TEMPLATE_CATEGORIES, AUTOMATION_TEMPLATES, templatesForCategory } from "./automationTemplates";
 
 describe("automation templates", () => {
   it("keeps popular examples in their real category too", () => {

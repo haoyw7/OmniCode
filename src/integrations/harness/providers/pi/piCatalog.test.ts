@@ -25,11 +25,7 @@ vi.mock("../../core/child", () => ({
   watchChild: mocks.watchChild,
   writeChild: mocks.writeChild,
 }));
-import {
-  discoverOmpModels,
-  discoverPiModels,
-  refreshPiCatalog,
-} from "./piCatalog";
+import { discoverOmpModels, discoverPiModels, refreshPiCatalog } from "./piCatalog";
 
 const builtin = { provider: "meta", id: "shared-id", name: "Built-in" };
 const extension = {

@@ -1,3 +1,4 @@
+import type { DiscoveredSkill } from "../../../contracts/skills";
 // @vitest-environment happy-dom
 import { act, createElement, Profiler } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -5,8 +6,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { startMotionClock, stopMotionClock, finishMotion } from "../../../../tests/helpers/sharedMotionClock";
 import { SkillsPage } from "./SkillsPage";
-import { SettingsView } from "../../settings/ui/SettingsView";
-import type { DiscoveredSkill } from "../../../platform/tauri/fs";
+import { SettingsView } from "../../../app/ui/SettingsView";
+
 import { loadDisabledSkillPaths, saveDisabledSkillPaths } from "../model/skills";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));

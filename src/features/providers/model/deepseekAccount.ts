@@ -5,7 +5,7 @@ import { knownRemoteMachine, remoteRequest, useRemoteMachines } from "../../conn
 import { loadRemoteHostDescriptor } from "../../connections/model/remoteHostMetadata";
 import { parseRemotePath } from "../../connections/model/remoteProjects";
 import { providerUsageHost } from "./providerUsageSource";
-import { RATE_LIMIT_POLL_MS } from "./rateLimits";
+import { RATE_LIMIT_POLL_MS } from "../../../domain/rateLimits";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 

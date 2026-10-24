@@ -1,25 +1,12 @@
-import { modelsFor } from "../../../../features/sessions/model/models";
-import {
-  childUsesSelectedMachine,
-  killChild,
-  resolveCodexBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import {
-  asRecord,
-  buildThreadStartParams,
-  buildTurnStartParams,
-  isRecoverableThreadResumeError,
-  mapCodexNotification,
-  stringField,
-} from "./codexProtocol";
-import type { HarnessEvent } from "../../core/types";
+import { modelsFor } from "../../core/modelCatalog";
+import { childUsesSelectedMachine, killChild, resolveCodexBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { asRecord } from "../../../../domain/records";
+import { buildThreadStartParams, buildTurnStartParams, isRecoverableThreadResumeError, mapCodexNotification, stringField } from "./codexProtocol";
+import type { HarnessEvent } from "../../../../contracts/harness";
 import { JsonRpcClient, type JsonRpcId } from "../../core/jsonRpc";
 import type { TextPromptInput } from "../../core/registry";
 
-import { mergeStream, streamTextDelta } from "../../core/streamText";
+import { mergeStream, streamTextDelta } from "../../../../domain/streamText";
 
 const TEXT_CHILD_ID = "omnicode-codex-text";
 const INIT_TIMEOUT_MS = 60_000;

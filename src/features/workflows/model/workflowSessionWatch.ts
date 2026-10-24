@@ -2,9 +2,9 @@
 // parent conversation (live run state) and hidden subagent sessions.
 
 import { loadRemoteSession, remoteMachineFor, remoteRequest, remoteSessionFor } from "../../connections/model/connections";
-import type { HostSession } from "../../connections/model/protocol";
+import type { HostSession } from "../../../contracts/protocol";
 import { remoteProjectFor } from "../../connections/model/remoteProjects";
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "../../../contracts/session";
 
 export type HostSessionLease = {
   readonly sessionId: string;

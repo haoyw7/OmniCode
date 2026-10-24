@@ -3,12 +3,8 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { basename } from "../../../platform/tauri/fs";
 import { projectKey } from "../../../shared/lib/paths";
 import { looksLikeProject } from "../../projects/model/recents";
-import { isChatFolder } from "../../projects/model/chatFolderPath";
-import {
-  loadTabGroupLabels,
-  resolveTabGroupLabel,
-  subscribeTabGroupLabels,
-} from "../../workspace/model/tabGroups";
+import { isChatFolder } from "../../../domain/chatFolderPath";
+import { loadTabGroupLabels, resolveTabGroupLabel, subscribeTabGroupLabels } from "../../workspace/model/tabGroups";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 
 type Props = {

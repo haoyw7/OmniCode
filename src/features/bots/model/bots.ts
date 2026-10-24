@@ -1,6 +1,6 @@
-import type { RemoteProvider } from "../../connections/model/protocol";
+import type { RemoteProvider } from "../../../contracts/provider";
 import type { BotLifecycle, BotConfiguration, BotToolConfiguration } from "./botView";
-import type { RuntimeMode } from "../../sessions/model/session";
+import type { RuntimeMode } from "../../../contracts/session";
 
 /** Host identity is supplied by the connection, never by a client-owned field. */
 export type BotScope = { botId: string; threadId: string };

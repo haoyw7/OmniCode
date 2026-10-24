@@ -1,20 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { newSession } from "../../sessions/model/session";
 import type { SessionSummary } from "../../sessions/data/sessionStore";
-import {
-  conversationRowsFrom,
-  filterHitsByProject,
-  flattenGrouped,
-  groupHits,
-  hitsFromContentMatches,
-  hitsFromSessionSearch,
-  mergeHits,
-  searchConversationTitles,
-  searchRecentProjects,
-  searchSessionMessages,
-  snippetAround,
-  type AppSearchHit,
-} from "./appSearch";
+import { conversationRowsFrom, filterHitsByProject, flattenGrouped, groupHits, hitsFromContentMatches, hitsFromSessionSearch, mergeHits, searchConversationTitles, searchRecentProjects, searchSessionMessages, snippetAround, type AppSearchHit } from "./appSearch";
 
 function summary(
   id: string,

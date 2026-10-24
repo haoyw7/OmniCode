@@ -2,7 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LinkedWorkItemUpdateCard } from "../model/linkedWorkItemActivity";
+import type { LinkedWorkItemUpdateCard } from "../../../contracts/session";
 import { resetSoundCues } from "../../settings/model/sounds";
 import { LinkedWorkItemUpdateNotice } from "./LinkedWorkItemUpdateNotice";
 

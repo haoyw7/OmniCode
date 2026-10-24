@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import type { HostDeviceInfo } from "../features/connections/model/protocol";
+import type { HostDeviceInfo } from "../contracts/protocol";
 
 /** Older app shells may not have the native plugin yet; connecting still works. */
 export async function readMobileDeviceInfo(): Promise<HostDeviceInfo | undefined> {

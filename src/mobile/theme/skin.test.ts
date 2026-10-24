@@ -3,15 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  MOBILE_SKINS,
-  MOBILE_SKIN_INFO,
-  MOBILE_SKIN_KEY,
-  applyMobileSkin,
-  loadMobileSkin,
-  resolveMobileSkin,
-  saveMobileSkin,
-} from "./skin";
+import { MOBILE_SKINS, MOBILE_SKIN_INFO, MOBILE_SKIN_KEY, applyMobileSkin, loadMobileSkin, resolveMobileSkin, saveMobileSkin } from "./skin";
 
 vi.mock("@capacitor/status-bar", async (importOriginal) => ({
   ...await importOriginal<typeof import("@capacitor/status-bar")>(),

@@ -1,6 +1,9 @@
-import { invoke } from "@tauri-apps/api/core";
+import { ATTACHMENT_FOLDER_MIME } from '../../../domain/attachmentPrompt';
+import { isVisionImage, normalizeImageMime } from '../../../domain/attachmentPrompt';
+import { inspectAttachmentPaths, readAttachmentBase64 } from "../../../platform/tauri/attachmentFiles";
+import { stageDesktopAttachment } from "../../../platform/tauri/attachmentStaging";
 import { basename, pickFiles as pickFilePaths } from "../../../platform/tauri/fs";
-import type { Attachment, AttachmentKind } from "./session";
+import type { Attachment, AttachmentKind } from "../../../contracts/session";
 
 export const MAX_ATTACHMENTS = 20;
 export const MAX_EMBED_BYTES = 20 * 1024 * 1024;
@@ -14,55 +17,7 @@ type PathInfo = {
 
 type NativeFile = File & { path?: string };
 
-export type PromptContentBlock =
-  | { type: "text"; text: string }
-  | { type: "image"; mimeType: string; data: string; uri?: string }
-  | {
-      type: "resource_link";
-      uri: string;
-      name: string;
-      mimeType?: string;
-      size?: number;
-    };
-
 const SKIP_NAMES = new Set([".ds_store", "thumbs.db", "desktop.ini"]);
-
-/**
- * Stands in for a turn that arrived with files but no words.
- *
- * Sent on the wire only. The transcript keeps the empty text and shows the
- * attachments on their own, so this never reaches the user's own message.
- */
-export const ATTACHMENT_ONLY_PROMPT =
-  "The user attached these files without saying anything. Use the conversation above to work out what they want done with them, then do that. If the conversation gives you nothing to go on, ask.";
-
-/**
- * The turn's text, or a stand-in when files arrived without any.
- *
- * A turn carrying only attachments never says what to do with them, leaving a
- * model to guess or to ask what the files are for. The conversation so far is
- * the only clue the user left behind, so point the model at it instead.
- */
-export function promptText(
-  text: string,
-  attachments: Attachment[] = [],
-): string {
-  const trimmed = text.trim();
-  if (trimmed || !attachments.length) return trimmed;
-  return ATTACHMENT_ONLY_PROMPT;
-}
-
-/** A copied folder. No harness can open one, so it travels as its path. */
-const FOLDER_MIME = "inode/directory";
-
-/** MIME types providers typically send as vision input. */
-const VISION_MIME = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/gif",
-  "image/webp",
-]);
 
 const MIME_BY_EXT: Record<string, string> = {
   png: "image/png",
@@ -159,13 +114,7 @@ export function displayAttachments(files: Attachment[]): Attachment[] {
   }));
 }
 
-export function attachmentPreviewSrc(file: Attachment): string | undefined {
-  if (file.previewUrl) return file.previewUrl;
-  if (file.data && file.kind === "image") {
-    return `data:${file.mimeType};base64,${file.data}`;
-  }
-  return undefined;
-}
+
 
 export function revokeAttachment(file: Attachment) {
   if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
@@ -248,7 +197,7 @@ export async function attachmentsFromPaths(
 ): Promise<Attachment[]> {
   const unique = [...new Set(paths.filter((path) => path.trim()))];
   if (unique.length === 0) return [];
-  const infos = await invoke<PathInfo[]>("inspect_paths", { paths: unique });
+  const infos = await inspectAttachmentPaths(unique);
   const out: Attachment[] = [];
   for (const info of infos) {
     const file = await attachmentFromPath(info);
@@ -288,9 +237,7 @@ export async function prepareAttachments(
         return file;
       }
       try {
-        const data = await invoke<string>("read_file_base64", {
-          path: file.path,
-        });
+        const data = await readAttachmentBase64(file.path);
         return { ...file, data };
       } catch {
         return file;
@@ -299,69 +246,11 @@ export async function prepareAttachments(
   );
 }
 
-export function promptBlocks(
-  text: string,
-  attachments: Attachment[] = [],
-): PromptContentBlock[] {
-  const blocks: PromptContentBlock[] = [];
-  const body = promptText(text, attachments);
-  if (body) blocks.push({ type: "text", text: body });
-  for (const file of attachments) {
-    blocks.push(contentBlockFor(file));
-  }
-  return blocks;
-}
-
-/** Require a deliverable source instead of silently dropping an attachment. */
-export function attachmentPath(file: Attachment): string {
-  if (!file.path?.trim()) {
-    throw new Error(
-      `Cannot attach ${JSON.stringify(file.name)}: no local file path is available. Attach the file again.`,
-    );
-  }
-  return file.path;
-}
-
-/** Native harnesses without file blocks can ask their tools to read this path. */
-export function attachmentPathText(file: Attachment): string {
-  if (isAttachmentFolder(file)) {
-    return `Attached folder (list or read the files inside from this path): ${JSON.stringify(attachmentPath(file))}`;
-  }
-  return `Attached file (read from disk): ${JSON.stringify(attachmentPath(file))}`;
-}
-
-export function isAttachmentFolder(file: Attachment): boolean {
-  return file.mimeType === FOLDER_MIME;
-}
-
-function contentBlockFor(file: Attachment): PromptContentBlock {
-  // No harness can open a folder, so it travels as a path for the agent's own
-  // tools rather than a resource link nothing can read.
-  if (isAttachmentFolder(file)) {
-    return { type: "text", text: attachmentPathText(file) };
-  }
-  if (file.data && isVisionImage(file.mimeType)) {
-    return {
-      type: "image",
-      mimeType: normalizeImageMime(file.mimeType),
-      data: file.data,
-      ...(file.path ? { uri: fileUri(file.path) } : {}),
-    };
-  }
-  return {
-    type: "resource_link",
-    uri: fileUri(attachmentPath(file)),
-    name: file.name,
-    mimeType: file.mimeType,
-    size: file.size,
-  };
-}
-
 async function attachmentFromPath(info: PathInfo): Promise<Attachment | null> {
   if (skipName(info.name)) return null;
   // A folder's name says nothing about its contents, and a harness handed a
   // resource_link for a directory has nothing to open.
-  const mimeType = info.isDir ? FOLDER_MIME : mimeFromName(info.name);
+  const mimeType = info.isDir ? ATTACHMENT_FOLDER_MIME : mimeFromName(info.name);
   const kind = kindFromMime(mimeType);
   const file: Attachment = {
     id: crypto.randomUUID(),
@@ -377,7 +266,7 @@ async function attachmentFromPath(info: PathInfo): Promise<Attachment | null> {
     info.size <= MAX_EMBED_BYTES
   ) {
     try {
-      file.data = await invoke<string>("read_file_base64", { path: info.path });
+      file.data = await readAttachmentBase64(info.path);
     } catch {
       // Fall back to a resource_link so the agent can still read the file.
     }
@@ -408,7 +297,7 @@ async function attachmentFromBlob(file: File): Promise<Attachment | null> {
     return null;
   }
   try {
-    const path = await invoke<string>("write_attachment", { name, data });
+    const path = await stageDesktopAttachment(name, data);
     return {
       id: crypto.randomUUID(),
       name,
@@ -486,16 +375,6 @@ function kindFromMime(mimeType: string): AttachmentKind {
   return "file";
 }
 
-export function isVisionImage(mimeType: string): boolean {
-  return VISION_MIME.has(mimeType.toLowerCase());
-}
-
-export function normalizeImageMime(mimeType: string): string {
-  const mime = mimeType.toLowerCase();
-  if (mime === "image/jpg") return "image/jpeg";
-  return mime;
-}
-
 function extension(name: string): string {
   const base = basename(name).toLowerCase();
   const dot = base.lastIndexOf(".");
@@ -520,12 +399,6 @@ function fallbackName(mimeType: string): string {
   if (mimeType.startsWith("image/")) return "image";
   if (mimeType.startsWith("audio/")) return "audio";
   return "attachment";
-}
-
-function fileUri(path: string): string {
-  const normalized = path.replace(/\\/g, "/");
-  const abs = normalized.startsWith("/") ? normalized : `/${normalized}`;
-  return `file://${abs.split("/").map(encodeURIComponent).join("/")}`;
 }
 
 function readBlobBase64(file: File): Promise<string | null> {

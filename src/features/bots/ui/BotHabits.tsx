@@ -1,11 +1,7 @@
 import { useState, type KeyboardEvent } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import type {
-  BotHabit,
-  BotHabitKind,
-  BotHabitSchedule,
-} from "../model/botHabits";
+import type { BotHabit, BotHabitKind, BotHabitSchedule } from "../model/botHabits";
 
 export type HabitControl =
   | {

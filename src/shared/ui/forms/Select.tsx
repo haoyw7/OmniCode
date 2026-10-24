@@ -3,14 +3,7 @@
 import { motion } from "motion/react";
 import { useCollapseMotion } from "../AnimatedCollapse";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../SurfaceVisibility";
-import {
-  duration,
-  immediateTransition,
-  popAnimate,
-  popExit,
-  popInitial,
-  popTransition,
-} from "../../motion/tokens";
+import { duration, immediateTransition, popAnimate, popExit, popInitial, popTransition } from "../../motion/tokens";
 import { useMotionPreference } from "../../motion/useMotionPreference";
 import { MenuHover } from "../MenuHover";
 import * as React from "react";
@@ -18,11 +11,7 @@ import { Select as SelectPrimitive } from "radix-ui";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "../../lib/cn";
-import {
-  ChevronDown as ChevronDownIcon,
-  Check as CheckIcon,
-  ChevronUp as ChevronUpIcon,
-} from "../icons";
+import { ChevronDown as ChevronDownIcon, Check as CheckIcon, ChevronUp as ChevronUpIcon } from "../icons";
 
 // resize 大会话时 Select trigger 跟随基础控件批量重排，
 // transition-all 会把布局/滚动条相关属性也动画化；这里限定为颜色过渡。

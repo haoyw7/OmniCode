@@ -3,7 +3,7 @@ import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { parseNativeSession } from "../../src/integrations/harness/core/nativeSessionParser";
+import { parseNativeSession } from "./parser";
 import { compactLine, NativeReader } from "./read";
 import { findNativeSource, listNativeSessions, nativeSources, nativeSourceId, sourceFile, sourceFor } from "./sources";
 

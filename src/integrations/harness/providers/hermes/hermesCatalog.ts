@@ -1,16 +1,8 @@
 import { homeDir } from "../../../../platform/tauri/fs";
-import {
-  setHarnessModels,
-  type AgentModel,
-} from "../../../../features/sessions/model/models";
+import { setHarnessModels } from "../../core/modelCatalog";
+import { type AgentModel } from "../../../../contracts/session";
 import { AcpClient } from "../../core/acp";
-import {
-  killChild,
-  resolveHermesBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
+import { killChild, resolveHermesBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
 import { modelsFromHermesSession } from "./hermesProtocol";
 
 const PROBE_ID = "omnicode-hermes-probe";

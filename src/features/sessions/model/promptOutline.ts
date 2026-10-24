@@ -1,4 +1,4 @@
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 
 /** A vertical span in viewport coordinates. */
 export type OutlineBand = { top: number; bottom: number };

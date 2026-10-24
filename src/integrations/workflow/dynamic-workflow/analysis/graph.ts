@@ -1,5 +1,5 @@
-import type { AnalysisCore, CoreSimpleSite, CoreTypes } from "./core.js";
-import { isActorSite } from "./core.js";
+import { type AnalysisCore, type CoreSimpleSite, type CoreTypes, isActorSite } from "./core.js";
+
 import type { TaintOcc } from "./domain.js";
 import type { ActorSite, SiteEdge, SiteGraph, SiteNode } from "./types.js";
 

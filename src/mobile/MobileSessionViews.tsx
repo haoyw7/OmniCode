@@ -1,8 +1,8 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ComponentProps } from "react";
-import type { HostModelCatalog, HostSession } from "../features/connections/model/protocol";
+import type { HostModelCatalog, HostSession } from "../contracts/protocol";
 import { withOutgoing, type OutgoingMessage } from "../features/connections/model/outgoing";
 import { MeterRing } from "../features/sessions/ui/ContextMeter";
-import { contextRatio } from "../features/sessions/model/contextUsage";
+import { contextRatio } from "../domain/contextUsage";
 import { Computer } from "../shared/ui/icons";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { MobileTranscript } from "./MobileTranscript";

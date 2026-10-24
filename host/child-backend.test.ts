@@ -6,7 +6,7 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { HostChildBackend } from "./child-backend";
-import { REMOTE_PROVIDERS } from "../src/features/connections/model/protocol";
+import { REMOTE_PROVIDERS } from "../src/contracts/provider";
 
 it("launches shared DSH outside the checkout using the requesting session's environment", async () => {
   const directory = mkdtempSync(join(tmpdir(), "omnicode-dsh-environment-"));

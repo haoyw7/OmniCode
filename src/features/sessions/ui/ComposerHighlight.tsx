@@ -1,8 +1,8 @@
 import { StickyNote } from "../../../shared/ui/icons";
 import { fileMentionParts } from "../../connections/files/model/fileMentions";
-import type { ProjectFile } from "../../../platform/tauri/fs";
+import type { ProjectFile } from "../../../contracts/workspace";
 import { skillTextParts } from "../../skills/model/skills";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
 import { isNoteMentionPath } from "../../notes";
 import { ModeCommandText, type ModeCommandToken } from "./modeCommands";
 import { mcpTagParts, type McpTag } from "../model/mcpPicker";

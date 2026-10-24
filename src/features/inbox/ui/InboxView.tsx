@@ -1,120 +1,33 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
-import { AppPageHeader } from "../../workspace/ui/AppPageHeader";
+import { AppPageHeader } from "../../../shared/ui/messaging/AppPageHeader";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  CheckCheck,
-  Inbox,
-  ListFilter,
-  LoaderCircle,
-  Plus,
-  RefreshCw,
-  Search,
-} from "../../../shared/ui/icons";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent as ReactMouseEvent,
-} from "react";
+import { CheckCheck, Inbox, ListFilter, LoaderCircle, Plus, RefreshCw, Search } from "../../../shared/ui/icons";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { InboxFiltersMenu, INBOX_FILTER_MENU_WIDTH } from "./InboxFiltersMenu";
 import { InboxConnectMenu } from "./InboxConnectMenu";
-import { InboxProviderMark } from "./InboxProviderMark";
+import { InboxProviderMark } from "../../../shared/ui/branding/InboxProviderMark";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import {
-  githubStatus,
-  githubWorkItem,
-  inboxItemKey,
-  inboxListIsFresh,
-  inboxProjectsForRail,
-  listInboxItems,
-  peekInboxList,
-  type InboxItem,
-  type InboxProviderErrors,
-  type InboxQuery,
-} from "../model/githubTasks";
-import {
-  applyInboxFilters,
-  connectableInboxSources,
-  hasActiveInboxFilters,
-  loadInboxConnections,
-  linearProjectOptions,
-  inboxFetchState,
-  loadInboxFilters,
-  loadInboxSource,
-  pruneInboxFilters,
-  saveInboxFilters,
-  resolveInboxSource,
-  saveInboxConnections,
-  saveInboxSource,
-  visibleInboxSources,
-  INBOX_SOURCE_LABELS,
-  isTrackerSource,
-  type ConnectableInboxSource,
-  type InboxFilters,
-  type InboxSource,
-} from "../model/inboxFilters";
+import { githubStatus, githubWorkItem, inboxItemKey, inboxListIsFresh, inboxProjectsForRail, listInboxItems, peekInboxList } from "../model/githubTasks";
+import type { InboxItem, InboxProviderErrors, InboxQuery, LinkedWorkItem } from "../../../contracts/session";
+import { applyInboxFilters, connectableInboxSources, hasActiveInboxFilters, loadInboxConnections, linearProjectOptions, inboxFetchState, loadInboxFilters, loadInboxSource, pruneInboxFilters, saveInboxFilters, resolveInboxSource, saveInboxConnections, saveInboxSource, visibleInboxSources, INBOX_SOURCE_LABELS, isTrackerSource, type ConnectableInboxSource, type InboxFilters, type InboxSource } from "../model/inboxFilters";
 import { projectKey, projectName } from "../../../shared/lib/paths";
-import {
-  type RecentProject,
-} from "../../projects/model/recents";
-import {
-  type LinkedWorkItem,
-} from "../../sessions/model/session";
+import { type RecentProject } from "../../projects/model/recents";
+
 import type { SessionSummary } from "../../sessions/data/sessionStore";
-import {
-  inboxItemMatchesLinkedWorkItem,
-  linkedWorkItemInboxKey,
-  relatedSessionsForInboxItem,
-} from "../../sessions/model/sessionWorkItem";
-import {
-  isInboxEntryUnseen,
-  markInboxItemSeen,
-  markInboxItemsSeen,
-  rememberInboxItems,
-  useInboxSeenTick,
-} from "../model/inboxSeen";
+import { inboxItemMatchesLinkedWorkItem, linkedWorkItemInboxKey, relatedSessionsForInboxItem } from "../../sessions/model/sessionWorkItem";
+import { isInboxEntryUnseen, markInboxItemSeen, markInboxItemsSeen, rememberInboxItems, useInboxSeenTick } from "../model/inboxSeen";
 import { LIST_PAGE_SIZE, listWindowSize } from "../../../shared/lib/listWindow";
-import {
-  LINEAR_CHANGE_EVENT,
-  linearConnected,
-  listLinearTeams,
-  loadHiddenLinearTeamIds,
-  saveHiddenLinearTeamIds,
-  type LinearTeam,
-} from "../model/linear";
-import {
-  JIRA_CHANGE_EVENT,
-  jiraConnected,
-  listJiraProjects,
-  loadHiddenJiraProjectIds,
-  saveHiddenJiraProjectIds,
-  type JiraProject,
-} from "../model/jira";
-import {
-  GITLAB_CHANGE_EVENT,
-  gitlabConnected,
-} from "../model/gitlab";
-import {
-  AZUREDEVOPS_CHANGE_EVENT,
-  azureDevOpsConnected,
-} from "../model/azureDevOps";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import {
-  InboxDiscussionPanel,
-  type InboxSessionPortal,
-} from "./InboxDiscussionPanel";
+import { LINEAR_CHANGE_EVENT, linearConnected, listLinearTeams, loadHiddenLinearTeamIds, saveHiddenLinearTeamIds } from "../model/linear";
+import type { LinearTeam } from "../../../contracts/linear";
+import { JIRA_CHANGE_EVENT, jiraConnected, listJiraProjects, loadHiddenJiraProjectIds, saveHiddenJiraProjectIds } from "../model/jira";
+import type { JiraProject } from "../../../contracts/jira";
+import { GITLAB_CHANGE_EVENT, gitlabConnected } from "../model/gitlab";
+import { AZUREDEVOPS_CHANGE_EVENT, azureDevOpsConnected } from "../model/azureDevOps";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLogo, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
+import { InboxDiscussionPanel, type InboxSessionPortal } from "./InboxDiscussionPanel";
 import { inboxAskKey } from "../model/inboxAsk";
 import { type CiRepairProps, InboxDetail } from "./InboxDetail";
 import { type InboxProjectOption, inboxProjectOptions } from "./InboxProjectPicker";

@@ -1,42 +1,18 @@
 import { usePreferenceState } from "../../settings/model/usePreferenceState";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import "./QuickModelSelector.css";
-import {
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
-import { emit } from "@tauri-apps/api/event";
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { requestQuickComposerCatalog } from "../../../platform/tauri/quickComposer";
 import { Check, RotateCcw, Search, Star, Zap } from "../../../shared/ui/icons";
-import {
-  findModel,
-  getModelSnapshot,
-  getPickerVisibilitySnapshot,
-  loadFavoriteModels,
-  modelEffortSetting,
-  modelsFor,
-  preferredModelSettings,
-  saveFavoriteModels,
-  showProviderInModelPicker,
-  subscribeModels,
-  subscribePickerVisibility,
-  type AgentModel,
-  type ModelPickerTab,
-} from "../../sessions/model/models";
-import {
-  HARNESSES,
-  HARNESS_TITLE,
-  type HarnessId,
-} from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { getPickerVisibilitySnapshot, loadFavoriteModels, preferredModelSettings, saveFavoriteModels, showProviderInModelPicker, subscribePickerVisibility } from "../../sessions/model/models";
+import { modelEffortSetting } from "../../../domain/modelSettings";
+import { findModel, getModelSnapshot, modelsFor, subscribeModels } from "../../../integrations/harness/core/modelCatalog";
+import { type AgentModel, type ModelPickerTab, HARNESSES, type HarnessId } from "../../../contracts/session";
+
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { modelGroups } from "../../sessions/model/modelGroups";
-import {
-  filterQuickModels,
-  QUICK_COMPOSER_CATALOG_REQUEST_EVENT,
-} from "../model/quickComposer";
+import { filterQuickModels } from "../model/quickComposer";
 
 type Props = {
   model: AgentModel;
@@ -139,7 +115,7 @@ export function QuickModelSelector({
   }, []);
   useEffect(() => {
     if (visibleTab !== "favorites")
-      void emit(QUICK_COMPOSER_CATALOG_REQUEST_EVENT, visibleTab);
+      void requestQuickComposerCatalog(visibleTab);
   }, [visibleTab]);
 
   useLayoutEffect(() => {

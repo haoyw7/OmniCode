@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  parseStreamingMarkdown,
-  StreamingMarkdownParser,
-} from "./streamingMarkdown";
+import { parseStreamingMarkdown, StreamingMarkdownParser } from "../../../shared/ui/markdown/streamingMarkdown";
 
 describe("streaming Markdown blocks", () => {
   it("closes incomplete emphasis within its paragraph", () => {

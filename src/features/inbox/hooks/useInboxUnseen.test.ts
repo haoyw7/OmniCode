@@ -2,20 +2,13 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { InboxItem } from "../model/githubTasks";
+import type { InboxItem } from "../../../contracts/session";
 import { inboxItemKey } from "../model/githubTasks";
-import {
-  isInboxEntryUnseen,
-  markInboxItemSeen,
-  seedInboxSeenIfNeeded,
-} from "../model/inboxSeen";
+import { isInboxEntryUnseen, markInboxItemSeen, seedInboxSeenIfNeeded } from "../model/inboxSeen";
 import { updateNotificationPreferences } from "../../notifications/model/notificationPreferences";
 import type { SessionSummary } from "../../sessions/data/sessionStore";
 import { markLinkedSessionUpdateSeen } from "../model/linkedSessionSeen";
-import {
-  clearPendingInboxSelfActivity,
-  recordInboxSelfActivity,
-} from "../model/inboxSelfActivity";
+import { clearPendingInboxSelfActivity, recordInboxSelfActivity } from "../model/inboxSelfActivity";
 import { useInboxActivity, type InboxActivity } from "./useInboxUnseen";
 
 const { githubWorkItem, listInboxItems, playCue } = vi.hoisted(() => ({

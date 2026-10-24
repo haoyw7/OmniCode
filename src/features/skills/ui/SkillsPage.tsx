@@ -1,58 +1,27 @@
+import type { DiscoveredSkill } from "../../../contracts/skills";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
-import {
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import {
-  AnimatedCollapse,
-  useCollapseMotion,
-} from "../../../shared/ui/AnimatedCollapse";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../../../shared/ui/SurfaceVisibility";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import "./SkillsPage.css";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import {
-  Copy,
-  Eye,
-  FolderOpen,
-  RefreshCw,
-  Search,
-  X,
-} from "../../../shared/ui/icons";
+import { revealLocalItem } from "../../../platform/tauri/browser";
+import { Copy, Eye, FolderOpen, RefreshCw, Search, X } from "../../../shared/ui/icons";
 import { CreateSkillForm } from "./SkillPicker";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import {
-  MarkdownModeToggle,
-  useMarkdownMode,
-} from "../../sessions/ui/MarkdownModeToggle";
-import { MarkdownSource } from "../../sessions/ui/AgentMarkdown";
+import { MarkdownModeToggle, useMarkdownMode } from "../../../shared/ui/MarkdownModeToggle";
+import { MarkdownSource } from "../../../shared/ui/markdown/AgentMarkdown";
 import { SkillDocumentPreview } from "./SkillDocumentPreview";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { HARNESS_TITLE, type HarnessId } from "../../sessions/model/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type HarnessId } from "../../../contracts/session";
 import { copyText } from "../../../platform/tauri/clipboard";
-import {
-  listSkills,
-  readTextFile,
-  type DiscoveredSkill,
-} from "../../../platform/tauri/fs";
-import {
-  createBlankSkill,
-  invalidateSkills,
-  loadDisabledSkillPaths,
-  saveDisabledSkillPaths,
-  SKILLS_CHANGE_EVENT,
-} from "../model/skills";
+import { listSkills, readTextFile } from "../../../platform/tauri/fs";
+import { createBlankSkill, invalidateSkills, loadDisabledSkillPaths, saveDisabledSkillPaths, SKILLS_CHANGE_EVENT } from "../model/skills";
 
 type SkillSource = DiscoveredSkill["source"];
 
@@ -275,7 +244,7 @@ export function SkillsPage({
 
   const onReveal = (path: string): void => {
     setActionError(null);
-    void revealItemInDir(path).catch((err: unknown) => {
+    void revealLocalItem(path).catch((err: unknown) => {
       setActionError(
         `Could not open the folder: ${err instanceof Error ? err.message : String(err)}`,
       );

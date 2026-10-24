@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
 import { HostStore } from "./store";
-import { importDesktopSessions } from "./desktop-import";
+import { desktopImportAudit, importDesktopSessions } from "./desktop-import";
 import { readAttachmentChunk } from "./attachments";
 import { readdirSync } from "node:fs";
 import { HostEngine } from "./engine";
@@ -216,4 +216,50 @@ it("rolls back a failed import and allows a repaired source to retry", () => {
   } finally {
     store.close();
   }
+});
+
+
+it("verifies versioned receipts and rejects source mutations without overwriting either history", () => {
+  const { path, store } = fixture();
+  try {
+    importDesktopSessions(store, path);
+    expect(desktopImportAudit(store, path).rows[0]).toMatchObject({ id: "legacy", sourceUpdatedAt: 200, fingerprint: expect.stringMatching(/^[a-f0-9]{64}$/) });
+    const before = store.session("legacy");
+    const source = new DatabaseSync(path);
+    source.prepare("UPDATE sessions SET title=?, updated_at=? WHERE id='legacy'").run("Offline older desktop", 201);
+    source.close();
+    expect(() => importDesktopSessions(store, path)).toThrow("changed after import");
+    expect(() => desktopImportAudit(store, path)).toThrow("changed after import");
+    expect(store.session("legacy")).toEqual(before);
+    const verify = new DatabaseSync(path, { readOnly: true });
+    expect(verify.prepare("SELECT title FROM sessions").get()?.title).toBe("Offline older desktop");
+    verify.close();
+  } finally { store.close(); }
+});
+
+it("upgrades a legacy marker only when its transcript is demonstrably retained", () => {
+  const { path, store } = fixture();
+  try {
+    importDesktopSessions(store, path);
+    store.db.prepare("UPDATE metadata SET value='1' WHERE key LIKE 'desktop-import:%'").run();
+    expect(importDesktopSessions(store, path)).toBe(0);
+    expect(desktopImportAudit(store, path).rows).toHaveLength(1);
+    store.db.prepare("UPDATE metadata SET value='1' WHERE key LIKE 'desktop-import:%'").run();
+    const source = new DatabaseSync(path);
+    source.prepare("UPDATE sessions SET blocks_json=?").run(JSON.stringify([{ id: "new", role: "user", text: "Unimported" }]));
+    source.close();
+    expect(() => importDesktopSessions(store, path)).toThrow("conflicts with Host history");
+    expect(store.session("legacy").session.blocks[0].id).toBe("user");
+  } finally { store.close(); }
+});
+
+it("preserves deleted legacy-marker conversations until their source import can be verified", () => {
+  const { path, store } = fixture();
+  try {
+    importDesktopSessions(store, path);
+    store.db.prepare("UPDATE metadata SET value='1' WHERE key LIKE 'desktop-import:%'").run();
+    store.deleteSession("legacy");
+    expect(() => importDesktopSessions(store, path)).toThrow("unverified legacy import");
+    expect(store.sessions()).toEqual([]);
+  } finally { store.close(); }
 });

@@ -1,20 +1,9 @@
 import ts from "typescript";
-import {
-  collectDiagnostics,
-  createWorkflowProgram,
-  WORKFLOW_FUNCTION_NAME,
-  type CompileDiagnostic,
-  type WorkflowProgram,
-} from "../compiler/compile.js";
+import { collectDiagnostics, createWorkflowProgram, WORKFLOW_FUNCTION_NAME, type CompileDiagnostic, type WorkflowProgram } from "../compiler/compile.js";
 import { FACADE_FILE_NAME } from "../facade/dts.js";
 import { isArtifactPresetOp, type ArtifactOp, type WorldReadOp } from "../facade/registry.js";
 import { collectFacadeMisuse } from "../analysis/facade-misuse.js";
-import {
-  collectSites,
-  isFacadeDeclared,
-  resolveSymbol,
-  type SiteTable,
-} from "../analysis/sites.js";
+import { collectSites, isFacadeDeclared, resolveSymbol, type SiteTable } from "../analysis/sites.js";
 
 /**
  * Lowering（instrumentation emit step）：把已 typecheck + analyze 干净的 workflow 脚本降级为沙箱可跑的

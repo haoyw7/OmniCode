@@ -1,18 +1,10 @@
-import {
-  TID_WORKFLOW_DETAIL_DESCRIPTION,
-  TID_WORKFLOW_DETAIL_WHEN_TO_USE,
-  TID_WORKFLOW_META_DISCARD,
-  TID_WORKFLOW_META_SAVE,
-} from "../../_shims/shared.js";
+import { TID_WORKFLOW_DETAIL_DESCRIPTION, TID_WORKFLOW_DETAIL_WHEN_TO_USE, TID_WORKFLOW_META_DISCARD, TID_WORKFLOW_META_SAVE } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { Spinner } from "../../../../../shared/ui/primitives/Spinner.js";
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import { SettingsFormTextarea } from "../SettingsFormTextarea.js";
-import type {
-  SavedWorkflowArgRow,
-  SavedWorkflowArgRowError,
-} from "./savedWorkflowArgsForm.js";
+import type { SavedWorkflowArgRow, SavedWorkflowArgRowError } from "./savedWorkflowArgsForm.js";
 import { SavedWorkflowArgsTable } from "./SavedWorkflowArgsTable.js";
 
 export interface SavedWorkflowMetaDraft {

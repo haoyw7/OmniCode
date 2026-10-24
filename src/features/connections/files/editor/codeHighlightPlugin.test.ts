@@ -3,10 +3,7 @@ import * as shiki from "shiki";
 import type { BundledLanguage } from "shiki";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import { describe, expect, it, vi } from "vitest";
-import {
-  createBoundedCodePlugin,
-  type BoundedCodePlugin,
-} from "./codeHighlightPlugin";
+import { createBoundedCodePlugin, type BoundedCodePlugin } from "./codeHighlightPlugin";
 import { createCodeTokenizer } from "./codeTokenizer";
 
 vi.mock("shiki", async (importOriginal) => {

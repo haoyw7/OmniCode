@@ -1,27 +1,13 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../projects/model/projectMascots";
+import { useProjectLogoSource } from "../../projects/model/useProjectLogoSource";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  CheckCircle,
-  CircleDot,
-  CircleX,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestClosed,
-  GitPullRequestDraft,
-  MessageMultiple,
-  type IconComponent,
-} from "../../../shared/ui/icons";
-import { InboxProviderMark } from "./InboxProviderMark";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import {
-  gitlabAttentionLabel,
-  inboxItemKey,
-  inboxItemRef,
-  inboxItemStatus,
-  formatRelativeTime,
-  type GithubLabel,
-  type InboxItem,
-} from "../model/githubTasks";
+import { CheckCircle, CircleDot, CircleX, GitMerge, GitPullRequest, GitPullRequestClosed, GitPullRequestDraft, MessageMultiple, type IconComponent } from "../../../shared/ui/icons";
+import { InboxProviderMark } from "../../../shared/ui/branding/InboxProviderMark";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
+
+import { gitlabAttentionLabel, inboxItemKey, inboxItemRef, inboxItemStatus, formatRelativeTime } from "../model/githubTasks";
+import { type GithubLabel, type InboxItem } from "../../../contracts/session";
 import { projectName } from "../../../shared/lib/paths";
 import { isInboxEntryUnseen, useInboxSeenTick } from "../model/inboxSeen";
 
@@ -85,6 +71,7 @@ export function InboxCard({
   relatedSessionCount: number;
   onSelect: () => void;
 }) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const { t: uiT } = useTranslation();
   useInboxSeenTick();
   const status = inboxStatusMark(item);
@@ -171,15 +158,15 @@ export function InboxCard({
         <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-content/45">
           {tracker || !item.projectPath ? null : logoPath ? (
             <ProjectLogoIcon
-              path={logoPath}
+              src={resolveProjectLogoSrc(logoPath)}
               className="size-3.5 shrink-0 rounded-sm"
               imageClassName="size-3.5"
             />
           ) : (
-            <ProjectMascot
-              project={name}
-              color={mascotColor}
-              name={mascotName}
+            <Omi compact
+              expression={projectMascot(name, mascotName).name}
+              style={{ color: mascotColor || undefined }}
+              
               className="size-3 shrink-0"
             />
           )}

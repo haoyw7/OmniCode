@@ -1,21 +1,7 @@
-import type {
-  CodeHighlighterPlugin,
-  HighlightResult,
-  ThemeInput,
-} from "@streamdown/code";
+import type { CodeHighlighterPlugin, HighlightResult, ThemeInput } from "@streamdown/code";
 import { codeHighlightThemes } from "../../../settings/model/codeAppearance";
-import {
-  bundledLanguages,
-  bundledLanguagesInfo,
-  type BundledLanguage,
-} from "shiki";
-import {
-  createCodeTokenizer,
-  themeName,
-  type CodeTokenizeRequest,
-  type CodeTokenizeResponse,
-  type CodeTokenizer,
-} from "./codeTokenizer";
+import { bundledLanguages, bundledLanguagesInfo, type BundledLanguage } from "shiki";
+import { createCodeTokenizer, themeName, type CodeTokenizeRequest, type CodeTokenizeResponse, type CodeTokenizer } from "./codeTokenizer";
 
 /**
  * `@streamdown/code` keeps every token result in a module-level Map that is

@@ -1,17 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  displayPath,
-  isEqualOrInside,
-  joinPath,
-  parentPath,
-  prettyCwd,
-  projectName,
-  rebasePath,
-  setHomeDir,
-  slash,
-  resolveWorkspaceFileReference,
-  resolveWorkspacePath,
-} from "./paths";
+import { isEqualOrInside, joinPath, parentPath, prettyCwd, projectName, rebasePath, setHomeDir, slash, resolveWorkspaceFileReference, resolveWorkspacePath } from "./paths";
+import { displayPath } from '../../domain/pathDisplay';
 
 describe("workspace file references", () => {
   it.each([

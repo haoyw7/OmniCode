@@ -6,7 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { newEditorPane, newFileTab } from "../../../workspace/model/layout";
 import { invalidateWatchedFiles } from "../model/fileWatch";
-import { FilePane } from "./FilePane";
+import { FilePane } from "../../../../app/ui/FilePane";
 
 const disk = vi.hoisted(() => ({ content: "", relative: "review.txt" }));
 const invoke = vi.hoisted(() =>

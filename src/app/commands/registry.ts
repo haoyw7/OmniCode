@@ -1,11 +1,6 @@
-import type { ExplorerMenuItem } from "../../features/connections/files/ui/ExplorerMenu";
+import type { ExplorerMenuItem } from "../../shared/ui/primitives/ExplorerMenu";
 import { quickComposerShortcutLabel } from "../../features/quick-composer/model/quickComposerShortcut";
-import {
-  KEYBINDINGS,
-  keybindingShortcutLabel,
-  loadQuickComposerEnabled,
-  loadQuickComposerShortcut,
-} from "../../features/settings/model/settings";
+import { KEYBINDINGS, keybindingShortcutLabel, loadQuickComposerEnabled, loadQuickComposerShortcut } from "../../features/settings/model/settings";
 import { IS_MAC } from "../../platform/tauri/platform";
 
 /**

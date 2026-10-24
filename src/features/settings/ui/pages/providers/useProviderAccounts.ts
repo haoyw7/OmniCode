@@ -1,38 +1,16 @@
-import { ask } from "@tauri-apps/plugin-dialog";
+import { confirmNativeAction } from "../../../../../platform/tauri/dialogs";
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { withStatusToast } from "../../../../../shared/ui/StatusToast";
-import { loginHarness } from "../../../../../integrations/harness/core/auth";
-import { HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
-import {
-  providerAccounts,
-  PROVIDER_ACCOUNT_PROVIDERS,
-  removeProviderAccount,
-  subscribeProviderAccounts,
-  type ManagedProviderAccountProvider,
-  type ProviderAccount,
-  type ProviderAccountProvider,
-} from "../../../../providers/model/providerAccounts";
-import {
-  addProviderAccountProfile,
-  importCurrentCodexAccount,
-  loadProviderAccounts,
-  loadSharedProviderDefaults,
-  removeProviderAccountCredentials,
-  requireSharedAccountHost,
-  setSharedProviderDefault,
-  updateProviderAccountProfile,
-} from "../../../../providers/model/providerAccountCredentials";
+import { loginHarness } from "../../../../providers/model/providerLogin";
+import { HARNESS_TITLE } from "../../../../../contracts/session";
+import { type HarnessId } from "../../../../../contracts/session";
+import { providerAccounts, PROVIDER_ACCOUNT_PROVIDERS, removeProviderAccount, subscribeProviderAccounts, type ManagedProviderAccountProvider, type ProviderAccount, type ProviderAccountProvider } from "../../../../providers/model/providerAccounts";
+import { addProviderAccountProfile, importCurrentCodexAccount, loadProviderAccounts, loadSharedProviderDefaults, removeProviderAccountCredentials, requireSharedAccountHost, setSharedProviderDefault, updateProviderAccountProfile } from "../../../../providers/model/providerAccountCredentials";
 import { useProviderAccountIdentities } from "../../../../providers/model/providerAccountIdentity";
-import {
-  useProviderAccountUsage,
-  type AccountUsage,
-} from "../../../../providers/model/accountUsage";
+import { useProviderAccountUsage, type AccountUsage } from "../../../../providers/model/accountUsage";
 import { clearCachedRateLimits } from "../../../../providers/model/rateLimitsCache";
-import {
-  useDeepseekAccount,
-  type DeepseekAccountState,
-} from "../../../../providers/model/deepseekAccount";
+import { useDeepseekAccount, type DeepseekAccountState } from "../../../../providers/model/deepseekAccount";
 
 export type AccountEditor = {
   homeEdited?: boolean;
@@ -236,7 +214,7 @@ export function useProviderAccounts() {
 
   const removeAccount = async (account: ProviderAccount) => {
     if (account.isDefault || working) return;
-    const confirmed = await ask(
+    const confirmed = await confirmNativeAction(
       uiT("Remove “{account}”? Running turns will stop. Host-managed credentials will be deleted; custom Data Homes will be kept.", { account: account.label }),
       {
         title: `Remove ${HARNESS_TITLE[account.provider]} account`,
@@ -274,7 +252,7 @@ export function useProviderAccounts() {
   };
 
   const accounts = PROVIDER_ACCOUNT_PROVIDERS.flatMap(providerAccounts);
-  const identities = useProviderAccountIdentities(accounts, version, "host");
+  const identities = useProviderAccountIdentities(accounts, version);
   const accountUsage = useProviderAccountUsage(version);
   const usage: AccountUsage = {
     ...accountUsage,

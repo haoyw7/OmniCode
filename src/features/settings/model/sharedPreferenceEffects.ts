@@ -4,7 +4,7 @@ import { initSounds, loadSoundsEnabled, SOUNDS_CHANGE_EVENT } from "./sounds";
 import { refreshUiLanguage } from "../../../shared/i18n/language";
 import * as settings from "./settings";
 import { SHARED_PREFERENCES_CHANGED } from "./sharedPreferences";
-import { PROJECT_LIST_PREFERENCES, preferenceField } from "./sharedPreferenceSchema";
+import { PROJECT_LIST_PREFERENCES, preferenceField } from "../../../domain/sharedPreferenceSchema";
 
 /**
  * Sidebar layout and session bookkeeping, saved by ordinary navigation

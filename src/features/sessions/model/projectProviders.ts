@@ -1,6 +1,6 @@
 import { preferenceStorage } from "../../settings/model/sharedPreferences";
 import { pathKey } from "../../../shared/lib/paths";
-import type { HarnessId } from "./session";
+import type { HarnessId } from "../../../contracts/session";
 
 /**
  * Per-project overrides for the Providers settings: which provider new

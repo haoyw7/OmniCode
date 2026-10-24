@@ -1,41 +1,15 @@
-import {
-  resetGenerationMetrics,
-  measureGenerationTurn,
-  emitAcpGenerationEvent,
-} from "../../core/generationMetrics";
+import { resetGenerationMetrics, measureGenerationTurn, emitAcpGenerationEvent } from "../../core/generationMetrics";
 import { nativeAcpTitleEvent, noteAcpTitleCapabilities, readAcpSessionTitle, readAcpTitleInProcess } from "../../core/nativeTitles";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
-import { nativeModelId } from "../../../../features/sessions/model/models";
+import { nativeModelId } from "../../core/modelCatalog";
 import { providerSessionAccessIssue } from "../sessionAccessErrors";
 import { AcpSubagents } from "../../core/acpSubagents";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import type { RuntimeMode } from "../../../../contracts/session";
 import { AcpClient, assertAcpPromptCompleted, type AcpHandlers } from "../../core/acp";
-import {
-  killChild,
-  resolveFxBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import {
-  autoPermissionOption,
-  eventsFromAcpUpdate,
-  extractModelConfigId,
-  fxModeId,
-  fxPromptBlocks,
-  permissionOptionId,
-  permissionRequestFromAcp,
-  readConfigOptions,
-  resolveSettingConfigId,
-  sessionIdFromResult,
-  type SessionConfigOption,
-} from "./fxProtocol";
-import type {
-  ApprovalDecision,
-  HarnessEvent,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+import { killChild, resolveFxBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { autoPermissionOption, eventsFromAcpUpdate, extractModelConfigId, fxModeId, fxPromptBlocks, permissionOptionId, permissionRequestFromAcp, readConfigOptions, resolveSettingConfigId, sessionIdFromResult, type SessionConfigOption } from "./fxProtocol";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput, SteerTurnInput } from "../../core/types";
 
 type SessionSetupResult = {
   sessionId?: string;

@@ -12,7 +12,7 @@ import { SurfaceVisibilityContext } from "../../../../../shared/ui/SurfaceVisibi
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), convertFileSrc: (path: string) => path, isTauri: () => false }));
 vi.mock("@tauri-apps/api/window", () => ({ getCurrentWindow: () => ({ label: "main" }) }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: vi.fn(async () => true) }));
-vi.mock("../../../../../integrations/harness/core/auth", () => ({ loginHarness: vi.fn(async () => {}) }));
+vi.mock("../../../../providers/model/providerLogin", () => ({ loginHarness: vi.fn(async () => {}) }));
 vi.mock("../../../../providers/model/accountUsage", async original => ({ ...await original<typeof import("../../../../providers/model/accountUsage")>(), useProviderAccountUsage: () => ({ usage: {}, now: Date.now(), refreshing: false, refresh: () => {} }),
   accountStatus: () => ({ tone: "neutral", label: "Unknown", rank: 0 }), accountHeadroom: () => undefined }));
 let root: Root;

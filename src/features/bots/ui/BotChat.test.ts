@@ -7,13 +7,7 @@ import { startMotionClock, stopMotionClock, finishMotion } from "../../../../tes
 import { BotChat } from "./BotChat";
 import { MobileAssistant } from "../../../mobile/MobileAssistant";
 import { BotSettings } from "./BotSettings";
-import {
-  fullBotPolicy,
-  type BotMessage,
-  type BotHistory,
-  type BotPatch,
-  type BotConfiguration,
-} from "../model/botView";
+import { fullBotPolicy, type BotMessage, type BotHistory, type BotPatch, type BotConfiguration } from "../model/botView";
 import { setUiLanguage } from "../../../shared/i18n/language";
 import { LAYER } from "../../../shared/lib/layers";
 vi.mock("./BotWorkerDetails", () => ({

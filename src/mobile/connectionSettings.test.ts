@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileApp } from "./MobileApp";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
-import { AttachmentChip } from "../features/sessions/ui/AttachmentChip";
+import { AttachmentChip } from "../shared/ui/attachments/AttachmentChip";
 import { setUiLanguage, UI_LANGUAGE_KEY } from "../shared/i18n/language";
 import { ensureRandomUUID } from "./browserCrypto";
 import { MOBILE_MATERIAL_SELECTOR } from "./theme/material";

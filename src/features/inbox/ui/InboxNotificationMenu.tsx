@@ -1,28 +1,14 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useState } from "react";
-import {
-  inboxHasUnseenItems,
-  knownInboxEntries,
-  markInboxItemsSeen,
-  useInboxSeenTick,
-} from "../model/inboxSeen";
+import { inboxHasUnseenItems, knownInboxEntries, markInboxItemsSeen, useInboxSeenTick } from "../model/inboxSeen";
 import { useProjectNotificationPreferences } from "../../notifications/hooks/useProjectNotificationPreferences";
-import {
-  isProjectMuted,
-  updateNotificationPreferences,
-} from "../../notifications/model/notificationPreferences";
+import { isProjectMuted, updateNotificationPreferences } from "../../notifications/model/notificationPreferences";
 import { useNotificationProjects } from "../../notifications/hooks/useNotificationProjects";
-import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../connections/files/ui/ExplorerMenu";
-import { NotificationMuteDatePicker } from "../../notifications/ui/NotificationMuteDatePicker";
+import { ExplorerMenu, type ExplorerMenuItem } from "../../../shared/ui/primitives/ExplorerMenu";
+import { NotificationMuteDatePicker } from "../../../shared/ui/NotificationMuteDatePicker";
 import { Popover } from "../../../shared/ui/Popover";
-import {
-  notificationMuteActions,
-  notificationMuteDeadline,
-} from "../../notifications/ui/notificationMuteActions";
+import { notificationMuteActions, notificationMuteDeadline } from "../../notifications/model/notificationMuteActions";
 
 type Props = {
   x: number;
@@ -103,7 +89,9 @@ export function InboxNotificationMenu({
           </p>
         </div>
         <NotificationMuteDatePicker
-          projectIds={allIds}
+          initialUntil={allIds.length === 1 ? preferences[allIds[0]]?.mutedUntil : undefined}
+          disabled={!allIds.length}
+          onSave={(mutedUntil) => updateNotificationPreferences(allIds, { mutedUntil })}
           onChanged={onClose}
           onCancel={() => setCustomOpen(false)}
         />

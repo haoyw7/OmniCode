@@ -1,13 +1,8 @@
-import type {
-  AgentModel,
-  Attachment,
-  HarnessEvent,
-  UserQuestion,
-  UserQuestionReply,
-} from "../../core/types";
-import { extractToolPreview, titleFromToolInput } from "../../core/preview";
+import type { AgentModel, Attachment, UserQuestion, UserQuestionReply } from "../../../../contracts/session";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import { extractToolPreview, titleFromToolInput } from "../../../../domain/preview";
 import { translate } from "../../../../shared/i18n/language";
-import { parseDeepseekModelRoute } from "./deepseekModelId";
+import { parseDeepseekModelRoute } from "../../../../domain/modelRoute";
 
 export const DEEPSEEK_BRIDGE_PROTOCOL = 1;
 export const DEEPSEEK_RUNTIME_VERSION = "0.2.1-rc.2";

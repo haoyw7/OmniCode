@@ -2,12 +2,9 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  WorkflowActivityContext,
-  type WorkflowActivityEntry,
-} from "../model/workflowActivity";
+import { WorkflowActivityContext, type WorkflowActivityEntry } from "../model/workflowActivity";
 import { WorkflowSidebarSection } from "./WorkflowSidebarSection";
-import { TerminalSpinner } from "../../sessions/ui/TerminalSpinner";
+import { TerminalSpinner } from "../../../shared/ui/TerminalSpinner";
 
 let container: HTMLDivElement;
 let root: Root;

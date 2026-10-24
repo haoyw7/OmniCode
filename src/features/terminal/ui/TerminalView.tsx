@@ -5,38 +5,17 @@ import { useEffect, useRef, useState } from "react";
 import { copyText } from "../../../platform/tauri/clipboard";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ExplorerMenu } from "../../../shared/ui/primitives/ExplorerMenu";
 import { pasteTerminalClipboard } from "../model/terminalClipboard";
-import {
-  getPtyStatus,
-  killPty,
-  resizePty,
-  spawnPty,
-  subscribePty,
-  writePty,
-} from "../../../platform/tauri/pty";
+import { getPtyStatus, killPty, resizePty, spawnPty, subscribePty, writePty } from "../../../platform/tauri/pty";
 import { isOscColorQuery, oscColorReply } from "../model/terminalChrome";
 import { guardTerminalComposition } from "../model/terminalComposition";
 import { createTerminalFitScheduler } from "../model/terminalFitScheduler";
 import { createTerminalResize } from "../model/terminalResize";
-import {
-  isMacTerminalClearShortcut,
-  macTerminalShortcutData,
-  terminalClipboardShortcut,
-} from "../model/terminalKeys";
-import {
-  defaultTerminalTitle,
-  scanOscCwd,
-  type TerminalMetaPatch,
-} from "../model/terminalTab";
+import { isMacTerminalClearShortcut, macTerminalShortcutData, terminalClipboardShortcut } from "../model/terminalKeys";
+import { defaultTerminalTitle, scanOscCwd, type TerminalMetaPatch } from "../model/terminalTab";
 import { isLightScheme, SCHEME_CHANGE_EVENT } from "../../settings/model/appearance";
-import {
-  applyTerminalChrome,
-  fitTerminal,
-  deduplicateTerminalDimensionStyles,
-  refreshTerminalMeasurements,
-  type TerminalFitMode,
-} from "../model/terminalLayout";
+import { applyTerminalChrome, fitTerminal, deduplicateTerminalDimensionStyles, refreshTerminalMeasurements, type TerminalFitMode } from "../model/terminalLayout";
 import { IS_MAC } from "../../../platform/tauri/platform";
 import "@xterm/xterm/css/xterm.css";
 

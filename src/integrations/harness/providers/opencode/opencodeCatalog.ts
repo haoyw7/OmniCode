@@ -1,22 +1,8 @@
 import { homeDir } from "../../../../platform/tauri/fs";
-import {
-  setHarnessModels,
-  type AgentModel,
-  type ModelSetting,
-  type ModelSettingChoice,
-} from "../../../../features/sessions/model/models";
+import { setHarnessModels } from "../../core/modelCatalog";
+import { type AgentModel, type ModelSetting, type ModelSettingChoice } from "../../../../contracts/session";
 import { execChild, resolveOpenCodeBinary } from "../../core/child";
-import {
-  compareSemver,
-  inferDefaultAgent,
-  inferDefaultVariant,
-  KNOWN_HIDDEN_AGENTS,
-  MINIMUM_OPENCODE_VERSION,
-  openCodeVariantLabel,
-  parseOpenCodeVersion,
-  sortOpenCodeVariants,
-  titleCaseSlug,
-} from "./opencodeProtocol";
+import { compareSemver, inferDefaultAgent, inferDefaultVariant, KNOWN_HIDDEN_AGENTS, MINIMUM_OPENCODE_VERSION, openCodeVariantLabel, parseOpenCodeVersion, sortOpenCodeVariants, titleCaseSlug } from "./opencodeProtocol";
 
 const SLUG_LINE_RE = /^(\S+\/\S+)\s*$/;
 const AGENT_HEADER_RE = /^(.+)\s+\((\S+)\)\s*$/;

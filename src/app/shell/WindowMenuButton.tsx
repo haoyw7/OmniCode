@@ -1,16 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../features/connections/files/ui/ExplorerMenu";
-import {
-  loadAutosave,
-  loadKeybindingOverrides,
-  loadMenuBarVisible,
-  subscribeAutosave,
-  subscribeKeybindings,
-  subscribeMenuBarVisible,
-} from "../../features/settings/model/settings";
+import { ExplorerMenu, type ExplorerMenuItem } from "../../shared/ui/primitives/ExplorerMenu";
+import { loadAutosave, loadKeybindingOverrides, loadMenuBarVisible, subscribeAutosave, subscribeKeybindings, subscribeMenuBarVisible } from "../../features/settings/model/settings";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";

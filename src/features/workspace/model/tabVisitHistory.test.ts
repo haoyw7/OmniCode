@@ -1,13 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  canTabVisitBack,
-  canTabVisitForward,
-  emptyTabVisitHistory,
-  pruneTabVisitHistory,
-  recordTabVisit,
-  tabVisitBack,
-  tabVisitForward,
-} from "./tabVisitHistory";
+import { canTabVisitBack, canTabVisitForward, emptyTabVisitHistory, pruneTabVisitHistory, recordTabVisit, tabVisitBack, tabVisitForward } from "./tabVisitHistory";
 
 describe("tab visit history", () => {
   it("returns to the previous tab", () => {

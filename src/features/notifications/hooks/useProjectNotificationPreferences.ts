@@ -1,9 +1,5 @@
 import { useSyncExternalStore } from "react";
-import {
-  loadNotificationPreferences,
-  notificationPreferencesSnapshot,
-  subscribeNotificationPreferences,
-} from "../model/notificationPreferences";
+import { loadNotificationPreferences, notificationPreferencesSnapshot, subscribeNotificationPreferences } from "../model/notificationPreferences";
 
 /** Share persisted preferences and mute expiry updates across menus and Settings. */
 export function useProjectNotificationPreferences() {

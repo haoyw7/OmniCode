@@ -1,22 +1,8 @@
 import { homeDir } from "../../../../platform/tauri/fs";
-import { setHarnessModels } from "../../../../features/sessions/model/models";
+import { setHarnessModels } from "../../core/modelCatalog";
 import { AcpClient } from "../../core/acp";
-import {
-  execChild,
-  killChild,
-  resolveGrokBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import {
-  fallbackGrokModels,
-  grokAuthMethodId,
-  grokSpawnArgs,
-  modelsFromGrokModelsOutput,
-  modelsFromInitialize,
-  modelsFromSessionNew,
-} from "./grokProtocol";
+import { execChild, killChild, resolveGrokBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { fallbackGrokModels, grokAuthMethodId, grokSpawnArgs, modelsFromGrokModelsOutput, modelsFromInitialize, modelsFromSessionNew } from "./grokProtocol";
 
 const PROBE_ID = "omnicode-grok-probe";
 const DISCOVERY_TIMEOUT_MS = 15_000;

@@ -3,14 +3,11 @@ import { summarizeOrchestration } from "../../orchestration/model/orchestrationS
 import { fuzzyMatch } from "../../../shared/lib/fuzzy";
 import { pathKey, projectName } from "../../../shared/lib/paths";
 import { sameProjectPath } from "../../projects/model/recents";
-import {
-  sessionDisplayTitle,
-  sessionDraftBlock,
-  sessionNeedsInput,
-  type Session,
-} from "../model/session";
+import { sessionDisplayTitle } from "../model/session";
+import { sessionDraftBlock, sessionNeedsInput } from "../../../domain/session";
+import { type Session } from "../../../contracts/session";
 import { shouldPersistSession, type SessionSummary } from "./sessionStore";
-import { sessionMessageActivityAt, sessionRecencyAt } from "../model/sessionActivity";
+import { sessionMessageActivityAt, sessionRecencyAt } from "../../../domain/sessionActivity";
 
 export type SessionGitHint = {
   repo?: string;

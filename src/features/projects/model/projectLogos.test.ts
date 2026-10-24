@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { projectKey } from "../../../shared/lib/paths";
-import {
-  clearProjectLogo,
-  droppableLogoFile,
-  pickAndSetProjectLogo,
-} from "./projectLogos";
+import { clearProjectLogo, droppableLogoFile, pickAndSetProjectLogo } from "./projectLogos";
 import { loadTabGroupLogos, saveTabGroupLogo } from "../../workspace/model/tabGroups";
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), open: vi.fn() }));

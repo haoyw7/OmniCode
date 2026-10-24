@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Attachment } from "../model/session";
-import { mergeAttachmentPresence } from "./AttachmentList";
+import type { Attachment } from "../../../contracts/session";
+import { mergeAttachmentPresence } from "../../../shared/ui/attachments/AttachmentList";
 
 const file = (id: string) => ({ id, name: id, kind: "file" }) as unknown as Attachment;
 const present = (...ids: string[]) => ids.map(id => ({ attachment: file(id), leaving: false }));

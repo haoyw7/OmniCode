@@ -5,16 +5,8 @@ import { SidebarWorktreeSwitcher } from "../../features/source-control/ui/Sideba
 import { FileTree } from "../../features/connections/files/ui/FileTree";
 import { ProjectSearch } from "../../features/projects/ui/ProjectSearch";
 import { isRemoteProjectPath } from "../../features/projects/model/recents";
-import {
-  cachedRemoteSessions,
-  remotePendingExecutionCwd,
-  remoteSessionFor,
-} from "../../features/connections/model/connections";
-import {
-  parseRemotePath,
-  remotePath,
-  remoteProjectFor,
-} from "../../features/connections/model/remoteProjects";
+import { cachedRemoteSessions, remotePendingExecutionCwd, remoteSessionFor } from "../../features/connections/model/connections";
+import { parseRemotePath, remotePath, remoteProjectFor } from "../../features/connections/model/remoteProjects";
 import type { SidebarProps } from "./Sidebar.types";
 
 export type ProjectToolsPanelProps = Omit<SidebarProps, "tab"> & {

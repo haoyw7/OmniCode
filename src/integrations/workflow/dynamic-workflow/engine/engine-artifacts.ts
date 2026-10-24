@@ -8,27 +8,14 @@
 
 import { canonicalJson, inputHash } from "./hash.js";
 import { ARTIFACT_CAPS } from "../facade/artifact-caps.js";
-import {
-  isArtifactPresetOp,
-  type ArtifactContentOp,
-  type ArtifactPresetOp,
-} from "../facade/registry.js";
+import { isArtifactPresetOp, type ArtifactContentOp, type ArtifactPresetOp } from "../facade/registry.js";
 import { heldResolution } from "./replay-order.js";
-import {
-  primaryArtifactId,
-  primaryConflict,
-  primaryConflictMessage,
-} from "./engine-artifacts-primary.js";
+import { primaryArtifactId, primaryConflict, primaryConflictMessage } from "./engine-artifacts-primary.js";
 import { validateArtifactSpec } from "./artifact-spec.js";
 import { hashMismatch } from "./scheduler.js";
 import type { EngineState } from "./engine-state.js";
-import type {
-  ArtifactPublishRequest,
-  ArtifactRef,
-  ArtifactVersionRecord,
-  InstanceRef,
-} from "./types.js";
-import { refToString, WorkflowError } from "./types.js";
+import { type ArtifactPublishRequest, type ArtifactRef, type ArtifactVersionRecord, type InstanceRef, refToString, WorkflowError } from "./types.js";
+
 
 /**
  * 发布一个**内容产物**（`artifact.file` / `artifact.markdown`）。效应族：经 driver 拷字节进

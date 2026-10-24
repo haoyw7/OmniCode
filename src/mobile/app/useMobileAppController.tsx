@@ -1,12 +1,11 @@
+import { mobileLifecycle } from "../lifecycle";
+import { startHostPolling } from "../../client/polling";
 import { lightImpact, attentionHaptic, setHapticsForeground } from "../haptics";
 
 import { usePreferenceState } from "../../features/settings/model/usePreferenceState";
 import type { MobileNotesHandle } from "../MobileNotes";
-import {
-  appendNoteReference,
-  noteSourceProject,
-  type Note,
-} from "../../features/notes/notesText";
+import { appendNoteReference, noteSourceProject } from "../../features/notes/notesText";
+import { type Note, DEFAULT_RUNTIME_MODE, type Attachment, type Block, type QueuedMessage, type NativeSessionAccess, type PersistedWorktreeCreation, type WorktreeCreation, type QueueReturnPosition } from "../../contracts/session";
 import { useConnectionAppearance, removeConnectionAppearance } from "../connectionAppearance";
 import { connectionErrorMessage } from "../connectionError";
 import type { MobileAssistantHandle } from "../MobileAssistant";
@@ -16,71 +15,34 @@ import { resolveBotOrigin } from "../../features/bots/model/botOrigin";
 import type { SessionReference } from "../../features/bots/model/botView";
 import { useMobileAssistantUnread } from "../useMobileAssistantUnread";
 import { useHostQueue } from "../../features/connections/ui/useHostQueue";
-import {
-  outgoingPlacement,
-  type OutgoingMessage,
-} from "../../features/connections/model/outgoing";
-import { consumePlanCommand } from "../../features/sessions/model/plan";
+import { outgoingPlacement, type OutgoingMessage } from "../../features/connections/model/outgoing";
+import { consumePlanCommand } from "../../domain/plan";
 import { saveLastSelectedModel } from "../../features/sessions/model/models";
-import {
-  IMPLEMENT_PLAN_PROMPT,
-  skipPlanDecision,
-  usePlanDecision,
-} from "../../features/sessions/model/planDecision";
+import { IMPLEMENT_PLAN_PROMPT, skipPlanDecision, usePlanDecision } from "../../features/sessions/model/planDecision";
 import { isCompactCommand } from "../../features/sessions/model/compact";
 import { MobileMessageQueue } from "../MobileMessageQueue";
 import { backMobileSheet } from "../mobileSheetBack";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import {
-  DEFAULT_RUNTIME_MODE,
-  sessionDisplayTitle,
-  sessionExecutionCwd,
-  type Attachment,
-  type Block,
-  type QueuedMessage,
-} from "../../features/sessions/model/session";
-import type {
-  HostProject,
-  HostSession,
-  HostSessionSummary,
-  HostCommand,
-} from "../../features/connections/model/protocol";
+
+import { sessionDisplayTitle } from "../../features/sessions/model/session";
+import { sessionExecutionCwd } from "../../domain/session";
+import type { HostProject, HostSession, HostSessionSummary, HostCommand, HostModelCatalog } from "../../contracts/protocol";
 import { createSessionSnapshotStore, useSessionSnapshot, selectSessionShell, sameSessionShell, type MobileSessionShell } from "../sessionSnapshotStore";
 import { createMobileGitSource } from "../mobileGit";
 import { createMobileSessionChangesSource } from "../mobileSessionChanges";
 import { useMobileAppUpdates } from "../MobileAppUpdates";
-import {
-  configurationForSession,
-  type MobileConfiguration,
-} from "../MobileModelControls";
-import {
-  defaultConfiguration as firstConfiguration,
-  defaultProviderAccount,
-  loadMobileProjectDefaults,
-  type MobileAgentDefaults as AgentDefaults,
-} from "../agentDefaults";
-import type { HostModelCatalog } from "../../features/connections/model/protocol";
-import {
-  MobileClient,
-  type PendingCommand,
-  type MobileFirstMessage,
-  type MobileSessionPatch,
-  type Connection,
-  type HostConnectionStatus,
-} from "../client";
+import { configurationForSession, type MobileConfiguration } from "../MobileModelControls";
+import { defaultConfiguration as firstConfiguration, defaultProviderAccount, loadMobileProjectDefaults, type MobileAgentDefaults as AgentDefaults } from "../agentDefaults";
+
+import { MobileClient, type PendingCommand, type MobileFirstMessage, type MobileSessionPatch, type Connection, type HostConnectionStatus } from "../client";
 import type { MobileComposerPanel } from "../MobileComposer";
 import { createMobileDraft } from "../MobileDraftComposer";
 import { normalizePairingCode } from "../pairing";
 import { type MobileSheetPoint } from "../MobileSheet";
 import { sessionListStore } from "../sessionListStore";
-import {
-  mobileSettingsTitle,
-  mobileSettingsParent,
-  type MobilePreferencePanel,
-  type MobileSettingsPage,
-} from "../mobileSettingsRoutes";
+import { mobileSettingsTitle, mobileSettingsParent, type MobilePreferencePanel, type MobileSettingsPage } from "../mobileSettingsRoutes";
 import { readLastLocation, saveLastLocation } from "../lastLocation";
 import { initializeMobileWorkspace, saveMobileWorkspace, flushMobileWorkspace, stopMobileWorkspace } from "../hostWorkspace";
 import { initializeHostConnections, stopHostConnections } from "../../features/connections/model/hostConnections";
@@ -94,42 +56,30 @@ import { saveLastOnline } from "../lastOnline";
 import { useHostConnectionStatus } from "../useHostConnectionStatus";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { translate } from "../../shared/i18n/language";
-import { nativeSourceKey, nativeSyncBlocked, type NativeSessionAccess } from "../../integrations/harness/core/nativeSessions";
+import { nativeSourceKey, nativeSyncBlocked } from "../../integrations/harness/core/nativeSessions";
+
 import { readMobileAttachments } from "../attachments";
-import {
-  CURRENT_WORKSPACE,
-  type MobileWorkspace,
-} from "../MobileWorkspaceControls";
-import {
-  WORKTREE_CREATION_FOLD_MS,
-  anchorWorktreeCreation,
-  appendWorktreeCreationLog,
-  completeWorktreeCreation,
-  failWorktreeCreation,
-  foldWorktreeCreation,
-  persistWorktreeCreation,
-  startWorktreeCreation,
-  type PersistedWorktreeCreation,
-  type WorktreeCreation,
-} from "../../features/source-control/model/worktreeCreation";
-import { WORKTREE_NAME_ERROR } from "../../features/source-control/model/worktreeNaming";
+import { CURRENT_WORKSPACE, type MobileWorkspace } from "../MobileWorkspaceControls";
+import { WORKTREE_CREATION_FOLD_MS, anchorWorktreeCreation, appendWorktreeCreationLog, completeWorktreeCreation, failWorktreeCreation, foldWorktreeCreation, persistWorktreeCreation, startWorktreeCreation } from "../../domain/worktreeCreation";
+
+import { WORKTREE_NAME_ERROR } from "../../domain/worktreeNaming";
 import { takeBackQueuedMessage } from "../queuedDraft";
-import { captureQueueReturnPosition, lastQueueUserMessageId } from "../../features/sessions/model/messageQueue";
-import type { QueueReturnPosition } from "../../features/sessions/model/session";
+import { captureQueueReturnPosition, lastQueueUserMessageId } from "../../domain/messageQueue";
+
 import { loadFollowUpBehavior } from "../../features/settings/model/settings";
-import { loadAccentColor, loadTranscriptAnchor, loadTranscriptLayout, loadChatBackgroundPath, loadNewThreadBackgroundEffect } from "../../features/settings/model/appearance";
+import { loadAccentColor, loadTranscriptAnchor, loadTranscriptLayout, loadChatBackgroundPath, loadNewThreadBackgroundEffect, loadThemePreference } from "../../features/settings/model/appearance";
 import { loadSoundsEnabled } from "../../features/settings/model/sounds";
 import { mobileStorage } from "../storage";
 import { useStableCallback } from "../useStableCallback";
 import { applyGlassSettings, readGlassSettings, type GlassSettings } from "../glassSettings";
-import { loadThemePreference } from "../../features/settings/model/appearance";
+
 import { applyMobileSkin, loadMobileSkin, type MobileSkinPreference } from "../theme/skin";
 import { useNow } from "../../shared/hooks/useNow";
 import { useMobileHeaderMotion, type MobileRoute } from "../MobilePageTransition";
 import { migrateConnectionSettings } from "../connectionScope";
 import { loadProjectChatBackgroundSettings, projectChatBackgroundRevision, projectChatBackgroundImageRevision, subscribeProjectChatBackground } from "../../features/projects/model/projectChatBackground";
-import { useProjectBackgroundEffect } from "../../features/projects/ui/useProjectBackgroundEffect";
-import { isChatFolder } from "../../features/projects/model/chatFolderPath";
+import { useProjectBackgroundEffect } from "../../features/projects/model/useProjectBackgroundEffect";
+import { isChatFolder } from "../../domain/chatFolderPath";
 import { dismissImageLightbox } from "../../shared/ui/ImageLightbox";
 
 export const client = new MobileClient(mobileStorage);
@@ -646,18 +596,11 @@ export function useMobileAppController() {
         if (live) setInitialRestorePending(false);
       }
     })();
-    const onVisibility = () => setForeground(!document.hidden);
-    document.addEventListener("visibilitychange", onVisibility);
-    const listener = Capacitor.isNativePlatform()
-      ? App.addListener("appStateChange", (state) =>
-          setForeground(state.isActive),
-        )
-      : undefined;
+    const stopLifecycle = mobileLifecycle.subscribe(setForeground);
     return () => {
       live = false;
       stopSharedState();
-      document.removeEventListener("visibilitychange", onVisibility);
-      void listener?.then((handle) => handle.remove());
+      stopLifecycle();
     };
   }, []);
 
@@ -680,10 +623,8 @@ export function useMobileAppController() {
     const turn = navigation.current;
     const hostId = client.connection?.endpoint;
     const current = () => live && navigation.current === turn && hostId === client.connection?.endpoint;
-    let timer: ReturnType<typeof setTimeout>;
-    let failures = 0;
     setPollError("");
-    const poll = async () => {
+    const poll = async (waitMs?: number) => {
       let running = false;
       try {
         if (drawerOpen || view === "home") {
@@ -696,7 +637,7 @@ export function useMobileAppController() {
           }
         }
         if (view === "chat" && sessionId) {
-          const result = await client.session(sessionId);
+          const result = await client.session(sessionId, undefined, waitMs);
           if (current()) {
             setSnapshot((previous) =>
               previous &&
@@ -713,34 +654,28 @@ export function useMobileAppController() {
         }
         if (!running && drawerOpen && listRunning.current) running = true;
         if (current()) {
-          failures = 0;
           setPollError("");
           const pending = await client.pending();
           if (current()) setPending(pending);
         }
       } catch (problem) {
         if (current()) {
-          failures += 1;
           setPollError(message(problem));
           setProjectListState((state) => state === "ready" ? state : "failed");
         }
+        throw problem;
       }
-      if (live)
-        timer = setTimeout(
-          poll,
-          failures
-            ? Math.min(30_000, 2000 * 2 ** failures)
-            : running
-              ? view === "chat" && sessionId && !drawerOpen
-                ? 250
-                : 750
-              : 3000,
-        );
+      return running;
     };
-    void poll();
+    const stopPolling = startHostPolling({
+      poll,
+      supportsWait: () => view === "chat" && !!sessionId && client.hasCapability("sessions.sync.wait.v1"),
+      onError: () => {}, // UI errors and navigation guards belong to this controller.
+      lifecycle: mobileLifecycle,
+    });
     return () => {
       live = false;
-      clearTimeout(timer);
+      stopPolling();
     };
   }, [
     connected,
@@ -1237,7 +1172,7 @@ export function useMobileAppController() {
       try {
         const receipt = transient
           ? await client.rpc<
-              import("../../features/connections/model/protocol").CommandReceipt
+              import("../../contracts/protocol").CommandReceipt
             >("commands.dispatch", command)
           : await client.dispatch(command);
         const result = await client.session(command.sessionId, receipt.revision);

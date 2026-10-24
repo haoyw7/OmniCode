@@ -264,24 +264,6 @@ export function prettyParent(path: string): string {
   return prettyCwd(parentPath(path));
 }
 
-/** Path relative to cwd when it lives under the project, otherwise unchanged. */
-export function displayPath(path: string, cwd?: string): string {
-  const normalized = trimSlash(path);
-  const base = cwd ? trimSlash(cwd) : undefined;
-  if (base && base !== "~") {
-    const key = pathKey(normalized);
-    const baseKey = pathKey(base);
-    if (key === baseKey) {
-      return normalized.split("/").filter(Boolean).pop() || normalized;
-    }
-    const prefix = `${base}/`;
-    if (key.startsWith(`${baseKey}/`)) {
-      return normalized.slice(prefix.length);
-    }
-  }
-  return normalized;
-}
-
 /** Folder name for tab labels — `~` when the cwd is home. */
 export function projectName(cwd: string): string {
   if (!cwd || prettyCwd(cwd) === "~") return "~";

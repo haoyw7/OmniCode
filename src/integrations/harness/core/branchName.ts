@@ -1,7 +1,4 @@
-import {
-  buildBranchNamePrompt,
-  parseBranchName,
-} from "../../../features/source-control/model/gitText";
+import { buildBranchNamePrompt, parseBranchName } from "../../../domain/gitText";
 import type { TextPromptInput } from "./registry";
 
 export async function generateTextBranchName(

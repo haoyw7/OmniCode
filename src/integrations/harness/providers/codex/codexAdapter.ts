@@ -1,33 +1,9 @@
-import { readCodexSessionTitle } from "./codex";
-import {
-  bindCodexSession,
-  cancelCodexTurn,
-  compactCodexContext,
-  rewindCodexLastTurn,
-  forgetCodexSession,
-  keepCodexQuestionOpen,
-  respondCodexApproval,
-  respondCodexQuestion,
-  sendCodexTurn,
-  steerCodexTurn,
-  stopCodexSession,
-} from "./codex";
-import {
-  generateCodexBranchName,
-  generateCodexCommitMessage,
-  generateCodexPrContent,
-} from "./codexGit";
+import { readCodexSessionTitle, bindCodexSession, cancelCodexTurn, compactCodexContext, rewindCodexLastTurn, forgetCodexSession, keepCodexQuestionOpen, respondCodexApproval, respondCodexQuestion, sendCodexTurn, steerCodexTurn, stopCodexSession } from "./codex";
+
+import { generateCodexBranchName, generateCodexCommitMessage, generateCodexPrContent } from "./codexGit";
 import { refreshCodexCatalog } from "./codexCatalog";
-import {
-  runCodexTextPrompt,
-  stopCodexTextPrompt,
-  warmupCodexText,
-} from "./codexText";
-import {
-  getHarness,
-  registerHarness,
-  type HarnessAdapter,
-} from "../../core/registry";
+import { runCodexTextPrompt, stopCodexTextPrompt, warmupCodexText } from "./codexText";
+import { getHarness, registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const codexAdapter: HarnessAdapter = {
   id: "codex",

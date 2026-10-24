@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
-import type {
-  HostProject,
-  HostSessionSummary,
-} from "../features/connections/model/protocol";
+import type { HostProject, HostSessionSummary } from "../contracts/protocol";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
-import { SessionWorktreeIcon } from "../features/sessions/ui/SessionWorktreeIcon";
+import { HarnessIcon } from "../shared/ui/HarnessIcon";
+import { SessionWorktreeIcon } from "../shared/ui/SessionWorktreeIcon";
 import { translate } from "../shared/i18n/language";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import { formatMobileRelativeTime } from "./relativeTime";
+import { formatRelativeTime } from "../shared/lib/relativeTime";
 import { archivedMobileSessions } from "./sessionList";
 import { Archive } from "../shared/ui/icons";
 import { MobileEmpty } from "./MobileEmpty";
@@ -112,7 +109,7 @@ export function MobileArchive({
                     <SessionWorktreeIcon session={session} />
                   </span>
                   <small>
-                    {formatMobileRelativeTime(session.updatedAt, now, language)}
+                    {formatRelativeTime(session.updatedAt, now, language)}
                   </small>
                 </span>
                 <button

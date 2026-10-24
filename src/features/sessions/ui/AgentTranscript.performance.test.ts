@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { Block } from "../model/session";
+import type { Block } from "../../../contracts/session";
 import * as activity from "../model/transcriptActivity";
 import { AgentTranscript } from "./AgentTranscript";
 
@@ -10,7 +11,7 @@ vi.mock("../model/transcriptActivity", async (original) => {
   const actual = await original<typeof activity>();
   return { ...actual, groupTurnItems: vi.fn(actual.groupTurnItems) };
 });
-vi.mock("./AgentMarkdown", () => ({
+vi.mock("../../../shared/ui/markdown/AgentMarkdown", () => ({
   AgentMarkdown: ({ text }: { text: string }) =>
     createElement("div", null, text),
 }));

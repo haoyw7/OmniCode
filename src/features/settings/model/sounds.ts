@@ -1,10 +1,7 @@
 import { preferenceStorage } from "./sharedPreferences";
 import { play, setEnabled, setVolume, type SoundName } from "cuelume";
-import type { LinkedWorkItemUpdateCard } from "../../inbox/model/linkedWorkItemActivity";
-import {
-  allowsProjectNotification,
-  type NotificationSubject,
-} from "../../notifications/model/notificationPreferences";
+import type { LinkedWorkItemUpdateCard } from "../../../contracts/session";
+import { allowsProjectNotification, type NotificationSubject } from "../../notifications/model/notificationPreferences";
 import { inboxNotificationProject } from "../../notifications/model/notificationProjects";
 
 const KEY = "omnicode.sounds";

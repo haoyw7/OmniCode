@@ -1,14 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  DESKTOP_SKIN_DEFAULT,
-  DESKTOP_SKIN_IDS,
-  DESKTOP_SKIN_KEY,
-  applyDesktopSkin,
-  loadDesktopSkin,
-  normalizeDesktopSkin,
-  resolveDesktopSkin,
-  saveDesktopSkin,
-} from "./desktopSkin";
+import { DESKTOP_SKIN_DEFAULT, DESKTOP_SKIN_IDS, DESKTOP_SKIN_KEY, applyDesktopSkin, loadDesktopSkin, normalizeDesktopSkin, resolveDesktopSkin, saveDesktopSkin } from "./desktopSkin";
 
 describe("desktop skin preference", () => {
   afterEach(() => {

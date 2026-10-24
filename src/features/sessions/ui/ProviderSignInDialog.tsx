@@ -1,12 +1,11 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useCallback, useEffect, useState } from "react";
-import { loginHarness } from "../../../integrations/harness/core/auth";
-import { HARNESS_TITLE, type HarnessId } from "../model/session";
+import { loginHarness } from "../../providers/model/providerLogin";
+import { useProviderSignInSupport } from "../../providers/model/useProviderSignInSupport";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type HarnessId } from "../../../contracts/session";
 import { Modal } from "../../../shared/ui/Modal";
-import {
-  ProviderSignInPanel,
-  type ProviderSignInState,
-} from "./ProviderSignInPanel";
+import { ProviderSignInPanel, type ProviderSignInState } from "./ProviderSignInPanel";
 
 type Props = {
   harness: HarnessId;
@@ -17,6 +16,7 @@ export function ProviderSignInDialog({ harness, onClose }: Props) {
   const { t: uiT } = useTranslation();
   const [state, setState] = useState<ProviderSignInState>("idle");
   const [error, setError] = useState<string | null>(null);
+  const available = useProviderSignInSupport(harness);
 
   useEffect(() => {
     setState("idle");
@@ -51,6 +51,7 @@ export function ProviderSignInDialog({ harness, onClose }: Props) {
     >
       <ProviderSignInPanel
         harness={harness}
+        available={available}
         state={state}
         error={error}
         onSignIn={signIn}

@@ -1,45 +1,14 @@
-import {
-  resetGenerationMetrics,
-  measureGenerationTurn,
-  emitAcpGenerationEvent,
-} from "../../core/generationMetrics";
+import { resetGenerationMetrics, measureGenerationTurn, emitAcpGenerationEvent } from "../../core/generationMetrics";
 import { nativeAcpTitleEvent, noteAcpTitleCapabilities, readAcpSessionTitle, readAcpTitleInProcess } from "../../core/nativeTitles";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
-import { nativeModelId } from "../../../../features/sessions/model/models";
+import { nativeModelId } from "../../core/modelCatalog";
 import { AcpSubagents } from "../../core/acpSubagents";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import type { RuntimeMode } from "../../../../contracts/session";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
-import {
-  killChild,
-  resolveAntigravityBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import {
-  autoPermissionOption,
-  asRecord,
-  eventsFromAcpUpdate,
-  extractModelConfigId,
-  antigravityModeId,
-  antigravityPromptBlocks,
-  antigravitySpawnCwd,
-  antigravityRetryFromStderr,
-  antigravityFailureFromStderr,
-  antigravityFailedSessionFromStderr,
-  permissionOptionId,
-  permissionRequestFromAcp,
-  readConfigOptions,
-  resolveSettingConfigId,
-  sessionIdFromResult,
-  type SessionConfigOption,
-} from "./antigravityProtocol";
-import type {
-  ApprovalDecision,
-  HarnessEvent,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+import { killChild, resolveAntigravityBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { autoPermissionOption, asRecord, eventsFromAcpUpdate, extractModelConfigId, antigravityModeId, antigravityPromptBlocks, antigravitySpawnCwd, antigravityRetryFromStderr, antigravityFailureFromStderr, antigravityFailedSessionFromStderr, permissionOptionId, permissionRequestFromAcp, readConfigOptions, resolveSettingConfigId, sessionIdFromResult, type SessionConfigOption } from "./antigravityProtocol";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput, SteerTurnInput } from "../../core/types";
 import { translate } from "../../../../shared/i18n/language";
 
 type SessionSetupResult = {

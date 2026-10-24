@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import type { ProviderRateLimits } from "./rateLimits";
-import {
-  getAllRateLimits,
-  loadRateLimits,
-  subscribeRateLimits,
-} from "./rateLimitsCache";
-import {
-  PROVIDER_ACCOUNT_PROVIDERS,
-  providerAccounts,
-  type ProviderAccount,
-  type ProviderAccountProvider,
-} from "./providerAccounts";
+import type { ProviderRateLimits } from "../../../contracts/session";
+import { getAllRateLimits, loadRateLimits, subscribeRateLimits } from "./rateLimitsCache";
+import { PROVIDER_ACCOUNT_PROVIDERS, providerAccounts, type ProviderAccount, type ProviderAccountProvider } from "./providerAccounts";
 import { identityKey } from "./providerAccountIdentity";
 import { useNow } from "../../../shared/hooks/useNow";
 import { providerUsageSourceKey } from "./providerUsageSource";

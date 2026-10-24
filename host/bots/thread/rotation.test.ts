@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import type { BotMessage } from "../../../src/features/bots/model/botView";
-import type { Session } from "../../../src/features/sessions/model/session";
+import type { Session } from "../../../src/contracts/session";
 import {
   conversationBrief,
   DEFAULT_BASELINE,

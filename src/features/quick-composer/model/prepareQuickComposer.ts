@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { prepareQuickComposerWindow } from "../../../platform/tauri/quickComposer";
 
 /** Prepare hidden windows after a paint and in idle time, never on startup's
  * critical path. If focus leaves first, wait for the workspace to regain it. */
@@ -20,7 +20,7 @@ export function prepareQuickComposerWhenIdle(): () => void {
     idle = timeout = undefined;
     if (disposed || prepared || inFlight || !foreground()) return;
     inFlight = true;
-    void invoke<boolean>("quick_composer_prepare")
+    void prepareQuickComposerWindow()
       .then((ready) => {
         prepared = ready;
       })

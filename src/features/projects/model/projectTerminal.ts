@@ -1,25 +1,9 @@
 import type { CSSProperties } from "react";
-import {
-  closeLeaf,
-  isolateTerminalPanes,
-  leafIds,
-  newEditorPane,
-  nextTerminalTitleFromFiles,
-  placePane,
-  type EditorPane,
-  type FilePaneTab,
-  type PaneEdge,
-  type WorkspaceTab,
-} from "../../workspace/model/layout";
-import {
-  normalizeProjectPath,
-  sameProjectPath,
-} from "./recents";
-import type { Session } from "../../sessions/model/session";
-import {
-  applyTerminalMeta,
-  type TerminalMetaPatch,
-} from "../../terminal/model/terminalTab";
+import { closeLeaf, isolateTerminalPanes, leafIds, newEditorPane, nextTerminalTitleFromFiles, placePane, type EditorPane, type FilePaneTab, type PaneEdge, type WorkspaceTab } from "../../workspace/model/layout";
+import { sameProjectPath } from "./recents";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
+import type { Session } from "../../../contracts/session";
+import { applyTerminalMeta, type TerminalMetaPatch } from "../../terminal/model/terminalTab";
 import { workspaceTabCwd } from "../../workspace/model/workspaceTabGroups";
 
 export type DockSide = "top" | "bottom" | "left" | "right";

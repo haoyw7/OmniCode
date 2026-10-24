@@ -2,11 +2,7 @@ import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { useRef, useState } from "react";
 import { ColorPickerPopover, ColorSwatchRow } from "../../../../../shared/ui/ColorPickerPopover";
 import { Popover } from "../../../../../shared/ui/Popover";
-import {
-  ACCENT_COLOR_DEFAULT,
-  ACCENT_COLOR_PRESET_LABELS,
-  ACCENT_COLOR_PRESETS,
-} from "../../../model/appearance";
+import { ACCENT_COLOR_DEFAULT, ACCENT_COLOR_PRESET_LABELS, ACCENT_COLOR_PRESETS } from "../../../model/appearance";
 import { type AppearanceSettings } from "./useAppearanceSettings";
 import { Row } from "../../settingsLayout";
 

@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { OmpAssistantText, OmpInterjectionAnchor } from "../../../platform/tauri/fs";
 import { backfillOmpInterjections, ompStatusSplitTexts } from "./ompInterjections";
-import { newSession, type Block } from "./session";
+import { newSession } from "./session";
+import { type Block } from "../../../contracts/session";
 import { getSession } from "../data/sessionStore";
 import { foldableWork, foldedBlocks, groupTurnItems, groupTurns } from "./transcriptActivity";
 
@@ -458,7 +459,7 @@ describe("persisted session loading", () => {
     return { ...newSession(harness, "/tmp/project"), id: "repair-load", providerSessionId, blocks: oldBlocks() };
   }
 
-  it("repairs before returning and persists only the first repair", async () => {
+  it("repairs cached projections without writing back to Rust", async () => {
     let record = stored();
     let writes = 0;
     mocks.invoke.mockImplementation(async (command, args) => {
@@ -475,7 +476,7 @@ describe("persisted session loading", () => {
     expect(foldedIds(first!.blocks)).toEqual(["r2", "t2"]);
     const second = await getSession(record.id);
     expect(second!.blocks).toEqual(first!.blocks);
-    expect(writes).toBe(1);
+    expect(writes).toBe(0);
   });
 
   it.each([true, false])("repairs unanchored status splits only when verified: %s", async verified => {
@@ -505,7 +506,7 @@ describe("persisted session loading", () => {
     expect(first!.blocks).toEqual(verified
       ? [{ ...original[0], text: "First.Second." }, original[1], original[3]] : original);
     expect((await getSession(record.id))!.blocks).toEqual(first!.blocks);
-    expect(writes).toBe(verified ? 1 : 0);
+    expect(writes).toBe(0);
   });
 
   it.each([false, true])("loads duplicate text without reusing occupied source evidence, complete first: %s", async complete => {

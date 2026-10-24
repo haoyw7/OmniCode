@@ -1,12 +1,10 @@
+import { normalizeProjectPath } from '../../../domain/pathDisplay';
 import { preferenceStorage } from "../../settings/model/sharedPreferences";
 import { pathKey, prettyCwd, slash } from "../../../shared/lib/paths";
-import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remotePaths";
+import { REMOTE_PATH_PREFIX } from "../../../contracts/remotePaths";
 import { WSL_PATH_PREFIX } from "../../../shared/lib/wslPaths";
-import {
-  clearProjectTreeExpanded,
-  rebaseProjectTreeExpanded,
-} from "./projectTree";
-import { isChatFolder } from "./chatFolderPath";
+import { clearProjectTreeExpanded, rebaseProjectTreeExpanded } from "./projectTree";
+import { isChatFolder } from "../../../domain/chatFolderPath";
 
 const KEY = "omnicode.recentProjects";
 const RAIL_ORDER_KEY = "omnicode.projectRailOrder";
@@ -26,9 +24,7 @@ export type ArchivedProject = {
   archivedAt: number;
 };
 
-export function normalizeProjectPath(path: string): string {
-  return slash(path).replace(/\/+$/, "") || "/";
-}
+
 
 function normalize(path: string): string {
   return normalizeProjectPath(path);

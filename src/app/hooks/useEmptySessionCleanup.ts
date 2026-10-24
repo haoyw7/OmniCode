@@ -1,10 +1,7 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
-import type { Session } from "../../features/sessions/model/session";
+import type { Session } from "../../contracts/session";
 import { clearComposerDraft } from "../../features/sessions/model/draftCache";
-import {
-  leafIds,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { leafIds, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { pruneDepartedEmptySessions } from "../model/emptySessionCleanup";
 
 export function useEmptySessionCleanup({

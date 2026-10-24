@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { remoteRequest } from "./connections";
 import { loadRemoteHostCatalog, loadRemoteHostDescriptor } from "./remoteHostMetadata";
-import type { HostDescriptor, HostModelCatalog } from "./protocol";
+import type { HostDescriptor, HostModelCatalog } from "../../../contracts/protocol";
 
 vi.mock("./connections", () => ({ remoteRequest: vi.fn() }));
 

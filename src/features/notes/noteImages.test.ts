@@ -1,10 +1,7 @@
+import { isNoteImagePath } from "../../contracts/noteAssets";
 import { describe, expect, it } from "vitest";
-import {
-  insertNoteImagesMarkdown,
-  isNoteImagePath,
-  noteImageMarkdown,
-  type NoteImageAsset,
-} from "./noteImages";
+import { insertNoteImagesMarkdown, noteImageMarkdown } from "./noteImages";
+import type { NoteImageAsset } from "../../contracts/notes";
 
 const image: NoteImageAsset = {
   name: "Architecture [draft].png",

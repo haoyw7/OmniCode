@@ -2,12 +2,13 @@
 import { completeMotionAnimation, motionTestDriver } from "../../../../tests/helpers/motionDriver";
 vi.mock("motion/react", async (importOriginal) => { const actual = await importOriginal<typeof import("motion/react")>(); return { ...actual, ...motionTestDriver(actual, true) }; });
 import { act, createElement, type ComponentProps } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EditorPane, LayoutNode } from "../model/layout";
-import { PaneTree } from "./PaneTree";
+import { PaneTree } from "../../../app/ui/PaneTree";
 
-vi.mock("../../connections/files/ui/FilePane", async () => {
+vi.mock("../../../app/ui/FilePane", async () => {
   const { createElement } = await import("react");
   return {
     FilePane: ({ pane }: { pane: EditorPane }) =>

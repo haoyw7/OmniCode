@@ -1,20 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  appendNoteReference,
-  composeNoteMessage,
-  injectNotePrompt,
-  isNoteMentionPath,
-  noteCardMeta,
-  noteMentionLabel,
-  notePreview,
-  noteSourceProject,
-  noteSlugsInText,
-  notesAsProjectFiles,
-  normalizeNoteTags,
-  noteTitle,
-  rankNoteFiles,
-  type Note,
-} from "./notes";
+import { appendNoteReference, isNoteMentionPath, noteMentionLabel, notePreview, noteSourceProject, noteSlugsInText, notesAsProjectFiles, normalizeNoteTags, noteTitle, rankNoteFiles } from "./notes";
+import { composeNoteMessage, injectNotePrompt, noteCardMeta } from "../../domain/notesText";
+import { type Note } from "../../contracts/session";
 
 function note(
   partial: Partial<Note> & Pick<Note, "id" | "slug" | "title">,

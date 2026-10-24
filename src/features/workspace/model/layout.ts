@@ -1,11 +1,8 @@
-import type { ReleaseNotesTabSource } from "../../../app/model/releaseNotes";
-import type { GitFileDiffKind } from "../../../platform/tauri/fs";
-import {
-  applyTerminalMeta,
-  defaultTerminalTitle,
-  type TerminalMetaPatch,
-} from "../../terminal/model/terminalTab";
-import type { HarnessId } from "../../sessions/model/session";
+import type { GitFileDiffKind } from "../../../contracts/workspace";
+import type { ReleaseNotesTabSource } from "../../../shared/lib/releaseNotes";
+
+import { applyTerminalMeta, defaultTerminalTitle, type TerminalMetaPatch } from "../../terminal/model/terminalTab";
+import type { HarnessId } from "../../../contracts/session";
 import type { WorkflowAgentAvatar } from "../../workflows/model/workflowAgentAvatar";
 import type { WorkflowRunArtifactKind } from "../../../integrations/workflow/protocol/workflow-artifacts";
 import { pathKey } from "../../../shared/lib/paths";

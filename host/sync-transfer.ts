@@ -1,9 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type {
-  SessionSync,
-  SessionSyncChunk,
-  SessionSyncResponse,
-} from "../src/features/connections/model/protocol";
+import type { SessionSync, SessionSyncChunk, SessionSyncResponse } from "../src/contracts/protocol";
 
 // The desktop rejects host responses over 16 MiB. Syncs above the inline limit
 // are served as pieces of one serialized revision, each well under that cap

@@ -1,4 +1,5 @@
-import type { HarnessEvent, SendTurnInput } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput } from "../../core/types";
 import type { HarnessAdapter } from "../../core/registry";
 import { translate } from "../../../../shared/i18n/language";
 

@@ -1,25 +1,25 @@
 import { Button } from "../../../../shared/ui/forms/Button";
 import { DetailsChevron } from "../../../../shared/ui/DetailsChevron";
 import { timestampTitle } from "../timestampTitle";
-import { AttachmentList } from "../AttachmentList";
+import { AttachmentList } from "../../../../shared/ui/attachments/AttachmentList";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { ArrowUp, CircleDashed, Bot, Trash2 } from "../../../../shared/ui/icons";
 import { useContext, useLayoutEffect, useRef, useState } from "react";
-import { TranscriptPlatformContext } from "../TranscriptPlatform";
-import { AttachmentChip } from "../AttachmentChip";
+import { TranscriptPlatformContext } from "../../../../shared/ui/markdown/TranscriptPlatform";
+import { AttachmentChip } from "../../../../shared/ui/attachments/AttachmentChip";
 import { OmniCodeSparkles } from "../OmniCodeSparkles";
 import { OrchestratorConstellation } from "../OrchestratorConstellation";
 import { PlanStepsBurst } from "../PlanStepsBurst";
 import { SecondOpinionCard } from "../SecondOpinionCard";
-import { NoteMiniCard } from "../../../notes/ui/NoteMiniCard";
-import { visibleUserPrompt } from "../../../orchestration/model/orchestration";
-import { type Block } from "../../model/session";
+import { TranscriptCardsContext } from "../../model/sessionPresentation";
+import { visibleUserPrompt } from "../../../../domain/orchestrationRuntime";
+import { type Block } from "../../../../contracts/session";
 import type { TranscriptLayout } from "../../../settings/model/appearance";
-import { CopyTurnButton } from "../CopyTurnButton";
+import { CopyTurnButton } from "../../../../shared/ui/messaging/CopyTurnButton";
 import { parseUserMessageLink } from "../../model/linkPreview";
-import { isAttachmentFolder } from "../../model/attachments";
+import { isAttachmentFolder } from "../../../../domain/attachmentPrompt";
 import { UserLinkPreview } from "../UserLinkPreview";
-import { isOperatorUserTurn, operatorUserPrompt } from "../../model/operatorCommand";
+import { isOperatorUserTurn, operatorUserPrompt } from "../../../../domain/operatorCommand";
 import { EditLastTurnButton, SaveNoteButton } from "./TurnActions";
 import { formatClockTime } from "./transcriptClock";
 
@@ -50,6 +50,7 @@ export function UserMessageBlock({
   onRemoveDraft?: (block: Block) => boolean | void;
   onOpenFile?: (path: string) => void;
 }) {
+  const { NoteMiniCard } = useContext(TranscriptCardsContext);
   const { t: uiT, language } = useTranslation();
   const { openBot } = useContext(TranscriptPlatformContext);
   const [openingBot, setOpeningBot] = useState(false);

@@ -1,10 +1,5 @@
 import { Plus } from "../../../../../shared/ui/icons";
-import {
-  TID_WORKFLOWS_CREATE_VIA_CHAT,
-  TID_WORKFLOWS_LIST,
-  TID_WORKFLOW_GLOBAL_GROUP,
-  testId,
-} from "../../_shims/shared.js";
+import { TID_WORKFLOWS_CREATE_VIA_CHAT, TID_WORKFLOWS_LIST, TID_WORKFLOW_GLOBAL_GROUP, testId } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { ControlHintTooltip } from "../../ControlHintTooltip.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
@@ -16,15 +11,8 @@ import { SavedWorkflowMoveDialog } from "./SavedWorkflowMoveDialog.js";
 import { GLOBAL_SAVED_WORKFLOW_TARGET } from "./globalWorkflowGroupHelpers.js";
 import { useSavedWorkflowGlobalGroup } from "./useSavedWorkflowGlobalGroup.js";
 import type { SavedWorkflowLaunchTarget } from "./useSavedWorkflowLauncher.js";
-import type {
-  SavedWorkflowGroupMode,
-  SavedWorkflowGroupState,
-} from "./SavedWorkflowProjectGroup.js";
-import type {
-  SavedWorkflowProjectTarget,
-  SavedWorkflowsOpenArtifactParams,
-  SavedWorkflowsOpenRunParams,
-} from "./savedWorkflowContract.js";
+import type { SavedWorkflowGroupMode, SavedWorkflowGroupState } from "./SavedWorkflowProjectGroup.js";
+import type { SavedWorkflowProjectTarget, SavedWorkflowsOpenArtifactParams, SavedWorkflowsOpenRunParams } from "./savedWorkflowContract.js";
 
 interface SavedWorkflowGlobalGroupProps {
   /** 页级刷新计数器；变化（非首挂）时绕过缓存重拉。 */

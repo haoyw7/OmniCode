@@ -1,11 +1,9 @@
 import { remoteRequest } from "./connections";
-import { ModelCatalogLoad } from "./modelCatalogLoad";
-import {
-  REMOTE_PROVIDERS,
-  requireHostDescriptor,
-  type HostDescriptor,
-  type HostModelCatalog,
-} from "./protocol";
+import { ModelCatalogLoad } from "../../../client/modelCatalogLoad";
+import { translate } from "../../../shared/i18n/language";
+import { REMOTE_PROVIDERS } from "../../../contracts/provider";
+import { requireHostDescriptor } from "../../../client/hostProtocol";
+import { type HostDescriptor, type HostModelCatalog } from "../../../contracts/protocol";
 
 const descriptors = new Map<string, Promise<HostDescriptor>>();
 const catalogs = new Map<string, ModelCatalogLoad>();
@@ -51,7 +49,8 @@ export function loadRemoteHostCatalog(
   let load = catalogs.get(key);
   if (!load) {
     load = new ModelCatalogLoad(params =>
-      remoteRequest<HostModelCatalog>(machineId, "models.list", { projectId, ...params }));
+      remoteRequest<HostModelCatalog>(machineId, "models.list", { projectId, ...params }),
+      undefined, () => translate("Model discovery timed out"));
     catalogs.set(key, load);
     const clear = () => { if (catalogs.get(key) === load) catalogs.delete(key); };
     void load.promise.then(clear, clear);

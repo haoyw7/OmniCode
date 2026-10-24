@@ -1,13 +1,5 @@
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { ALT, MOD, SHIFT } from "../../../../platform/tauri/platform";
 import { ChevronDown, ChevronUp, X } from "../../../../shared/ui/icons";
 import { keybindingPressed } from "../../../settings/model/settings";

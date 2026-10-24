@@ -1,17 +1,18 @@
 import { dirname, join } from "node:path";
 import type { HostEngine } from "../engine";
 import { BotThreadRuntime, type BotThreadRuntimeOptions } from "./thread";
-import { BotThreadStore, signature } from "./thread/store";
+import { BotThreadStore, signature, type BotThreadRecord } from "./thread/store";
 import { fields, id, object } from "./thread/policy";
 import { BotStore } from "./store";
 import { HostResourceGuard } from "./resources";
 import { DelegationService } from "./delegations";
 import { RoomService } from "./rooms";
 import { TeamService } from "./teams";
-import type { BotThreadRecord } from "./thread/store";
+
 import type { BotRun, BotScope, BotsSnapshot } from "../../src/features/bots/model/bots";
-import type { HostModelCatalog, HostSession, RemoteProvider } from "../../src/features/connections/model/protocol";
-import type { TurnOrigin } from "../../src/features/sessions/model/session";
+import type { HostModelCatalog, HostSession } from "../../src/contracts/protocol";
+import type { RemoteProvider } from "../../src/contracts/provider";
+import type { TurnOrigin } from "../../src/contracts/session";
 
 const BOT_CONTROLS = new Set(["pause", "resume", "disable", "enable"]);
 const PASSIVE_SESSION_EVENTS = new Set(["message.delta", "reasoning.delta", "context", "turn.metrics"]);

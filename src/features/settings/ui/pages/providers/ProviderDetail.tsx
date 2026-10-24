@@ -4,12 +4,13 @@ import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { immediateTransition, panelTransition } from "../../../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../../../shared/motion/useMotionPreference";
 import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
-import { isHarnessAvailable } from "../../../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../../../integrations/harness/core/registry";
+import { isHarnessAvailable } from "../../../../providers/model/harnessAvailability";
+import { refreshHostModelCatalogs } from "../../../../providers/model/hostModelCatalog";
 import type { HarnessVersionInfo } from "../../../../providers/model/harnessUpdates";
-import { hasFreshCatalog, LAST_SELECTED_MODEL, modelsFor, resolveModel } from "../../../../sessions/model/models";
+import { hasFreshCatalog, LAST_SELECTED_MODEL, modelsFor, resolveModel } from "../../../../../integrations/harness/core/modelCatalog";
 import { projectName } from "../../../../../shared/lib/paths";
-import { HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
+import { HARNESS_TITLE } from "../../../../../contracts/session";
+import { type HarnessId } from "../../../../../contracts/session";
 import type { ProviderScopeState } from "../../../model/providerDefaults";
 import { loadClaudeHooks, saveClaudeHooks } from "../../../model/settings";
 import { usePreferenceState } from "../../../model/usePreferenceState";
@@ -55,7 +56,7 @@ export function ProviderDetail({
 
   useEffect(() => {
     if (!available || hasFreshCatalog(harness)) return;
-    void refreshHarnessCatalogs([harness]);
+    void refreshHostModelCatalogs([harness]);
   }, [available, harness]);
 
   const scopeHint = project
@@ -100,7 +101,7 @@ export function ProviderDetail({
               // Fallbacks keep models non-empty and routine refreshes skip live
               // catalogs. Explicitly opening the picker must refresh either one.
               if (available) {
-                void refreshHarnessCatalogs([harness], { force: true });
+                void refreshHostModelCatalogs([harness], { force: true });
               }
             }}
             options={[

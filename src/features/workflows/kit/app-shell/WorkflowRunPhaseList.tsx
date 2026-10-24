@@ -9,34 +9,15 @@ import { cn } from "../../../../shared/lib/cn";
 import { laneDisplayName } from "../components/workflow-graph/lane-name.js";
 import { phaseDisplayName } from "../components/workflow-graph/phase-name.js";
 import type { WorkflowCausalityGraphData } from "../components/workflow-graph/types.js";
-import {
-  pillActivity,
-  type TimelinePill,
-  type WorkflowTimelineModel,
-} from "../components/workflow-timeline/timeline-model.js";
+import { pillActivity, type TimelinePill, type WorkflowTimelineModel } from "../components/workflow-timeline/timeline-model.js";
 import { reducedMotionQuery } from "../../../../shared/lib/reducedMotion";
-import {
-  ROSTER_PINS_PANE,
-  pillInstanceKey,
-  rosterMore,
-  rosterRestCounts,
-  rosterRoll,
-  stationRosterOf,
-} from "../components/workflow-timeline/roster-model.js";
-import {
-  WorkflowAgentPill,
-  type WorkflowAgentPillOpen,
-} from "../components/workflow-timeline/WorkflowAgentPill.js";
+import { ROSTER_PINS_PANE, pillInstanceKey, rosterMore, rosterRestCounts, rosterRoll, stationRosterOf } from "../components/workflow-timeline/roster-model.js";
+import { WorkflowAgentPill, type WorkflowAgentPillOpen } from "../components/workflow-timeline/WorkflowAgentPill.js";
 import { WorkflowMoreRow } from "../components/workflow-timeline/WorkflowMoreRow.js";
 import { WorkflowRoll } from "../components/workflow-timeline/WorkflowRoll.js";
 import { RosterMeter } from "../components/workflow-timeline/WorkflowRosterParts.js";
 import { WorkflowRunQuestionRow } from "./WorkflowRunQuestionRow.js";
-import {
-  AvatarCluster,
-  Rounds,
-  SpineLamp,
-  SpinePieces,
-} from "./WorkflowRunSpineParts.js";
+import { AvatarCluster, Rounds, SpineLamp, SpinePieces } from "./WorkflowRunSpineParts.js";
 import { spineSections } from "./workflowRunSpine.js";
 import type { WorkflowActorInstance } from "./workflowRunPanel.js";
 import { useWorkflowIntl } from "../i18n/IntlProvider.js";

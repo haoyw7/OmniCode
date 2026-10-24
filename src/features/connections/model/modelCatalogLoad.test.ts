@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { ModelCatalogLoad } from "./modelCatalogLoad";
-import type { HostModelCatalog } from "./protocol";
+import { ModelCatalogLoad } from "../../../client/modelCatalogLoad";
+import type { HostModelCatalog } from "../../../contracts/protocol";
 
 afterEach(() => vi.useRealTimers());
 

@@ -1,8 +1,14 @@
 // @vitest-environment happy-dom
-import { act, createElement } from "react";
+import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { UsageMeter } from "./ProviderAccountUsage";
+import { UsageMeter } from "../../../shared/ui/ProviderAccountUsage";
+import { useShowRemainingUsage } from "../../settings/model/displayPrefs";
+
+function PreferredUsageMeter(props: Omit<ComponentProps<typeof UsageMeter>, "showRemaining">) {
+  const showRemaining = useShowRemainingUsage();
+  return createElement(UsageMeter, { ...props, showRemaining });
+}
 
 let container: HTMLDivElement;
 let root: Root;
@@ -25,7 +31,7 @@ it("flips the meter when another window turns on remaining usage", async () => {
   const now = Date.now();
   await act(async () =>
     root.render(
-      createElement(UsageMeter, {
+      createElement(PreferredUsageMeter, {
         title: "5h",
         now,
         window: {

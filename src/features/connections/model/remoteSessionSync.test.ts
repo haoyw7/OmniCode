@@ -1,9 +1,12 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { loadRemoteSessionText } from "./connections";
-import type { HostSession, SessionSyncResponse } from "./protocol";
+import type { HostSession, SessionSyncResponse } from "../../../contracts/protocol";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../../platform/tauri/hostProjectionCache", () => ({
+  saveHostProjection: vi.fn(async () => undefined), hostProjectionIdentity: vi.fn(async () => "identity"),
+}));
 afterEach(() => vi.resetAllMocks());
 const known: HostSession = {
   projectId: "project", revision: 1, status: "running", updatedAt: 1,
@@ -18,6 +21,8 @@ it("shares a pending revision across remounted panes and serializes requests for
   const remounted = loadRemoteSessionText("host", "session", known, 1_000);
   const newer = { ...known, revision: 2 };
   const second = loadRemoteSessionText("host", "session", newer, 1_000);
+  await Promise.resolve();
+  await Promise.resolve();
   expect(invoke).toHaveBeenCalledTimes(1);
   expect(invoke).toHaveBeenCalledWith("remote_request", { machineId: "host", method: "sessions.sync", params: { sessionId: "session", revision: 1, waitMs: 1_000 } });
   resolve({ kind: "unchanged", revision: 1 });

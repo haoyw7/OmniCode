@@ -1,48 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  modelsForClaudeVersion,
-  modelsFromClaudeListModels,
-} from "./claudeCatalog";
-import {
-  applyClaudePromptEffortPrefix,
-  applyClaudeTaskTool,
-  askUserQuestionAllowInput,
-  buildClaudeSpawnArgs,
-  buildClaudeUserMessage,
-  contextFromResult,
-  contextFromUsageSnapshot,
-  contextUsedFromAssistant,
-  extractExitPlanModePlan,
-  isClaudeInitMessage,
-  isSubagentMessage,
-  isTodoTool,
-  listModelsFromControlResponse,
-  normalizeClaudeCliEffort,
-  parseBackgroundTasks,
-  parseClaudeVersion,
-  parseControlRequest,
-  parseControlResponse,
-  parseTaskNotification,
-  parseTaskProgress,
-  parseTaskStarted,
-  parseTaskUpdated,
-  parseToolProgress,
-  taskListFromTodos,
-  resolveClaudeApiModelId,
-  runtimeModeToPermission,
-  sessionIdFromMessage,
-  statusTextFromSystem,
-  streamDeltaFromEvent,
-  toClaudePermissionResult,
-  toolKindFromName,
-  toolStartFromEvent,
-  toolTitle,
-  turnStatusFromResult,
-  turnMetricsFromResult,
-  isUsageLimitResult,
-  usageLimitFromRateLimitEvent,
-  isReplayedTaskNotificationResult,
-} from "./claudeProtocol";
+import { modelsForClaudeVersion, modelsFromClaudeListModels } from "./claudeCatalog";
+import { applyClaudePromptEffortPrefix, applyClaudeTaskTool, askUserQuestionAllowInput, buildClaudeSpawnArgs, buildClaudeUserMessage, contextFromResult, contextFromUsageSnapshot, contextUsedFromAssistant, extractExitPlanModePlan, isClaudeInitMessage, isSubagentMessage, isTodoTool, listModelsFromControlResponse, normalizeClaudeCliEffort, parseBackgroundTasks, parseClaudeVersion, parseControlRequest, parseControlResponse, parseTaskNotification, parseTaskProgress, parseTaskStarted, parseTaskUpdated, parseToolProgress, taskListFromTodos, resolveClaudeApiModelId, runtimeModeToPermission, sessionIdFromMessage, statusTextFromSystem, streamDeltaFromEvent, toClaudePermissionResult, toolKindFromName, toolStartFromEvent, toolTitle, turnStatusFromResult, turnMetricsFromResult, isUsageLimitResult, usageLimitFromRateLimitEvent, isReplayedTaskNotificationResult } from "./claudeProtocol";
 
 describe("runtimeModeToPermission", () => {
   it("appends a Bot Soul without replacing the provider's base system prompt", () => {

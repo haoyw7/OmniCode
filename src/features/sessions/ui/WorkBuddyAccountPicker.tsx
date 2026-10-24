@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { providerAccounts, subscribeProviderAccounts, workBuddyAccountIdForModel } from "../../providers/model/providerAccounts";
 import type { UsageSession } from "../../providers/model/sessionUsage";
 

@@ -1,7 +1,7 @@
 import { createElement, type ReactNode } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup } from "../../../../tests/helpers/sessionPresentationRoot";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Block } from "../model/session";
+import type { Block } from "../../../contracts/session";
 import { AgentTranscript } from "./AgentTranscript";
 import { setUiLanguage } from "../../../shared/i18n/language";
 

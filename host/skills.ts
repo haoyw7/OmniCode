@@ -1,17 +1,16 @@
+import type { DiscoveredSkill } from "../src/contracts/skills";
 import { machineFs, machinePath, currentMachineIO } from "./machine-io";
 import { open } from "node:fs/promises";
 import { homedir } from "node:os";
-import type {
-  HostSkillCatalog,
-  RemoteProvider,
-} from "../src/features/connections/model/protocol";
-import type { DiscoveredSkill } from "../src/platform/tauri/fs";
-import { mergeCatalog } from "../src/features/skills/model/skillCatalog";
+import type { HostSkillCatalog } from "../src/contracts/protocol";
+import type { RemoteProvider } from "../src/contracts/provider";
+
+import { mergeCatalog } from "../src/domain/skillCatalog";
 import {
   injectSkillPrompt,
   skillNamesInText,
-} from "../src/features/skills/model/skillPrompt";
-import { CREATE_SKILL_BODY } from "../src/features/skills/model/createSkill";
+} from "../src/domain/skillPrompt";
+import { CREATE_SKILL_BODY } from "../src/domain/createSkill";
 import { nativeCommandPrompt } from "../src/integrations/harness/core/nativeCommands";
 import type { HostProvider } from "./providers";
 

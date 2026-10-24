@@ -10,14 +10,7 @@ import { sidebarDragPreview } from "../SidebarEntryReorder";
 import { useTabGroupLogos } from "../../../features/projects/hooks/useTabGroupLogos";
 import { pathKey } from "../../../shared/lib/paths";
 import { sameProjectPath, type RecentProject } from "../../../features/projects/model/recents";
-import {
-  collapsedProjectHeaderSize,
-  isBusyPath,
-  PROJECT_COLLAPSE_DURATION_MS,
-  type ProjectListEntry,
-  type ProjectTree,
-  SidebarSectionReorderContext,
-} from "./projectListShared";
+import { collapsedProjectHeaderSize, isBusyPath, PROJECT_COLLAPSE_DURATION_MS, type ProjectListEntry, type ProjectTree, SidebarSectionReorderContext } from "./projectListShared";
 import { ProjectSectionHeader } from "./ProjectSectionHeader";
 import { SidebarEntry } from "./SidebarEntry";
 import { ProjectCard } from "./ProjectCard";

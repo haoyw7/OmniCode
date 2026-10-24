@@ -182,8 +182,8 @@ describe("Host notes", () => {
       notes.upsert(input("a", "Title", "中".repeat(333_334))),
     ).toThrow(/too large/);
   });
-  it("shares the desktop WAL database and migrates only notes columns", () => {
-    const desktop = directory();
+  it("imports desktop notes and assets once without writing or replaying the source", () => {
+    const desktop = directory(), root = directory();
     const db = new DatabaseSync(join(desktop, "omnicode.db"));
     try {
       db.exec(`PRAGMA journal_mode=WAL;
@@ -191,35 +191,36 @@ describe("Host notes", () => {
         INSERT INTO sessions VALUES ('s1', 'untouched');
         CREATE TABLE notes (id TEXT PRIMARY KEY, slug TEXT NOT NULL UNIQUE, title TEXT NOT NULL,
           body TEXT NOT NULL DEFAULT '', source_session_id TEXT, source_cwd TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
-        INSERT INTO notes VALUES ('old', 'untitled', 'Untitled', '', NULL, NULL, 1, 2);`);
-      const notes = storage(directory(), () => desktop);
-      expect(notes.get("old")).toMatchObject({ tags: [], slugPending: false });
+        INSERT INTO notes VALUES ('old', 'untitled', 'Untitled', 'legacy', NULL, NULL, 1, 2);`);
+      mkdirSync(join(desktop, "note-assets", "old"), { recursive: true });
+      writeFileSync(join(desktop, "note-assets", "old", "image.png"), "legacy-image");
+      const notes = storage(root, () => desktop);
+      expect(notes.get("old")).toMatchObject({ tags: [], slugPending: false, body: "legacy", createdAt: 1, updatedAt: 2 });
+      expect(notes.image("/note-assets/old/image.png").data).toBe(Buffer.from("legacy-image").toString("base64"));
       notes.upsert(input("new"));
-      expect(
-        db.prepare("SELECT title FROM notes WHERE id='new'").get()?.title,
-      ).toBe("Title");
-      db.prepare("UPDATE notes SET body='Desktop edit' WHERE id='new'").run();
-      expect(notes.get("new")?.body).toBe("Desktop edit");
-      expect(
-        db.prepare("SELECT payload FROM sessions WHERE id='s1'").get()?.payload,
-      ).toBe("untouched");
-    } finally {
-      db.close();
-    }
+      expect(db.prepare("SELECT title FROM notes WHERE id='new'").get()).toBeUndefined();
+      notes.upsert(input("old", "Host edit"));
+      db.prepare("UPDATE notes SET body='Later desktop edit' WHERE id='old'").run();
+      expect(notes.get("old")?.title).toBe("Host edit");
+      notes.delete("old");
+      notes.close();
+      expect(notes.get("old")).toBeNull();
+      expect(readFileSync(join(desktop, "note-assets", "old", "image.png"), "utf8")).toBe("legacy-image");
+      expect(db.prepare("SELECT payload FROM sessions WHERE id='s1'").get()?.payload).toBe("untouched");
+      expect(db.prepare("PRAGMA table_info(notes)").all().some(column => column.name === "tags_json")).toBe(false);
+    } finally { db.close(); }
   });
-  it("uses notes.db headlessly and switches to paired storage without silently falling back", () => {
-    const root = directory(),
-      desktop = directory();
+  it("keeps Host notes when paired and refuses an inaccessible import source", () => {
+    const root = directory(), desktop = directory();
     let paired: string | undefined;
     const notes = storage(root, () => paired);
     notes.upsert(input("headless"));
     expect(existsSync(join(root, "notes.db"))).toBe(true);
-    expect(existsSync(join(root, "host.db"))).toBe(false);
     paired = desktop;
-    expect(notes.list()).toEqual([]);
-    notes.upsert(input("desktop"));
+    expect(notes.list().map(note => note.id)).toEqual(["headless"]);
+    notes.upsert(input("paired"));
     paired = undefined;
-    expect(notes.list().map((n) => n.id)).toEqual(["headless"]);
+    expect(notes.list().map(note => note.id).sort()).toEqual(["headless", "paired"]);
     paired = join(root, "missing");
     expect(() => notes.list()).toThrow();
   });
@@ -239,7 +240,7 @@ describe("Host notes", () => {
     );
     expect(
       readFileSync(
-        join(desktop, validateNoteAssetPath(image.markdownPath)),
+        join(host, validateNoteAssetPath(image.markdownPath)),
         "utf8",
       ),
     ).toBe("image bytes");
@@ -247,10 +248,10 @@ describe("Host notes", () => {
       mime: "image/png",
       data: Buffer.from("image bytes").toString("base64"),
     });
-    expect(existsSync(join(host, "note-assets"))).toBe(false);
+    expect(existsSync(join(desktop, "note-assets"))).toBe(false);
     notes.delete("n1");
     expect(notes.get("n1")).toBeNull();
-    expect(existsSync(join(desktop, "note-assets", "n1"))).toBe(false);
+    expect(existsSync(join(host, "note-assets", "n1"))).toBe(false);
     notes.delete("n1");
   });
   it("rejects traversal and invalid asset paths", () => {
@@ -284,7 +285,10 @@ describe("Host notes", () => {
     const notes = storage(root);
     mkdirSync(join(root, "note-assets", "n1"), { recursive: true });
     writeFileSync(join(outside, "secret.png"), "secret");
-    symlinkSync(
+    if (process.platform === "win32") {
+      rmSync(join(root, "note-assets", "n1"), { recursive: true });
+      symlinkSync(outside, join(root, "note-assets", "n1"), "junction");
+    } else symlinkSync(
       join(outside, "secret.png"),
       join(root, "note-assets", "n1", "secret.png"),
     );

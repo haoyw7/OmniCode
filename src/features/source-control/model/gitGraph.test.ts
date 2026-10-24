@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  COLOR_REGISTRY,
-  HISTORY_ITEM_REF_COLOR,
-  historyItemGraph,
-  layoutGitGraph,
-  SWIMLANE_HEIGHT,
-  SWIMLANE_WIDTH,
-} from "./gitGraph";
+import { COLOR_REGISTRY, HISTORY_ITEM_REF_COLOR, historyItemGraph, layoutGitGraph, SWIMLANE_HEIGHT, SWIMLANE_WIDTH } from "./gitGraph";
 
 describe("layoutGitGraph", () => {
   it("keeps other branches connected past an unrelated root commit", () => {

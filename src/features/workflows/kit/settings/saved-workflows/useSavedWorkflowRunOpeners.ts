@@ -1,9 +1,6 @@
 import { useCallback } from "react";
 import type { OmniCodeSavedWorkflowRun } from "../../_shims/shared.js";
-import type {
-  SavedWorkflowsOpenArtifactParams,
-  SavedWorkflowsOpenRunParams,
-} from "./savedWorkflowContract.js";
+import type { SavedWorkflowsOpenArtifactParams, SavedWorkflowsOpenRunParams } from "./savedWorkflowContract.js";
 
 /** 一行运行记录归属的项目（项目档恒定，全局档按 `run.cwd` 反查）。 */
 interface SavedWorkflowRunOpenTarget {

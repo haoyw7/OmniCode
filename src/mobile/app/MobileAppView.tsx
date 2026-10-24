@@ -5,25 +5,12 @@ import { MobileSpinner } from "../MobileSpinner";
 import { saveConnectionAppearance } from "../connectionAppearance";
 import { delegateSession } from "../../features/bots/model/delegateSession";
 import { MobileEmpty } from "../MobileEmpty";
-import {
-  ArrowLeft,
-  Chatting,
-  ChevronDown,
-  Computer,
-  Folder,
-  FolderPlus,
-  Info,
-  MoreVertical,
-  PanelLeft,
-  RefreshCw,
-  Search,
-  X,
-} from "../../shared/ui/icons";
+import { ArrowLeft, Chatting, ChevronDown, Computer, Folder, FolderPlus, Info, MoreVertical, PanelLeft, RefreshCw, Search, X } from "../../shared/ui/icons";
 import { MobileSessionTranscript, MobileSessionContextRing, MobileSnapshotActions, MobileSnapshotStatus } from "../MobileSessionViews";
 import { MobileDraftComposer } from "../MobileDraftComposer";
 import { MobileSheet, SHEET_WIDTH } from "../MobileSheet";
 import { MobileDrawer } from "../MobileDrawer";
-import { isChatFolder } from "../../features/projects/model/chatFolderPath";
+import { isChatFolder } from "../../domain/chatFolderPath";
 import { MobileHome } from "../MobileHome";
 import { MobileHomeMenu } from "../MobileHomeMenu";
 import { MobileHeaderSearch } from "../MobileHeaderSearch";
@@ -34,17 +21,18 @@ import { MobileDeviceChips } from "../MobileDeviceChips";
 import { MobileHostUnavailable } from "../MobileHostUnavailable";
 import { loadLastOnline } from "../lastOnline";
 import { setUiLanguage, translate } from "../../shared/i18n/language";
-import { nativeProviderLabel, nativeSyncNotice, type NativeSessionAccess } from "../../integrations/harness/core/nativeSessions";
+import { nativeProviderLabel, nativeSyncNotice } from "../../integrations/harness/core/nativeSessions";
+import { type NativeSessionAccess } from "../../contracts/session";
 import { saveFollowUpBehavior } from "../../features/settings/model/settings";
-import { applyAccentColor, saveAccentColor, saveTranscriptAnchor, saveTranscriptLayout } from "../../features/settings/model/appearance";
+import { applyAccentColor, saveAccentColor, saveTranscriptAnchor, saveTranscriptLayout, saveThemePreference } from "../../features/settings/model/appearance";
 import { saveSoundsEnabled } from "../../features/settings/model/sounds";
 import { saveGlassSettings } from "../glassSettings";
-import { saveThemePreference } from "../../features/settings/model/appearance";
+
 import { MobilePageOverlay, MobilePageTransition } from "../MobilePageTransition";
 import { MobileOverlayHostContext } from "../MobileOverlayHost";
 import { MobileSheetPresence } from "../MobileSheetPresence";
 import { SurfaceVisibilityContext } from "../../shared/ui/SurfaceVisibility";
-import { GradientBlurBackground } from "../../features/settings/ui/GradientBlurBackground";
+import { GradientBlurBackground } from "../../shared/ui/GradientBlurBackground";
 
 import { lazyMobilePage, lazyMobileSheet } from "../mobileLazy";
 import { saveMobileSkin } from "../theme/skin";

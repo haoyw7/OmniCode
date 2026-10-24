@@ -12,7 +12,7 @@ import { Pencil } from "../../../shared/ui/icons";
 import { BotAvatar } from "./BotAvatar";
 import { BotAvatarPicker } from "./BotAvatarPicker";
 import { botAvatarAppearance, decodeBotAvatar, encodeBotAvatar } from "./botAvatarAppearance";
-import { HARNESS_TITLE } from "../../sessions/model/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
 
 const avatarTabs = [{ id: "bot", label: "Bot" }, { id: "generate", label: "Generate" }, { id: "upload", label: "Upload" }];
 

@@ -1,11 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { newSession } from "../model/session";
-import { manualSessionTitle } from "../model/titlePolicy";
+import { manualSessionTitle } from "../../../domain/titlePolicy";
 import { setSharedSessionBackend, type SharedSessionBackend } from "./sharedSessionBackend";
 import { persistManualSessionTitle } from "./sessionStore";
+import * as remoteProjects from "../../connections/model/remoteProjects";
+import { remoteRequest } from "../../connections/model/connections";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
-afterEach(() => setSharedSessionBackend(undefined));
+vi.mock("../../connections/model/connections", () => ({
+  remoteMachineFor: vi.fn(async () => ({ id: "paired-machine" })),
+  remoteSessionFor: vi.fn(() => "host-session"),
+  remoteRequest: vi.fn(async () => {}),
+}));
+afterEach(() => {
+  setSharedSessionBackend(undefined);
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
+});
 
 function backend(exists: boolean) {
   const update = vi.fn(async () => {});
@@ -27,5 +38,18 @@ describe("manual title execution ownership", () => {
     expect(update).not.toHaveBeenCalled();
     expect(saved.titleState?.source).toBe("manual");
     expect(saved.title).toBe("My draft name");
+  });
+
+  it("returns a successful remote rename without treating it as a read-only cache", async () => {
+    vi.spyOn(remoteProjects, "remoteProjectFor").mockReturnValue({
+      key: "remote://paired/repo", environmentId: "paired", projectId: "repo", cwd: "/repo",
+    });
+    const session = newSession("codex", "remote://paired/repo");
+    session.blocks = [{ id: "u", role: "user", text: "hello" }];
+    const saved = await persistManualSessionTitle(session, "New title");
+    expect(saved.title).toBe("New title");
+    expect(remoteRequest).toHaveBeenCalledWith("paired-machine", "sessions.update", {
+      projectId: "repo", sessionId: "host-session", title: "New title",
+    });
   });
 });

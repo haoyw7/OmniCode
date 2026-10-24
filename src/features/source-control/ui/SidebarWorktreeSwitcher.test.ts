@@ -2,11 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  setWorktreeFocus,
-  worktreeFocus,
-  type WorktreeFocus,
-} from "../model/worktreeFocus";
+import { setWorktreeFocus, worktreeFocus, type WorktreeFocus } from "../model/worktreeFocus";
 import { SidebarWorktreeSwitcher } from "./SidebarWorktreeSwitcher";
 
 const { branchState, worktreeState, refreshWorktrees } = vi.hoisted(() => ({

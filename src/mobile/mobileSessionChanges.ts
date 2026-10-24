@@ -1,14 +1,23 @@
-import type { GitDiffIndex, GitFileDiff } from "../platform/tauri/fs";
-import type { CheckpointStatus } from "../features/sessions/model/checkpoint";
+import type { GitDiffIndex, GitFileDiff } from "../contracts/workspace";
+
+import type { CheckpointStatus } from "../contracts/checkpoint";
 import { translate } from "../shared/i18n/language";
 import type { MobileClient } from "./client";
 import type { MobileGitSource } from "./mobileGit";
 
 /** Why Undo All is unavailable, if it is. */
-export type SessionUndoBlock = "outside" | "locked" | "shared";
+export type SessionUndoBlock = "outside" | "locked" | "shared" | "unavailable";
 
 /** The edits one conversation made, in the review sheet's index shape. */
-export type SessionChangesIndex = GitDiffIndex & { undoBlocked?: SessionUndoBlock; workspaceShared?: boolean };
+export type SessionChangesIndex = GitDiffIndex & {
+  undoBlocked?: SessionUndoBlock;
+  /** The Host's explanation when it refuses to restore this turn. */
+  undoUnavailableReason?: string;
+  workspaceShared?: boolean;
+  /** Provider history was rolled back; Undo must be retried to restore files. */
+  restorePending?: boolean;
+  restoreMessage?: string;
+};
 
 export type MobileSessionChangesSource = MobileGitSource & {
   keep: () => Promise<void>;
@@ -39,11 +48,20 @@ export function sessionChangesIndex(status: CheckpointStatus): SessionChangesInd
     aheadOfDefault: 0,
     headPushed: false,
     workspaceShared: status.workspaceShared,
-    undoBlocked: status.workspaceShared
-      ? "shared"
-      : status.undoLocked
-        ? "locked"
-        : status.files.some((file) => !file.undoable) ? "outside" : undefined,
+    ...(status.undoUnavailableReason ? { undoUnavailableReason: status.undoUnavailableReason } : {}),
+    ...(status.restorePending
+      ? { restorePending: true, ...(status.restoreMessage ? { restoreMessage: status.restoreMessage } : {}) }
+      : {}),
+    // A pending restore is retried even though its files may already differ.
+    undoBlocked: status.restorePending
+      ? status.undoLocked ? "locked" : undefined
+      : status.workspaceShared
+        ? "shared"
+        : status.undoUnavailableReason
+          ? "unavailable"
+          : status.undoLocked
+            ? "locked"
+            : status.files.some((file) => !file.undoable) ? "outside" : undefined,
   };
 }
 

@@ -1,14 +1,7 @@
 import type { WorkflowRunState } from "../../_shims/protocol.js";
 import { phaseBinder } from "./instance-phases.js";
 import { aggregateRunStatuses, statusOfRunNode } from "./run-status.js";
-import {
-  IMPLICIT_PHASE_ID,
-  type StepRunStatus,
-  type StepStatusTable,
-  type WorkflowCausalityGraphData,
-  type WorkflowHandoffData,
-  type WorkflowParticipantData,
-} from "./types.js";
+import { IMPLICIT_PHASE_ID, type StepRunStatus, type StepStatusTable, type WorkflowCausalityGraphData, type WorkflowHandoffData, type WorkflowParticipantData } from "./types.js";
 
 /**
  * 参与者层的纯选择器。

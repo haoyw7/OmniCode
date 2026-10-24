@@ -1,8 +1,6 @@
-import type { Skill } from "../features/skills/model/skillTypes";
-import {
-  replaceSlashToken,
-  slashTokenAt,
-} from "../features/skills/model/slashCommands";
+import type { Skill } from "../contracts/skills";
+
+import { replaceSlashToken, slashTokenAt } from "../features/skills/model/slashCommands";
 
 /** Reuse slash replacement; plain caret insertion adds only needed whitespace. */
 export function insertMobileSkill(

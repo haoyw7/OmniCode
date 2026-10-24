@@ -1,13 +1,5 @@
-import { readFxSessionTitle } from "./fx";
-import {
-  bindFxSession,
-  cancelFxTurn,
-  forgetFxSession,
-  respondFxApproval,
-  sendFxTurn,
-  steerFxTurn,
-  stopFxSession,
-} from "./fx";
+import { readFxSessionTitle, bindFxSession, cancelFxTurn, forgetFxSession, respondFxApproval, sendFxTurn, steerFxTurn, stopFxSession } from "./fx";
+
 import { refreshFxCatalog } from "./fxCatalog";
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
 

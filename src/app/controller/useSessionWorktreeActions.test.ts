@@ -1,34 +1,20 @@
 // @vitest-environment happy-dom
 import { act, createElement, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  newSession,
-  type Session,
-} from "../../features/sessions/model/session";
-import {
-  setWorktreeFocus,
-  worktreeFocus,
-} from "../../features/source-control/model/worktreeFocus";
-import type {
-  Worktree,
-  Worktrees,
-} from "../../features/source-control/model/worktrees";
-import {
-  newTab,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import {
-  useWorkspaceNavigation,
-  type WorkspaceNavigation,
-} from "../hooks/useWorkspaceNavigation";
+import { newSession } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
+import { setWorktreeFocus, worktreeFocus } from "../../features/source-control/model/worktreeFocus";
+import type { Worktree, Worktrees } from "../../contracts/worktree";
+import { newTab, type WorkspaceTab } from "../../features/workspace/model/layout";
+import { useWorkspaceNavigation, type WorkspaceNavigation } from "../hooks/useWorkspaceNavigation";
 import { useSessionWorktreeActions } from "./useSessionWorktreeActions";
 
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   save: vi.fn(),
   forget: vi.fn(),
-  flush: vi.fn(),
   keep: vi.fn(),
   review: vi.fn(),
   git: vi.fn(),
@@ -39,8 +25,8 @@ vi.mock("../../features/source-control/model/worktrees", async (original) => ({
   >()),
   listWorktrees: mocks.list,
 }));
-vi.mock("../../features/orchestration/model/orchestration", () => ({
-  orchestrator: { forSession: () => undefined },
+vi.mock("../../features/orchestration/model/orchestrationClient", () => ({
+  hostOrchestrationClient: { forSession: () => undefined },
 }));
 vi.mock("../../integrations/harness", () => ({
   forgetHarnessSession: mocks.forget,
@@ -52,7 +38,6 @@ vi.mock("../../features/sessions/data/sessionStore", () => ({
   upsertSession: mocks.save,
 }));
 vi.mock("../../features/sessions/model/checkpoint", () => ({
-  flushSessionCheckpoint: mocks.flush,
   keepSessionChanges: mocks.keep,
   notifyReviewChanged: mocks.review,
 }));
@@ -137,7 +122,6 @@ beforeEach(() => {
   mocks.list.mockReset().mockResolvedValue(listing);
   mocks.save.mockReset().mockResolvedValue(undefined);
   mocks.forget.mockResolvedValue(undefined);
-  mocks.flush.mockResolvedValue(undefined);
   mocks.keep.mockResolvedValue(undefined);
   setWorktreeFocus(project, undefined);
   container = document.createElement("div");

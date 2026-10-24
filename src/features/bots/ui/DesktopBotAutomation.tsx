@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotPatch } from "../model/botView";
 import type { BotView } from "../model/bots";
-import type { HostModelCatalog, HostProject, HostSessionSummary } from "../../connections/model/protocol";
+import type { HostModelCatalog, HostProject, HostSessionSummary } from "../../../contracts/protocol";
 import { botErrorMessage } from "../model/botErrors";
 import { BotSettings } from "./BotSettings";
 import { useTranslation } from "../../../shared/i18n/useTranslation";

@@ -1,4 +1,4 @@
-import type { AgentModel } from "./models";
+import type { AgentModel } from "../../../contracts/session";
 
 /** Matches Opus 5.5 across catalog IDs (`opus-5-5`), names (`Opus 5.5`), and dated native IDs. */
 export function isOpus55Model(model: AgentModel): boolean {

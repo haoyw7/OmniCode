@@ -2,27 +2,13 @@ import { motion } from "motion/react";
 import { motionGeometry, panelTransition } from "../shared/motion/tokens";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import {
-  focusedTaskWindow,
-  sessionStatusSummary,
-  type SessionStatusPanelModel,
-} from "../features/sessions/model/sessionStatusPanel";
-import { taskListProgressLabel } from "../features/sessions/model/taskList";
+import { focusedTaskWindow, sessionStatusSummary, type SessionStatusPanelModel } from "../features/sessions/model/sessionStatusPanel";
+import { taskListProgressLabel } from "../domain/taskList";
 import { TaskState } from "../features/sessions/ui/TaskListPreview";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
 import { IconButton } from "../shared/ui/forms/IconButton";
-import {
-  Bot,
-  CircleAlert,
-  ChevronRight,
-  FileDiff,
-  FileScript,
-  Gauge,
-  GitCompare,
-  ListEnd,
-  Terminal,
-} from "../shared/ui/icons";
+import { Bot, CircleAlert, ChevronRight, FileDiff, FileScript, Gauge, GitCompare, ListEnd, Terminal } from "../shared/ui/icons";
 import { MobileSheet } from "./MobileSheet";
 import { MobileSheetPresence } from "./MobileSheetPresence";
 import { MobileDiffCounts } from "./MobileDiffCounts";

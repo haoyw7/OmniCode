@@ -1,176 +1,28 @@
-import { invoke } from "@tauri-apps/api/core";
+import type { GithubTaskKind, GithubPrAction, InboxKind, GithubWorkItem, InboxProvider, InboxItem, GithubWorkItemDetails, GithubWorkItemThread, GithubPrDiff, GithubWorkItemQuery, InboxQuery, InboxProviderErrors, GithubStatus, InboxListResult, InboxComposerCard } from "../../../contracts/session";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { inboxHostCommand as invoke } from "../../connections/model/inboxHost";
 import { clearKnownInboxItems } from "./inboxSeen";
-import {
-  linearConnected,
-  linearTeamIdsForFetch,
-  listLinearIssues,
-  listLinearTeams,
-  loadHiddenLinearTeamIds,
-  type LinearIssue,
-} from "./linear";
-import {
-  clearJiraCache,
-  jiraConnected,
-  jiraProjectIdsForFetch,
-  listJiraIssues,
-  listJiraProjects,
-  loadHiddenJiraProjectIds,
-  type JiraIssue,
-} from "./jira";
-import {
-  clearGitlabCache,
-  gitlabConnected,
-  gitlabRepo,
-  listGitlabTodos,
-  listGitlabWorkItems,
-  type GitlabWorkItem,
-} from "./gitlab";
-import {
-  azureDevOpsConnected,
-  azureDevOpsRepo,
-  clearAzureDevOpsCache,
-  listAzureDevOpsTodos,
-  listAzureDevOpsWorkItems,
-  type AzureDevOpsWorkItem,
-} from "./azureDevOps";
-import {
-  collectRailProjects,
-  normalizeProjectPath,
-  sameProjectPath,
-  type RecentProject,
-} from "../../projects/model/recents";
+import { linearConnected, linearTeamIdsForFetch, listLinearIssues, listLinearTeams, loadHiddenLinearTeamIds } from "./linear";
+import { clearJiraCache, jiraConnected, jiraProjectIdsForFetch, listJiraIssues, listJiraProjects, loadHiddenJiraProjectIds } from "./jira";
+import { clearGitlabCache, gitlabConnected, gitlabRepo, listGitlabTodos, listGitlabWorkItems } from "./gitlab";
+import { azureDevOpsConnected, azureDevOpsRepo, clearAzureDevOpsCache, listAzureDevOpsTodos, listAzureDevOpsWorkItems } from "./azureDevOps";
+import { collectRailProjects, sameProjectPath, type RecentProject } from "../../projects/model/recents";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
 import { recordInboxSelfActivity } from "./inboxSelfActivity";
-
-export type GithubTaskKind = "issue" | "pr";
-export type GithubPrAction =
-  "merge" | "squash" | "rebase" | "draft" | "ready" | "close" | "reopen";
-export type InboxKind = GithubTaskKind | "linear" | "jira";
-
-export type GithubLabel = {
-  name: string;
-  color: string;
-};
-
-export type GithubAssignee = {
-  login: string;
-  avatarUrl?: string;
-};
-
-export type GithubWorkItem = {
-  kind: GithubTaskKind;
-  number: number;
-  title: string;
-  url: string;
-  state: string;
-  /** GitHub issue closure reason, such as `completed` or `not_planned`. */
-  stateReason?: string;
-  createdAt?: string;
-  updatedAt: string;
-  labels: GithubLabel[];
-  assignees: GithubAssignee[];
-  draft: boolean;
-  repo: string;
-};
-
-export type InboxProvider =
-  "github" | "linear" | "jira" | "gitlab" | "azuredevops";
-
-export type InboxItem = Omit<GithubWorkItem, "kind"> & {
-  kind: InboxKind;
-  projectPath: string;
-  provider: InboxProvider;
-  id?: string;
-  identifier?: string;
-  teamId?: string;
-  teamName?: string;
-  /** Linear project the issue belongs to. Empty when it sits outside every project. */
-  projectId?: string;
-  projectName?: string;
-  stateType?: string;
-  /** GitLab To-Do action that caused this item to need attention. */
-  attentionReason?: string;
-};
-
-export type GithubWorkItemDetails = {
-  body: string;
-  author: string;
-  authorAvatarUrl?: string;
-  baseRefName?: string;
-  headRefName?: string;
-  reviewDecision?: string;
-};
-
-export type GithubWorkItemComment = {
-  id: string;
-  kind: string;
-  author: string;
-  authorAvatarUrl?: string;
-  body: string;
-  createdAt: string;
-  url: string;
-  state: string;
-  path: string;
-  line: number | null;
-  resolved: boolean;
-  threadId: string;
-  replies: GithubWorkItemComment[];
-};
-
-export type GithubWorkItemCommit = {
-  oid: string;
-  messageHeadline: string;
-  author: string;
-  committedDate: string;
-  url: string;
-};
-
-export type GithubWorkItemThread = {
-  comments: GithubWorkItemComment[];
-  commits: GithubWorkItemCommit[];
-  truncated: boolean;
-  reviewDecision: string;
-  baseRefName: string;
-  headRefName: string;
-};
-
-export type GithubPrFile = {
-  path: string;
-  additions: number;
-  deletions: number;
-};
-
-export type GithubPrDiff = {
-  additions: number;
-  deletions: number;
-  files: GithubPrFile[];
-  patch: string;
-  truncated: boolean;
-};
-
-export type GithubWorkItemQuery = {
-  kind: GithubTaskKind;
-  assignedToMe: boolean;
-  state: "open" | "all";
-  search: string;
-};
-
-export type InboxQuery = Omit<GithubWorkItemQuery, "kind"> & {
-  linearHiddenTeamIds?: string[];
-  jiraHiddenProjectIds?: string[];
-};
-
-export type InboxProviderErrors = Partial<Record<InboxProvider, string>>;
-
-export type GithubStatus = {
-  connected: boolean;
-  installed: boolean;
-  authenticated: boolean;
-};
-
-export type InboxListResult = {
-  items: InboxItem[];
-  errors: InboxProviderErrors;
-};
+import { azureDevOpsWorkItemToInboxItem, gitlabWorkItemToInboxItem, inboxStartDraft, jiraIssueToInboxItem, linearIssueToInboxItem } from "../../../domain/automationInbox";
 
 const INBOX_CACHE_FRESH_MS = 2 * 60_000;
 
@@ -925,30 +777,6 @@ async function fetchLinearInboxItems(query: InboxQuery): Promise<InboxItem[]> {
     .map(linearIssueToInboxItem);
 }
 
-function linearIssueToInboxItem(issue: LinearIssue): InboxItem {
-  return {
-    provider: "linear",
-    kind: "linear",
-    id: issue.id,
-    identifier: issue.identifier,
-    number: issue.number,
-    title: issue.title,
-    url: issue.url,
-    state: issue.state,
-    stateType: issue.stateType,
-    updatedAt: issue.updatedAt,
-    labels: issue.labels,
-    assignees: issue.assignees,
-    draft: false,
-    repo: issue.repo,
-    teamId: issue.teamId,
-    teamName: issue.teamName,
-    projectId: issue.projectId || "",
-    projectName: issue.projectName || "",
-    projectPath: issue.projectPath || "",
-  };
-}
-
 async function fetchJiraInboxItems(query: InboxQuery): Promise<InboxItem[]> {
   const hiddenIds = query.jiraHiddenProjectIds ?? loadHiddenJiraProjectIds();
   let projectIds: string[] | null = null;
@@ -966,54 +794,6 @@ async function fetchJiraInboxItems(query: InboxQuery): Promise<InboxItem[]> {
   return issues
     .filter((issue) => hidden.size === 0 || !hidden.has(issue.teamId))
     .map(jiraIssueToInboxItem);
-}
-
-function jiraIssueToInboxItem(issue: JiraIssue): InboxItem {
-  return {
-    provider: "jira",
-    kind: "jira",
-    id: issue.id,
-    identifier: issue.identifier,
-    number: issue.number,
-    title: issue.title,
-    url: issue.url,
-    state: issue.state,
-    stateType: issue.stateType,
-    updatedAt: issue.updatedAt,
-    labels: issue.labels,
-    assignees: issue.assignees,
-    draft: false,
-    repo: issue.repo,
-    teamId: issue.teamId,
-    teamName: issue.teamName,
-    projectPath: issue.projectPath || "",
-  };
-}
-
-function gitlabWorkItemToInboxItem(
-  item: GitlabWorkItem,
-  projectPath: string,
-  repo: string,
-): InboxItem {
-  return {
-    ...item,
-    provider: "gitlab",
-    repo: item.repo || repo,
-    projectPath,
-  };
-}
-
-function azureDevOpsWorkItemToInboxItem(
-  item: AzureDevOpsWorkItem,
-  projectPath: string,
-  repo: string,
-): InboxItem {
-  return {
-    ...item,
-    provider: "azuredevops",
-    repo: item.repo || repo,
-    projectPath,
-  };
 }
 
 export function inboxProjectsForRail(
@@ -1226,53 +1006,6 @@ export function inboxItemRef(item: {
   }
   return `#${item.number}`;
 }
-
-export function inboxStartDraft(item: InboxItem, body?: string): string {
-  if (item.provider === "linear" || item.provider === "jira") {
-    const provider = item.provider === "jira" ? "Jira" : "Linear";
-    const id = item.identifier?.trim() || `${provider} #${item.number}`;
-    const title = item.title.trim() || id;
-    const lines = [`Work on this ${provider} issue:`, "", `${id} ${title}`];
-    const url = item.url.trim();
-    if (url) lines.push(url);
-    const description = body?.trim();
-    if (description) {
-      lines.push("", description);
-    }
-    return `${lines.join("\n")}\n`;
-  }
-  const kind = item.kind === "pr" ? "pull request" : "issue";
-  const provider =
-    item.provider === "gitlab"
-      ? "GitLab"
-      : item.provider === "azuredevops"
-        ? "ADO"
-        : "GitHub";
-  const providerKind =
-    item.provider === "gitlab" && item.kind === "pr" ? "merge request" : kind;
-  const title =
-    item.title.trim() || `${provider} ${providerKind} #${item.number}`;
-  const lines = [
-    `Work on this ${provider} ${providerKind}:`,
-    "",
-    `#${item.number} ${title}`,
-  ];
-  const url = item.url.trim();
-  if (url) lines.push(url);
-  return `${lines.join("\n")}\n`;
-}
-
-/** Compact chip shown above the composer when starting from Inbox. */
-export type InboxComposerCard = {
-  provider: InboxProvider;
-  kind: InboxKind;
-  identifier: string;
-  title: string;
-  url: string;
-  source: string;
-  labels: GithubLabel[];
-  prompt: string;
-};
 
 export function inboxComposerCard(
   item: InboxItem,

@@ -1,40 +1,28 @@
+import type { SessionPaneProps } from "../features/sessions/model/sessionPane";
+vi.mock("../features/providers/model/hostModelCatalog", () => ({ refreshHostModelCatalogs: async () => {} }));
 import { startMotionClock, stopMotionClock, finishMotion } from "../../tests/helpers/sharedMotionClock";
 // @vitest-environment happy-dom
 import { act, createElement, Fragment, StrictMode, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
-import type { SessionPaneProps } from "../features/sessions/ui/SessionPane";
-import { sessionComposerConfiguration } from "../features/sessions/model/composerConfiguration";
-import { newSession, type Session } from "../features/sessions/model/session";
+
+import { sessionComposerConfiguration } from "../domain/composerConfiguration";
+import { newSession } from "../features/sessions/model/session";
+import { type Session } from "../contracts/session";
 import { beginComposerAttachmentRead, clearComposerDraft, getComposerDraft, setComposerAttachmentCount, setComposerDraft } from "../features/sessions/model/draftCache";
 import { ADD_TO_CHAT_EVENT, type AddToChatRequest } from "../features/sessions/model/quoteDraft";
-import {
-  newAppViewWorkspaceTab,
-  newEditorWorkspaceTab,
-  newFileTab,
-  newTab,
-  newTerminalFile,
-  newWorkflowRunTab,
-  openEditorTab,
-} from "../features/workspace/model/layout";
-import type {
-  OpenScopedWorkflowActorSessionSideTabRequest,
-  WorkflowRunSidePaneTab,
-} from "../features/workflows/kit/lib/workspaceSidePane";
-import {
-  createProjectTerminal,
-  type DockSide,
-} from "../features/projects/model/projectTerminal";
+import { newAppViewWorkspaceTab, newEditorWorkspaceTab, newFileTab, newTab, newTerminalFile, newWorkflowRunTab, openEditorTab } from "../features/workspace/model/layout";
+import type { OpenScopedWorkflowActorSessionSideTabRequest, WorkflowRunSidePaneTab } from "../features/workflows/kit/lib/workspaceSidePane";
+import { createProjectTerminal, type DockSide } from "../features/projects/model/projectTerminal";
 import { setUiLanguage } from "../shared/i18n/language";
-import {
-  saveMenuBarVisible,
-  saveNotesEnabled,
-} from "../features/settings/model/settings";
+import { saveMenuBarVisible, saveNotesEnabled } from "../features/settings/model/settings";
 import { loadSessionSidebarOpen } from "../features/settings/model/appearance";
 import { saveProjectSidebarTab } from "../features/settings/model/projectSidebarTab";
 import type { GitBranches } from "../platform/tauri/fs";
 import { activatePreferenceStore, SharedPreferenceStore, type PreferenceRequest, type PreferenceSnapshot } from "../features/settings/model/sharedPreferences";
+import { setSharedSessionBackend, type SharedSessionBackend } from "../features/sessions/data/sharedSessionBackend";
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -47,6 +35,11 @@ const mocks = vi.hoisted(() => ({
   windowMinimize: vi.fn(async () => {}),
   windowMaximize: vi.fn(async () => {}),
   windowClose: vi.fn(async () => {}),
+  statusToast: vi.fn(),
+}));
+
+vi.mock("../shared/ui/StatusToast", async (original) => ({
+  ...await original<typeof import("../shared/ui/StatusToast")>(), showStatusToast: mocks.statusToast,
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -126,7 +119,6 @@ vi.mock("../integrations/harness", async (original) => ({
   registerBuiltinHarnesses: () => {},
   startHarnessBridge: () => () => {},
   probeHarnessAvailability: async () => {},
-  refreshHarnessCatalogs: async () => {},
   stopHarnessTextPrompts: async () => {},
 }));
 vi.mock("./model/appLifecycle", async (original) => ({
@@ -268,7 +260,7 @@ vi.mock("./shell/Sidebar", async () => {
       ) => void;
       cwd: string;
       gitCwd: string;
-      projectHistory?: { id: string; cwd: string; title: string }[];
+      projectHistory?: { id: string; cwd: string; title: string; pinned?: boolean }[];
       openSessions?: { id: string; cwd?: string }[];
       loadedProjectPaths?: ReadonlySet<string>;
       failedProjectPaths?: ReadonlySet<string>;
@@ -323,6 +315,10 @@ vi.mock("./shell/Sidebar", async () => {
           "data-pin-first": true,
           onClick: () => onPinSession("first", true),
         }, "Pin first"),
+        el("button", {
+          "data-unpin-first": true,
+          onClick: () => onPinSession("first", false),
+        }, "Unpin first"),
         ...["/project-a", "/project-b"].flatMap((path) => [
           el("button", {
             key: `select-project-${path}`,
@@ -386,6 +382,7 @@ vi.mock("./shell/Sidebar", async () => {
               key: row.id,
               "data-history-project": row.cwd,
               "data-history-title": row.title,
+              "data-history-pinned": String(!!row.pinned),
             },
             el(
               "button",
@@ -513,6 +510,7 @@ vi.mock("../features/sessions/ui/SessionPane", async () => {
       onRuntimeModeChange,
       onCwdChange,
       onSubmit,
+      onRemoteSnapshot,
     }: {
       session: Session;
       composerFocused: boolean;
@@ -526,8 +524,9 @@ vi.mock("../features/sessions/ui/SessionPane", async () => {
       onRuntimeModeChange: SessionPaneProps["onRuntimeModeChange"];
       onCwdChange: SessionPaneProps["onCwdChange"];
       onSubmit: SessionPaneProps["onSubmit"];
+      onRemoteSnapshot: SessionPaneProps["onRemoteSnapshot"];
     }) => {
-      mocks.paneRendered({ session, onModelChange, onModelSettingsChange, onRuntimeModeChange, onCwdChange, onSubmit, onOpenBot });
+      mocks.paneRendered({ session, onModelChange, onModelSettingsChange, onRuntimeModeChange, onCwdChange, onSubmit, onOpenBot, onRemoteSnapshot });
       return el(
         "div",
         {
@@ -611,7 +610,7 @@ vi.mock("../features/bots/ui/DesktopBots", async () => {
 
 vi.mock("../features/workflows/ui/WorkflowsView", async () => {
   const { createElement: el } = await import("react");
-  const { AppPageHeader } = await import("../features/workspace/ui/AppPageHeader");
+  const { AppPageHeader } = await import("../shared/ui/messaging/AppPageHeader");
   const { Workflow } = await import("../shared/ui/icons");
   const { useWorkflowApp } = await import("../features/workflows/ui/workflowAppContext");
   return {
@@ -660,9 +659,10 @@ vi.mock("../features/workflows/model/workflowSessionWatch", () => ({
   }),
 }));
 
-vi.mock("../features/settings/ui/SettingsView", async () => {
+vi.mock("./ui/SettingsView", async () => {
   const { createElement: el, useEffect, useState } = await import("react");
   return {
+    preloadSettingsSection: async () => {},
     SettingsView: ({
       active,
       onClose,
@@ -692,7 +692,7 @@ vi.mock("../features/settings/ui/SettingsView", async () => {
 });
 vi.mock("../features/inbox/ui/InboxView", async () => {
   const { createElement: el, useEffect, useRef } = await import("react");
-  const { AppPageHeader } = await import("../features/workspace/ui/AppPageHeader");
+  const { AppPageHeader } = await import("../shared/ui/messaging/AppPageHeader");
   const { Inbox } = await import("../shared/ui/icons");
   return {
     InboxView: ({
@@ -706,7 +706,7 @@ vi.mock("../features/inbox/ui/InboxView", async () => {
       onClose: () => void;
       onOpenSession: (id: string) => void;
       onAsk: (
-        item: import("../features/inbox/model/githubTasks").InboxItem,
+        item: import("../contracts/session").InboxItem,
       ) => Promise<string>;
       onAskMount: (portal: { sessionId: string; host: HTMLElement }) => void;
     }) => {
@@ -753,7 +753,7 @@ vi.mock("../features/inbox/ui/LinkedWorkItemPanel", () => ({
 }));
 vi.mock("../features/notes/ui/NotesView", async () => {
   const { createElement: el, useEffect, useState } = await import("react");
-  const { AppPageHeader } = await import("../features/workspace/ui/AppPageHeader");
+  const { AppPageHeader } = await import("../shared/ui/messaging/AppPageHeader");
   const { File } = await import("../shared/ui/icons");
   const { useTranslation } = await import("../shared/i18n/useTranslation");
   return {
@@ -786,6 +786,7 @@ let firstId: string;
 let recentId: string;
 
 beforeEach(() => {
+  setSharedSessionBackend(undefined);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   startMotionClock();
   vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
@@ -805,6 +806,7 @@ beforeEach(() => {
   mocks.windowMinimize.mockClear();
   mocks.windowMaximize.mockClear();
   mocks.windowClose.mockClear();
+  mocks.statusToast.mockClear();
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -815,6 +817,7 @@ afterEach(async () => {
     clearComposerDraft(pane.dataset.session!);
   }
   await act(async () => root.unmount());
+  setSharedSessionBackend(undefined);
   activatePreferenceStore(undefined);
   container.remove();
   stopMotionClock();
@@ -823,6 +826,20 @@ afterEach(async () => {
   setUiLanguage("en");
   localStorage.clear();
 });
+
+function installSessionBackend(overrides: Partial<SharedSessionBackend>) {
+  setSharedSessionBackend({
+    ownsProject: () => false, ownsSession: () => false, rememberSession: () => {},
+    list: async () => [], get: async () => null, update: async () => {},
+    delete: async () => {}, search: async () => [], cancelSearch: () => {},
+    native: {
+      list: async () => { throw new Error("Native catalog is not part of this fixture"); },
+      import: async () => { throw new Error("Native import is not part of this fixture"); },
+      syncAll: async () => {}, access: async () => null,
+    },
+    ...overrides,
+  });
+}
 
 async function mount(onlyApp = false, side: DockSide = "bottom", seed?: Partial<Session>, strict = false, recentSeed?: Partial<Session>, surfaceMode?: "split" | "unified") {
   const first = { ...newSession("codex", "/repo"), id: "first", ...seed };
@@ -1264,7 +1281,7 @@ describe("window page navigation", () => {
   });
 });
 
-describe("local composer agent selection", () => {
+describe("project composer agent selection", () => {
   beforeEach(() => {
     const original = mocks.invoke.getMockImplementation()!;
     mocks.invoke.mockImplementation(async (command, args) => {
@@ -1276,7 +1293,7 @@ describe("local composer agent selection", () => {
   const pane = () => mocks.paneRendered.mock.calls.map(([props]) => props as SessionPaneProps)
     .filter(props => props.session.id === "first").at(-1)!;
 
-  it("keeps the existing agent until a non-empty message is submitted", async () => {
+  it("keeps the existing agent and pending selection when Host is unavailable", async () => {
     await mount(false, "bottom", { providerSessionId: "original-thread", title: "Existing work",
       blocks: [{ id: "old-user", role: "user", text: "Earlier work" }] });
     const before = pane().session;
@@ -1290,12 +1307,13 @@ describe("local composer agent selection", () => {
     expect(pane().session.runtimeMode).toEqual(before.runtimeMode);
     await act(async () => { expect(pane().onSubmit("first", " ", [])).toBe(false); });
     expect(pane().session.harness).toBe("codex");
-    await act(async () => { pane().onSubmit("first", "Continue with Claude", []); });
+    await act(async () => { expect(pane().onSubmit("first", "Continue with Claude", [])).toBe(false); });
     await act(async () => vi.dynamicImportSettled());
-    expect(pane().session.harness).toBe("claude");
-    expect(pane().session.runtimeMode).toBe("full-access");
-    expect(pane().session.pendingConfiguration).toBeUndefined();
-    expect(pane().session.blocks.some(block => block.role === "user" && block.text === "Continue with Claude")).toBe(true);
+    expect(pane().session.harness).toBe("codex");
+    expect(pane().session.runtimeMode).toBe(before.runtimeMode);
+    expect(sessionComposerConfiguration(pane().session)).toMatchObject({ harness: "claude", runtimeMode: "full-access" });
+    expect(pane().session.blocks).toEqual(before.blocks);
+    expect(mocks.invoke.mock.calls.some(([command]) => command === "harness_spawn" || command === "session_upsert")).toBe(false);
   });
 
   it("cancels an unsent switch when the original agent is selected again", async () => {
@@ -1581,9 +1599,14 @@ describe("App workspace app views", () => {
         "[data-app-view-dialog]",
       )!;
       expect(dialog.style.top).toBe("42px");
-      expect(Number(chrome.style.zIndex)).toBeGreaterThan(
+      expect(Number(chrome.style.zIndex)).toBeLessThan(
         Number(dialog.style.zIndex),
       );
+      // The dialog leaves native window controls outside its inset; a visual
+      // backdrop dims that strip without intercepting their pointer input.
+      const chromeBackdrop = document.querySelector<HTMLElement>("[data-window-chrome-backdrop]")!;
+      expect(chromeBackdrop.style.height).toBe(dialog.style.top);
+      expect(chromeBackdrop.classList.contains("pointer-events-none")).toBe(true);
       expect(visibleControls()).toHaveLength(1);
       await click('[aria-label="Minimize window"]');
       await click('[aria-label="Maximize window"]');
@@ -2357,15 +2380,14 @@ describe("App multi-project history", () => {
       createdAt: 1,
       updatedAt: 2,
     };
-    mocks.invoke.mockImplementation(async (command, args) => {
-      if (command === "session_list_by_project")
-        return args.cwd === "/project-b" ? [row] : [];
-      if (command === "session_get") return row;
-      if (command === "session_upsert") {
-        row = { ...row, ...args.session };
-        return row;
-      }
-      return [];
+    const list = vi.fn(async (cwd?: string) => cwd === "/project-b" ? [row] : []);
+    const update = vi.fn<SharedSessionBackend["update"]>(async (_id, patch) => {
+      row = { ...row, title: patch.title ?? row.title, updatedAt: Date.now() };
+    });
+    installSessionBackend({
+      ownsProject: (cwd) => cwd === "/project-b",
+      ownsSession: (id) => id === row.id,
+      list, get: async () => row, update,
     });
     await mount();
     await click('[data-load-project="/project-b"]');
@@ -2376,12 +2398,9 @@ describe("App multi-project history", () => {
         ?.getAttribute("data-history-title"),
     ).toContain("Renamed");
     expect(container.querySelector('[data-sidebar="/repo"]')).not.toBeNull();
-    expect(
-      mocks.invoke.mock.calls.filter(
-        ([command, args]) =>
-          command === "session_list_by_project" && args.cwd === "/project-b",
-      ),
-    ).toHaveLength(2);
+    expect(list.mock.calls.filter(([cwd]) => cwd === "/project-b")).toHaveLength(2);
+    expect(update).toHaveBeenCalledWith(row.id, { title: row.title });
+    expect(mocks.invoke.mock.calls.some(([command]) => command === "session_upsert")).toBe(false);
     expect(
       mocks.invoke.mock.calls.filter(
         ([command, args]) =>
@@ -2390,9 +2409,65 @@ describe("App multi-project history", () => {
     ).toHaveLength(1);
   });
 
+  it.each([true, false])("reports an offline rename without changing the displayed title (open=%s)", async (open) => {
+    const row = { ...newSession("codex", "/repo"), id: open ? "first" : "offline-history", title: "Original",
+      blocks: [{ id: "user", role: "user" as const, text: "Existing conversation" }], createdAt: 1, updatedAt: 2 };
+    const invoke = mocks.invoke.getMockImplementation()!;
+    mocks.invoke.mockImplementation(async (command, args) => {
+      if (command === "session_list_by_project" && args.cwd === "/repo") return [row];
+      if (command === "session_get" && args.sessionId === row.id) return row;
+      return invoke(command, args);
+    });
+    await mount(false, "bottom", open ? row : undefined);
+    await act(async () => setUiLanguage("zh-CN"));
+    await click(`[data-rename-history="${row.id}"]`);
+    expect(mocks.statusToast).toHaveBeenCalledWith("会话更改必须由 Host 保存", "error");
+    expect(container.querySelector(`[data-open-history="${row.id}"]`)?.textContent).toBe("Original");
+    if (open) {
+      const latest = mocks.paneRendered.mock.calls.map(([props]) => props as SessionPaneProps)
+        .findLast(props => props.session.id === row.id)!.session;
+      expect(latest.title).toBe("Original");
+      expect(latest.blocks).toEqual(row.blocks);
+    }
+    expect(mocks.invoke.mock.calls.some(([command]) => command === "session_upsert")).toBe(false);
+  });
+
+  it("keeps new Host blocks received while a rename acknowledgement is pending", async () => {
+    const projects = await import("../features/connections/model/remoteProjects");
+    projects.configureSharedHost("local-rename", [{ id: "project", cwd: "/repo", name: "repo" }]);
+    let row = { ...newSession("codex", "/repo"), id: "first", title: "Original",
+      blocks: [{ id: "user", role: "user" as const, text: "Existing conversation" }], createdAt: 1, updatedAt: 2 };
+    let finishRename!: () => void;
+    installSessionBackend({
+      ownsSession: (id) => id === row.id, ownsProject: (cwd) => cwd === "/repo",
+      get: async () => row, list: async () => [row],
+      update: async (_id, patch) => new Promise<void>(resolve => {
+        finishRename = () => { row = { ...row, title: patch.title ?? row.title }; resolve(); };
+      }),
+    });
+    const pane = () => mocks.paneRendered.mock.calls.map(([props]) => props as SessionPaneProps)
+      .findLast(props => props.session.id === row.id)!;
+    try {
+      await mount(false, "bottom", row);
+      await click('[data-rename-history="first"]');
+      expect(pane().session.title).toBe("Original");
+      const blocks = [...row.blocks, { id: "new", role: "assistant" as const, text: "New Host output" }];
+      await act(async () => pane().onRemoteSnapshot!(row.id, {
+        session: { ...row, blocks, busy: true }, projectId: "project", revision: 2,
+        status: "running", runId: "run", updatedAt: 3,
+      }));
+      await act(async () => finishRename());
+      expect(pane().session.title).toContain("Renamed");
+      expect(pane().session.blocks).toEqual(blocks);
+      expect(pane().session.busy).toBe(true);
+    } finally {
+      projects.configureSharedHost(undefined, []);
+    }
+  });
+
   it("preserves a newer canonical rename when an alias history read finishes", async () => {
-    let finishAlias!: (rows: unknown[]) => void;
-    const aliasRead = new Promise<unknown[]>((resolve) => {
+    let finishAlias!: (rows: Awaited<ReturnType<SharedSessionBackend["list"]>>) => void;
+    const aliasRead = new Promise<Awaited<ReturnType<SharedSessionBackend["list"]>>>((resolve) => {
       finishAlias = resolve;
     });
     let row = {
@@ -2406,29 +2481,26 @@ describe("App multi-project history", () => {
       updatedAt: 2,
     };
     const staleRow = { ...row };
-    mocks.invoke.mockImplementation(async (command, args) => {
-      if (command === "session_list_by_project") {
-        if (args.cwd === "/project-a") return aliasRead;
-        if (args.cwd === "/project-b") return [row];
-      }
-      if (command === "session_get") return row;
-      if (command === "session_upsert") {
-        row = { ...row, ...args.session, updatedAt: Date.now() };
-        return row;
-      }
+    const list = vi.fn(async (cwd?: string) => {
+      if (cwd === "/project-a") return aliasRead;
+      if (cwd === "/project-b") return [row];
       return [];
+    });
+    installSessionBackend({
+      ownsProject: (cwd) => cwd === "/project-a" || cwd === "/project-b",
+      ownsSession: (id) => id === row.id,
+      list, get: async () => row,
+      update: async (_id, patch) => {
+        row = { ...row, title: patch.title ?? row.title, updatedAt: Date.now() };
+      },
     });
     await mount();
     await click('[data-load-project="/project-b"]');
     await click('[data-load-project="/project-a"]');
     await click('[data-rename-history="inactive-chat"]');
     expect(row.title).toContain("Renamed");
-    expect(
-      mocks.invoke.mock.calls.filter(
-        ([command, args]) =>
-          command === "session_list_by_project" && args.cwd === "/project-b",
-      ),
-    ).toHaveLength(2);
+    expect(list.mock.calls.filter(([cwd]) => cwd === "/project-b")).toHaveLength(2);
+    expect(mocks.invoke.mock.calls.some(([command]) => command === "session_upsert")).toBe(false);
 
     await act(async () => finishAlias([staleRow]));
     const historyRows = container.querySelectorAll(
@@ -2602,17 +2674,49 @@ describe("App multi-project history", () => {
 
   it("protects a pinned blank before its persistence finishes", async () => {
     let finishPin!: () => void;
-    const invoke = mocks.invoke.getMockImplementation()!;
-    mocks.invoke.mockImplementation((command, args) =>
-      command === "session_set_pinned"
-        ? new Promise<void>((resolve) => { finishPin = resolve; })
-        : invoke(command, args),
-    );
+    const update = vi.fn<SharedSessionBackend["update"]>(() =>
+      new Promise<void>((resolve) => { finishPin = resolve; }));
+    installSessionBackend({ ownsSession: (id) => id === "first", update });
     await mount();
     await click("[data-pin-first]");
     await selectSession("recent");
     expect(workspace(firstId)).not.toBeNull();
+    expect(update).toHaveBeenCalledWith("first", { pinned: true });
+    expect(mocks.invoke.mock.calls.some(([command]) => command === "session_set_pinned")).toBe(false);
     await act(async () => finishPin());
+  });
+
+  it("reports an offline pin and restores the previous pinned state", async () => {
+    const row = { ...newSession("codex", "/repo"), id: "first", title: "Original", pinned: false,
+      blocks: [{ id: "user", role: "user" as const, text: "Existing conversation" }], createdAt: 1, updatedAt: 2 };
+    const invoke = mocks.invoke.getMockImplementation()!;
+    mocks.invoke.mockImplementation(async (command, args) => {
+      if (command === "session_list_by_project" && args.cwd === "/repo") return [row];
+      if (command === "session_get" && args.sessionId === row.id) return row;
+      return invoke(command, args);
+    });
+    await mount(false, "bottom", row);
+    await click("[data-pin-first]");
+    expect(mocks.statusToast).toHaveBeenCalledWith("Conversation changes must be saved by the Host", "error");
+    expect(container.querySelector('[data-open-history="first"]')?.parentElement?.dataset.historyPinned).toBe("false");
+    expect(mocks.invoke.mock.calls.some(([command]) => command === "session_set_pinned")).toBe(false);
+  });
+
+  it("does not roll back a later pin when an older pin fails", async () => {
+    const row = { ...newSession("codex", "/repo"), id: "first", title: "Original", pinned: false, createdAt: 1, updatedAt: 2 };
+    let rejectFirst!: (error: Error) => void;
+    const update = vi.fn<SharedSessionBackend["update"]>().mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
+      rejectFirst = reject;
+    })).mockResolvedValue(undefined);
+    installSessionBackend({ ownsSession: id => id === row.id, ownsProject: cwd => cwd === "/repo",
+      list: async () => [row], get: async () => row, update });
+    await mount(false, "bottom", row);
+    await click("[data-pin-first]");
+    await click("[data-unpin-first]");
+    await click("[data-pin-first]");
+    await act(async () => rejectFirst(new Error("Earlier request failed")));
+    expect(container.querySelector('[data-open-history="first"]')?.parentElement?.dataset.historyPinned).toBe("true");
+    expect(mocks.statusToast).toHaveBeenCalledWith("Earlier request failed", "error");
   });
 
   it("does not replace an unsent prompt when opening a stored conversation", async () => {

@@ -13,10 +13,7 @@ import { AnimatePresence } from "motion/react";
 import { applyReducedMotion } from "../lib/reducedMotion";
 import { Popover } from "./Popover";
 import { NativePopupHost } from "./NativePopupHost";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "./SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "./SurfaceVisibility";
 
 let container: HTMLDivElement;
 let host: HTMLDivElement;

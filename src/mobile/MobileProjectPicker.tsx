@@ -1,13 +1,7 @@
 import { Button } from "../shared/ui/forms/Button";
 import { IconButton } from "../shared/ui/forms/IconButton";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
-import type { HostDirectory } from "../features/connections/model/protocol";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import type { HostDirectory } from "../contracts/protocol";
 import { ArrowUp, ChevronRight, Computer, Folder, X } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { parentPath, pathKey } from "../shared/lib/paths";

@@ -1,10 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  captureDraft,
-  dropPastedText,
-  insertRestoredText,
-} from "./draftRestore";
+import { captureDraft, dropPastedText, insertRestoredText } from "./draftRestore";
 
 /** Selection is only honoured on an attached field, as in a real document. */
 const attached: HTMLTextAreaElement[] = [];

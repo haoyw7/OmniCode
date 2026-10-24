@@ -2,75 +2,23 @@ import { usePreferenceState } from "../../features/settings/model/usePreferenceS
 import { AnimatedCollapse } from "../../shared/ui/AnimatedCollapse";
 import type { ProjectHoverSummary } from "../model/projectHoverSummary";
 import { useTranslation } from "../../shared/i18n/useTranslation";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-  type ReactNode,
-  type Ref,
-} from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode, type Ref } from "react";
 import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
-import {
-  useAnimatedReorder,
-} from "../../shared/hooks/useAnimatedReorder";
-import {
-  loadSidebarPinnedOrder,
-  reorderSidebarPins,
-  saveSidebarPinnedOrder,
-  subscribeSidebarPinnedOrder,
-} from "../model/sidebarPinnedOrder";
-import {
-  sidebarDragPreview,
-} from "./SidebarEntryReorder";
+import { useAnimatedReorder } from "../../shared/hooks/useAnimatedReorder";
+import { loadSidebarPinnedOrder, reorderSidebarPins, saveSidebarPinnedOrder, subscribeSidebarPinnedOrder } from "../model/sidebarPinnedOrder";
+import { sidebarDragPreview } from "./SidebarEntryReorder";
 import { useTabGroupLogos } from "../../features/projects/hooks/useTabGroupLogos";
 import { basename } from "../../platform/tauri/fs";
 import { pathKey, projectKey } from "../../shared/lib/paths";
-import {
-  collectRailProjects,
-  loadPinnedProjects,
-  loadProjectRailOrder,
-  projectRailSections,
-  saveProjectRailOrder,
-  subscribeProjectPathsChanged,
-  syncProjectRailOrder,
-  toggleProjectPin,
-  type RecentProject,
-} from "../../features/projects/model/recents";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupLabels,
-  loadTabGroupMascots,
-  resolveTabGroupLabel,
-} from "../../features/workspace/model/tabGroups";
-import {
-  loadProjectGroupAssignments,
-  loadProjectGroups,
-  projectGroupIdForPath,
-  updateProjectGroup,
-} from "../../features/projects/model/projectGroups";
-import { notificationMuteStatus } from "../../features/notifications/ui/notificationMuteActions";
+import { collectRailProjects, loadPinnedProjects, loadProjectRailOrder, projectRailSections, saveProjectRailOrder, subscribeProjectPathsChanged, syncProjectRailOrder, toggleProjectPin, type RecentProject } from "../../features/projects/model/recents";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupLabels, loadTabGroupMascots, resolveTabGroupLabel } from "../../features/workspace/model/tabGroups";
+import { loadProjectGroupAssignments, loadProjectGroups, projectGroupIdForPath, updateProjectGroup } from "../../features/projects/model/projectGroups";
+import { notificationMuteStatus } from "../../features/notifications/model/notificationMuteActions";
 import { useProjectNotificationPreferences } from "../../features/notifications/hooks/useProjectNotificationPreferences";
 import { useNotificationProjects } from "../../features/notifications/hooks/useNotificationProjects";
 import { useProjectMenu } from "./useProjectMenu";
-import {
-  loadSidebarSectionsCollapsed,
-  saveSidebarSectionsCollapsed,
-  subscribeSidebarSectionsCollapsed,
-  type SidebarSectionId,
-} from "../../features/settings/model/sidebarSections";
-import {
-  DEFAULT_SIDEBAR_SECTION_ORDER,
-  loadSidebarSectionOrder,
-  reorderSidebarSections,
-  saveSidebarSectionOrder,
-  subscribeSidebarSectionOrder,
-  type SidebarOrderedSectionId,
-} from "../../features/settings/model/sidebarSectionOrder";
+import { loadSidebarSectionsCollapsed, saveSidebarSectionsCollapsed, subscribeSidebarSectionsCollapsed, type SidebarSectionId } from "../../features/settings/model/sidebarSections";
+import { DEFAULT_SIDEBAR_SECTION_ORDER, loadSidebarSectionOrder, reorderSidebarSections, saveSidebarSectionOrder, subscribeSidebarSectionOrder, type SidebarOrderedSectionId } from "../../features/settings/model/sidebarSectionOrder";
 import { SidebarPinDropContext } from "./sidebarPinDrop";
 import { PROJECT_COLLAPSE_DURATION_MS, type ProjectListEntry, ProjectSummaryContext, SidebarSectionReorderContext } from "./projects/projectListShared";
 import { ProjectSection } from "./projects/ProjectSection";

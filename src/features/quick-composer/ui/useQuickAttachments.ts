@@ -1,37 +1,16 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ClipboardEvent,
-  type DragEvent,
-} from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import {
-  attachmentsFromFiles,
-  attachmentsFromPaths,
-  filesFromClipboard,
-  MAX_ATTACHMENTS,
-  pickAttachments,
-  revokeAttachment,
-} from "../../sessions/model/attachments";
-import type { Attachment } from "../../sessions/model/session";
-import {
-  isFileReferenceText,
-  nativeClipboardAttachments,
-} from "../../../platform/tauri/clipboard";
+import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
+import { captureQuickComposerScreen, releaseQuickComposerCaptures } from "../../../platform/tauri/quickComposer";
+import { subscribeNativeFileDrop } from "../../../platform/tauri/webview";
+import { attachmentsFromFiles, attachmentsFromPaths, filesFromClipboard, MAX_ATTACHMENTS, pickAttachments, revokeAttachment } from "../../sessions/model/attachments";
+import type { Attachment } from "../../../contracts/session";
+import { isFileReferenceText, nativeClipboardAttachments } from "../../../platform/tauri/clipboard";
 import { storeQuickAttachments } from "../model/quickAttachments";
-import {
-  captureDraft,
-  dropPastedText,
-  insertRestoredText,
-} from "../../../shared/lib/draftRestore";
+import { captureDraft, dropPastedText, insertRestoredText } from "../../../shared/lib/draftRestore";
 
 function releaseCaptures(files: Attachment[]) {
   const paths = files.flatMap((file) => (file.path ? [file.path] : []));
   if (paths.length)
-    void invoke("quick_composer_release_capture", { paths }).catch(
+    void releaseQuickComposerCaptures(paths).catch(
       () => undefined,
     );
 }
@@ -146,8 +125,7 @@ export function useQuickAttachments(
   useEffect(() => {
     let disposed = false;
     let stop: (() => void) | undefined;
-    void getCurrentWebview()
-      .onDragDropEvent(({ payload }) => {
+    void subscribeNativeFileDrop(({ payload }) => {
         if (payload.type === "leave") {
           setDragging(false);
           return;
@@ -269,7 +247,7 @@ export function useQuickAttachments(
       let captured: string | null = null;
       try {
         await collect(async () => {
-          captured = await invoke<string | null>("quick_composer_capture");
+          captured = await captureQuickComposerScreen();
           return captured ? attachmentsFromPaths([captured]) : [];
         });
       } finally {
@@ -278,9 +256,7 @@ export function useQuickAttachments(
           captured &&
           !filesRef.current.some((file) => file.path === captured)
         ) {
-          await invoke("quick_composer_release_capture", {
-            paths: [captured],
-          }).catch(() => undefined);
+          await releaseQuickComposerCaptures([captured]).catch(() => undefined);
         }
       }
     },

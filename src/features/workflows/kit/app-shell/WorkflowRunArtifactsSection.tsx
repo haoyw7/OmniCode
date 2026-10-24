@@ -1,23 +1,13 @@
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { memo, useMemo, useState } from "react";
 import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
-import { } from "../../../../shared/ui/icons";
-import {
-  TID_WORKFLOW_ARTIFACTS_SECTION,
-  TID_WORKFLOW_ARTIFACTS_TOGGLE,
-  TID_WORKFLOW_ARTIFACT_CARD,
-} from "../_shims/shared.js";
+
+import { TID_WORKFLOW_ARTIFACTS_SECTION, TID_WORKFLOW_ARTIFACTS_TOGGLE, TID_WORKFLOW_ARTIFACT_CARD } from "../_shims/shared.js";
 import { WorkflowArtifactIndex } from "../components/workflow-timeline/WorkflowArtifactIndex.js";
 import { WorkflowArtifactRow } from "../components/workflow-timeline/WorkflowArtifactRow.js";
 import { WorkflowArtifactTile } from "../components/workflow-timeline/WorkflowArtifactTile.js";
 import { PILL_STAGGER_MS } from "../components/workflow-timeline/WorkflowTimeline.js";
-import {
-  ArtifactDetail,
-  artifactDisplayTitle,
-  artifactKindMessageId,
-  buildPresetLabels,
-  resolvePrimaryArtifact,
-} from "./workflow-artifacts/artifactPresentation.js";
+import { ArtifactDetail, artifactDisplayTitle, artifactKindMessageId, buildPresetLabels, resolvePrimaryArtifact } from "./workflow-artifacts/artifactPresentation.js";
 import { WorkflowArtifactTilePreview } from "./workflow-artifacts/WorkflowArtifactTilePreview.js";
 import { useWorkflowIntl } from "../i18n/IntlProvider.js";
 import type { WorkflowRunArtifactView } from "../hooks/useWorkflowRunArtifacts.js";

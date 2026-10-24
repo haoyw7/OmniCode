@@ -1,16 +1,9 @@
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
-import type { HarnessEvent, SendTurnInput } from "../../core/types";
-import {
-  killChild, readWorkBuddyAccounts, readWorkBuddyCatalog, resolveWorkBuddyBinary,
-  spawnChild, watchChild, unwatchChild, writeChild, hasHeadlessChildBackend, childUsesSelectedMachine,
-} from "../../core/child";
-import {
-  control, isHistorical, parseLine, permissionMode, permissionResponse, questionInput, questions,
-  spawnArgs, textContent, toolKind, toolPreview, userMessage, workBuddyModel,
-  type Json, type QuestionReply,
-} from "./workbuddyProtocol";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput } from "../../core/types";
+import { killChild, readWorkBuddyAccounts, readWorkBuddyCatalog, resolveWorkBuddyBinary, spawnChild, watchChild, unwatchChild, writeChild, childUsesSelectedMachine } from "../../core/child";
+import { control, isHistorical, parseLine, permissionMode, permissionResponse, questionInput, questions, spawnArgs, textContent, toolKind, toolPreview, userMessage, workBuddyModel, type Json, type QuestionReply } from "./workbuddyProtocol";
 import { translate } from "../../../../shared/i18n/language";
-import { saveGeneratedImage, deleteGeneratedImages } from "../../../../platform/tauri/fs";
 
 type Resume = { providerId?: string; accountId?: string; cwd: string };
 type Pending = { nativeId: string; input: Json; question: boolean; callId?: string };
@@ -32,8 +25,6 @@ type Live = Resume & {
   text: string;
   reasoning: string;
   assistantSeen: boolean;
-  pendingImages: Promise<void>;
-  imageError?: Error;
   generation: number;
   cancelTimer?: ReturnType<typeof setTimeout>;
 };
@@ -160,17 +151,7 @@ function handle(id: string, live: Live, message: Json) {
     if (live.images.has(image.itemId)) continue;
     live.images.add(image.itemId);
     if (image.error) live.emit({ type: "status", text: translate("Could not read the generated image on the execution machine") });
-    else if (hasHeadlessChildBackend()) live.emit({ type: "image.generated", itemId: image.itemId, data: image.data, name: image.name, mimeType: image.mimeType });
-    else {
-      const generation = live.generation;
-      live.pendingImages = live.pendingImages.then(async () => {
-        try {
-          const asset = await saveGeneratedImage({ data: image.data, name: image.name, mimeType: image.mimeType });
-          if (live.cancelled || lives.get(id) !== live || generation !== live.generation) { await deleteGeneratedImages([asset.path]); return; }
-          live.emit({ type: "image.generated", itemId: image.itemId, path: asset.path, name: image.name, mimeType: asset.mimeType, size: asset.size });
-        } catch { live.imageError = new Error(translate("Could not save generated image")); }
-      });
-    }
+    else live.emit({ type: "image.generated", itemId: image.itemId, data: image.data, name: image.name, mimeType: image.mimeType });
   }
   if (message.type === "result") {
     if (!live.assistantSeen && message.duration_api_ms === 0 && !message.is_error) return;
@@ -182,12 +163,11 @@ function handle(id: string, live: Live, message: Json) {
     if (Number.isFinite(used)) live.emit({ type: "context", used });
     const error = message.is_error && !live.cancelled ? new Error(textContent(message.errors) || message.result || translate("WorkBuddy turn failed")) : undefined;
     const generation = live.generation;
-    void live.pendingImages.then(() => {
+    void Promise.resolve().then(() => {
       if (lives.get(id) !== live || !live.active || live.generation !== generation) return;
-      const failure = error || live.imageError;
-      finish(id, live, failure);
+      finish(id, live, error);
       // The next send must reread the desktop login after an authentication error.
-      if (failure) void stop(id);
+      if (error) void stop(id);
     });
   }
 }
@@ -213,7 +193,7 @@ async function prepare(input: SendTurnInput): Promise<Live> {
   const ready = new Promise<void>((resolve, reject) => { initialize = resolve; failInitialize = reject; });
   const live: Live = { cwd: input.cwd, accountId: account.id, providerId: saved?.providerId, emit: input.onEvent, key, ready,
     initialize, failInitialize, active: false, cancelled: false, sentAt: 0, pending: new Map(), nextId: 1,
-    tools: new Set(), toolResults: new Map(), images: new Set(), text: "", reasoning: "", assistantSeen: false, pendingImages: Promise.resolve(), generation: 0 };
+    tools: new Set(), toolResults: new Map(), images: new Set(), text: "", reasoning: "", assistantSeen: false, generation: 0 };
   lives.set(input.sessionId, live);
   // Attach a rejection handler before spawn: an immediate exit can precede the await.
   void ready.catch(() => {});
@@ -250,7 +230,7 @@ async function sendPrepared(input: SendTurnInput) {
   if (cancelledStarts.has(input.sessionId) || lives.get(input.sessionId) !== live) throw new Error(translate("WorkBuddy session stopped"));
   if (live.active) throw new Error(translate("WorkBuddy is already running a turn"));
   live.active = true; live.cancelled = false; live.sentAt = Date.now();
-  live.generation++; live.imageError = undefined;
+  live.generation++;
   live.text = ""; live.reasoning = ""; live.assistantSeen = false; live.tools.clear(); live.toolResults.clear(); live.images.clear();
   const uuid = crypto.randomUUID();
   const completed = new Promise<void>((resolve, reject) => { live.finish = error => error ? reject(error) : resolve(); });

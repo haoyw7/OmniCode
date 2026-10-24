@@ -1,32 +1,13 @@
 import { NativePopupHost } from "./NativePopupHost";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "./SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "./SurfaceVisibility";
 import { AnimatePresence, motion, useMotionValue, usePresence, type HTMLMotionProps } from "motion/react";
 import { immediateTransition, motionDistance, popAnimate, popExit, popInitial, popTransition } from "../motion/tokens";
 import { useMotionPreference } from "../motion/useMotionPreference";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ComponentPropsWithoutRef,
-  type CSSProperties,
-  type Ref,
-} from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ComponentPropsWithoutRef, type CSSProperties, type Ref } from "react";
 import { createPortal } from "react-dom";
 import { GlassBackdrop } from "./GlassBackdrop";
 import { LAYER } from "../lib/layers";
-import {
-  placePopover,
-  type AnchorRect,
-  type PopoverAlign,
-  type PopoverPosition,
-  type PopoverSide,
-} from "../lib/popover";
+import { placePopover, type AnchorRect, type PopoverAlign, type PopoverPosition, type PopoverSide } from "../lib/popover";
 
 /**
  * A trigger element, a live ref to one, a rect already in viewport

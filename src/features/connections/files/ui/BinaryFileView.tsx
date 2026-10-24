@@ -1,27 +1,15 @@
 import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  AlertCircle,
-  Check,
-  Copy,
-  Folder,
-  Minus,
-  Plus,
-  RotateCcw,
-} from "../../../../shared/ui/icons";
-import { ExplorerMenu } from "./ExplorerMenu";
-import { FileTypeIcon } from "./FileTypeIcon";
+import { AlertCircle, Check, Copy, Folder, Minus, Plus, RotateCcw } from "../../../../shared/ui/icons";
+import { ExplorerMenu } from "../../../../shared/ui/primitives/ExplorerMenu";
+import { FileTypeIcon } from "../../../../shared/ui/FileTypeIcon";
 import { copyText } from "../../../../platform/tauri/clipboard";
-import { formatFileSize, sniffImageMime } from "../model/filePreview";
+import { formatFileSize } from "../model/filePreview";
+import { sniffImageMime } from "../../../../domain/imageBytes";
 import { watchFile } from "../model/fileWatch";
-import {
-  basename,
-  copyFileToClipboard,
-  readBinaryFile,
-  revealPath,
-} from "../../../../platform/tauri/fs";
-import { displayPath } from "../../../../shared/lib/paths";
+import { basename, copyFileToClipboard, readBinaryFile, revealPath } from "../../../../platform/tauri/fs";
+import { displayPath } from '../../../../domain/pathDisplay';
 import { IS_MAC } from "../../../../platform/tauri/platform";
 
 const MIN_ZOOM = 0.1;

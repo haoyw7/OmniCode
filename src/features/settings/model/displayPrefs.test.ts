@@ -1,13 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  loadMaskEmails,
-  loadShowRemainingUsage,
-  saveMaskEmails,
-  saveShowRemainingUsage,
-  subscribeMaskEmails,
-  subscribeShowRemainingUsage,
-} from "./displayPrefs";
+import { loadMaskEmails, loadShowRemainingUsage, saveMaskEmails, saveShowRemainingUsage, subscribeMaskEmails, subscribeShowRemainingUsage } from "./displayPrefs";
 
 const prefs = [
   {

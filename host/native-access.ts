@@ -10,12 +10,8 @@ import {
   statSync,
 } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
-import type { NativeSessionLink } from "../src/features/sessions/model/session";
-import type {
-  NativeSessionAccess,
-  NativeSessionHolder,
-  NativeSessionProvider,
-} from "../src/integrations/harness/core/nativeSessions";
+import type { NativeSessionLink, NativeSessionAccess, NativeSessionHolder, NativeSessionProvider } from "../src/contracts/session";
+
 
 /**
  * Host-side ownership for native sessions: an advisory lock file serializes

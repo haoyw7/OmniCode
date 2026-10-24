@@ -1,6 +1,6 @@
 import type { BotRpc } from "./botRpc";
 import type { BotScope } from "./bots";
-import type { HostDescriptor } from "../../connections/model/protocol";
+import type { HostDescriptor } from "../../../contracts/protocol";
 
 /** Adapt the existing chat renderer without changing the Host connection identity. */
 export function scopedBotRpc(rpc: BotRpc, scope: BotScope, defaultScope: boolean): BotRpc {

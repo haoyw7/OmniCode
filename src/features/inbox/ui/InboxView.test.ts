@@ -2,12 +2,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  clearInboxCache,
-  githubWorkItemDetails,
-  type InboxItem,
-} from "../model/githubTasks";
-import type { LinkedWorkItem } from "../../sessions/model/session";
+import { clearInboxCache, githubWorkItemDetails } from "../model/githubTasks";
+import type { InboxItem, LinkedWorkItem } from "../../../contracts/session";
+
 import type { SessionSummary } from "../../sessions/data/sessionStore";
 import { InboxDetail, inboxShowsFullFileDiff } from "./InboxDetail";
 import { inboxStatusMark } from "./InboxCard";

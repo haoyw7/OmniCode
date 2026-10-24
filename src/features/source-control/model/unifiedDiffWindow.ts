@@ -1,9 +1,4 @@
-import {
-  revealedFold,
-  type FoldReveal,
-  type UnifiedBlock,
-  type UnifiedLine,
-} from "./unifiedDiff";
+import { revealedFold, type FoldReveal, type UnifiedBlock, type UnifiedLine } from "./unifiedDiff";
 
 export const UNIFIED_LINE_PX = 20;
 export const UNIFIED_FOLD_PX = 32;

@@ -4,8 +4,8 @@ import type {
   BotPersonaPreset,
   BotReminder,
 } from "../../../src/features/bots/model/botView";
-import type { BotTask } from "../../../src/integrations/harness/core/botAutonomy";
-import { BOT_CONTINUATION_MS, BOT_PARALLEL_LIMIT, canContinueBotTask } from "../../../src/integrations/harness/core/botAutonomy";
+import { type BotTask, BOT_CONTINUATION_MS, BOT_PARALLEL_LIMIT, canContinueBotTask } from "../../../src/integrations/harness/core/botAutonomy";
+
 import type { BotThreadRecord, Wakeup } from "./store";
 import type { BotHabit } from "../../../src/features/bots/model/botHabits";
 import { conversationBrief } from "./rotation";

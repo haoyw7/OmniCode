@@ -1,18 +1,10 @@
-import { workflowEntry } from "./workflow-motion.js";
-import { workflowFold } from "./workflow-motion.js";
+import { workflowEntry, workflowFold } from "./workflow-motion.js";
+
 import { motion as motionElement } from "motion/react";
 import type { ReactNode } from "react";
 import { cn } from "../../../../../shared/lib/cn";
 import type { TimelineRail, TimelineStation } from "./timeline-model.js";
-import {
-  CAPTION_X,
-  PLATFORM_ROW,
-  RAIL_ROW,
-  STATION_PITCH,
-  STATION_WIDTH,
-  stationX,
-  type TimelineLayout,
-} from "./timeline-geometry.js";
+import { CAPTION_X, PLATFORM_ROW, RAIL_ROW, STATION_PITCH, STATION_WIDTH, stationX, type TimelineLayout } from "./timeline-geometry.js";
 import { railKey } from "./timeline-ledge.js";
 import type { TypewriterState } from "./use-typewriter.js";
 import { StationMeta } from "./WorkflowStationMeta.js";

@@ -1,3 +1,4 @@
+import type { GitChangedFile, GitDiffIndex } from "../../../contracts/workspace";
 // @vitest-environment happy-dom
 import { finishMotion, startMotionClock, stopMotionClock } from "../../../../tests/helpers/sharedMotionClock";
 import { act, createElement, Profiler } from "react";
@@ -36,7 +37,7 @@ vi.mock("../../../platform/tauri/fs", () => ({
   basename: (path: string) => path.split("/").pop() ?? path,
 }));
 
-vi.mock("../../../integrations/harness", () => ({
+vi.mock("../../providers/model/providerAuxiliary", () => ({
   generateCommitMessage: vi.fn(async () => ""),
   generatePrContent: vi.fn(async () => null),
 }));
@@ -52,23 +53,11 @@ vi.mock("../../inbox/model/inboxSelfActivity", () => ({
 
 import { GitChangesPanel } from "./GitChangesPanel";
 import { loadGraphPanelHeight, saveGraphPanelHeight } from "./GitHistoryGraph";
-import {
-  gitDiffIndex,
-  gitPrCreate,
-  gitPull,
-  gitPush,
-  gitRangeContext,
-  gitStageFile,
-  gitUnstageFile,
-  notifyGitChanged,
-} from "../../../platform/tauri/fs";
-import {
-  generateCommitMessage,
-  generatePrContent,
-} from "../../../integrations/harness";
+import { gitDiffIndex, gitPrCreate, gitPull, gitPush, gitRangeContext, gitStageFile, gitUnstageFile, notifyGitChanged } from "../../../platform/tauri/fs";
+import { generateCommitMessage, generatePrContent } from "../../providers/model/providerAuxiliary";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import type { GitChangedFile, GitDiffIndex } from "../../../platform/tauri/fs";
+
 
 function index(overrides: Partial<GitDiffIndex> = {}): GitDiffIndex {
   return {

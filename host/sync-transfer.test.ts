@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { SyncTransfers } from "./sync-transfer";
-import type { SessionSync } from "../src/features/connections/model/protocol";
+import type { SessionSync } from "../src/contracts/protocol";
 
 const sync = (text: string): SessionSync => ({
   kind: "delta",

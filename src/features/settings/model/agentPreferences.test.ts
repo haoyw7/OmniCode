@@ -2,11 +2,11 @@
 import { afterEach, expect, it } from "vitest";
 import { HostStore } from "../../../../host/store";
 import { HostClientState } from "../../../../host/client-state";
-import { activatePreferenceStore, SharedPreferenceStore } from "./sharedPreferences";
+import { activatePreferenceStore, SharedPreferenceStore, preferenceStorage } from "./sharedPreferences";
 import { legacyAgentDefaults } from "./agentPreferences";
 import { saveLastModelChoice, saveLastModelSettings, loadLastModelChoice, loadDefaultModels } from "../../sessions/model/models";
 import { loadMobileAgentDefaults, saveMobileAgentDefaults, loadMobileProjectDefaults } from "../../../mobile/agentDefaults";
-import { preferenceStorage } from "./sharedPreferences";
+
 import { requestedProviderAccountId, selectProviderAccount, restoreProviderAccounts, removeProviderAccount } from "../../providers/model/providerAccounts";
 
 const databases: HostStore[] = [];

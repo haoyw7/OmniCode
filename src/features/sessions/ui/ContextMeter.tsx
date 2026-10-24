@@ -1,11 +1,8 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useRef, useState } from "react";
-import {
-  contextRatio,
-  contextTooltip,
-  type ContextUsage,
-} from "../model/contextUsage";
+import { contextRatio, contextTooltip } from "../../../domain/contextUsage";
+import { type ContextUsage } from "../../../contracts/session";
 import { Popover } from "../../../shared/ui/Popover";
 
 const SIZE = 14;

@@ -1,3 +1,4 @@
+import { normalizeProjectPath } from '../../../domain/pathDisplay';
 import { flushPreferenceAssets, migrateLegacyPreferenceBackgrounds, registerPreferenceAssetHost } from "./preferenceAssets";
 import { activatePreferenceStore, activePreferenceStore, adoptDeviceLocalPreferences, SharedPreferenceStore, type PreferenceCodec, type PreferenceRequest } from "./sharedPreferences";
 import { hostStateTransportUnavailable } from "../../connections/model/hostStateOffline";
@@ -56,12 +57,12 @@ export async function initializeHostPreferences() {
     { loadRemoteHostDescriptor }, { createProjectPreferenceCodec },
     { configureProjectPreferenceStores, flushProjectPreferenceStaging, routeGet, routeSet },
     { setPreferenceRouting, SHARED_PREFERENCES_CHANGED },
-    { PROJECT_MAP_PREFERENCES, PROJECT_LIST_PREFERENCES, validateSharedPreferenceValue }, { invoke },
+    { PROJECT_MAP_PREFERENCES, PROJECT_LIST_PREFERENCES, validateSharedPreferenceValue }, { listDesktopConnections },
   ] = await Promise.all([
     import("../../connections/model/remoteProjects"), import("../../connections/model/connections"),
     import("../../connections/model/remoteHostMetadata"), import("./projectPreferenceCodec"),
     import("./projectPreferenceRouting"), import("./sharedPreferences"),
-    import("./sharedPreferenceSchema"), import("@tauri-apps/api/core"),
+    import("../../../domain/sharedPreferenceSchema"), import("../../../platform/tauri/connections"),
   ]);
   const hostId = sharedHostEnvironment();
   const machineId = sharedHostMachineId();
@@ -97,7 +98,7 @@ export async function initializeHostPreferences() {
   const refreshMachines = (): Promise<void> => {
     if (machinesRequest) return machinesRequest;
     machinesRequest = (async () => {
-      const machines = await invoke<import("../../connections/model/protocol").RemoteMachine[]>("remote_machines");
+      const machines = await listDesktopConnections();
       if (!live) return;
       const present = new Set(machines.map((entry) => entry.environmentId));
       for (const id of stores.keys()) if (id !== hostId && !present.has(id)) {
@@ -117,7 +118,7 @@ export async function initializeHostPreferences() {
             const remote = await loadRemoteHostDescriptor(machine.id, machine.environmentId);
             if (!remote.capabilities.includes("clientState.v1")) throw new Error("Update Host to share settings.");
             // Resolve project IDs into this device's remote path representation.
-            const projects = await remoteRequest<import("../../connections/model/protocol").HostProject[]>(machine.id, "projects.list");
+            const projects = await remoteRequest<import("../../../contracts/protocol").HostProject[]>(machine.id, "projects.list");
             verified = true;
             if (live) for (const project of projects) rememberRemoteProject(machine.environmentId, project);
           }
@@ -165,7 +166,7 @@ export async function initializeHostPreferences() {
     }
     // Project discovery is a shared preference write. Bootstrap must not mutate
     // the retained legacy localStorage before the Host adapter is installed.
-    const { knownProjectPaths, normalizeProjectPath, rememberProject, replaceProjectPath } = await import("../../projects/model/recents");
+    const { knownProjectPaths, rememberProject, replaceProjectPath } = await import("../../projects/model/recents");
     const { parseWslUncPath, wslPath } = await import("../../../shared/lib/wslPaths");
     const { IS_WIN } = await import("../../../platform/tauri/platform");
     const projects = sharedProjects();

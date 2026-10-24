@@ -1,21 +1,14 @@
+import { useProjectLogoSource } from "../../projects/model/useProjectLogoSource";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Check, CircleDot, GitPullRequest } from "../../../shared/ui/icons";
 import { type ReactNode } from "react";
-import type { InboxKind } from "../model/githubTasks";
-import {
-  DEFAULT_INBOX_FILTERS,
-  hasActiveInboxFilters,
-  isTrackerSource,
-  type InboxFilters,
-  type InboxSource,
-  type InboxTimeFilter,
-  type LinearProjectOption,
-} from "../model/inboxFilters";
-import type { JiraProject } from "../model/jira";
-import type { LinearTeam } from "../model/linear";
+import type { InboxKind } from "../../../contracts/session";
+import { DEFAULT_INBOX_FILTERS, hasActiveInboxFilters, isTrackerSource, type InboxFilters, type InboxSource, type InboxTimeFilter, type LinearProjectOption } from "../model/inboxFilters";
+import type { JiraProject } from "../../../contracts/jira";
+import type { LinearTeam } from "../../../contracts/linear";
 import { Popover } from "../../../shared/ui/Popover";
 import { MenuHover } from "../../../shared/ui/MenuHover";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
 
 export const INBOX_FILTER_MENU_WIDTH = 228;
 
@@ -84,6 +77,7 @@ export function InboxFiltersMenu({
   onJiraProjectsChange,
   onClose,
 }: Props) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const { t: uiT } = useTranslation();
   const hiddenProjects = new Set(filters.hiddenProjects);
   const hiddenLinearProjects = new Set(filters.hiddenLinearProjects);
@@ -280,7 +274,7 @@ export function InboxFiltersMenu({
               icon={
                 project.logoPath ? (
                   <ProjectLogoIcon
-                    path={project.logoPath}
+                    src={resolveProjectLogoSrc(project.logoPath)}
                     className="size-3.5 shrink-0 rounded-sm"
                     imageClassName="size-3.5"
                   />

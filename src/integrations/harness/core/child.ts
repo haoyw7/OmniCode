@@ -1,11 +1,7 @@
-import { invoke as tauriInvoke } from "@tauri-apps/api/core";
-import { listen as tauriListen, type UnlistenFn } from "@tauri-apps/api/event";
+type UnlistenFn = () => void;
 import { ChildBackendRegistry, type ChildBackend } from "./childBackendRegistry";
 export type { ChildBackend } from "./childBackendRegistry";
-import {
-  runtimeProviderBinaryPath,
-  type ConfigurableBinaryProvider,
-} from "../../../features/providers/model/providerBinaryPaths";
+import { runtimeProviderBinaryPath, type ConfigurableBinaryProvider } from "./runtimeBinaryPaths";
 
 /** Process I/O is supplied by the desktop or a headless host. Provider
  * protocols never need to know which process owns their children. */
@@ -35,7 +31,7 @@ export function hasHeadlessChildBackend(): boolean {
 
 /** Warm utility processes may be reused only within their execution machine. */
 export function childUsesSelectedMachine(sessionId: string): boolean {
-  return !backend || backends.usesSelectedMachine(sessionId);
+  return !!backend && backends.usesSelectedMachine(sessionId);
 }
 
 export function selectedChildMachine(): string {
@@ -44,7 +40,7 @@ export function selectedChildMachine(): string {
 
 /** Provider-owned transcript files are read on the machine running the child. */
 export function readHarnessTextFile(path: string): Promise<string> {
-  return invoke<string>(backend ? "harness_read_text_file" : "read_text_file", {
+  return invoke<string>("harness_read_text_file", {
     path,
   });
 }
@@ -59,18 +55,18 @@ function invoke<T>(
 ): Promise<T> {
   return backend
     ? backend.invoke<T>(command, args)
-    : tauriInvoke<T>(command, args);
+    : Promise.reject(new Error("Provider execution requires a Host runtime"));
 }
 
 function listen<T>(
   event: string,
   handler: (event: { payload: T }) => void,
 ): Promise<UnlistenFn> {
-  return backend ? backend.listen(event, handler) : tauriListen(event, handler);
+  return backend ? backend.listen(event, handler) : Promise.reject(new Error("Provider execution requires a Host runtime"));
 }
 
 /** Read provider records on the same machine as the running process. */
-export function readProviderRecords<T>(command: "cursor_subagent_runs", args: Record<string, unknown>): Promise<T> {
+export function readProviderRecords<T>(command: "cursor_subagent_runs" | "cursor_tool_calls", args: Record<string, unknown>): Promise<T> {
   return invoke<T>(command, args);
 }
 
@@ -529,54 +525,6 @@ export function openHarnessSse(
 export function closeHarnessSse(sessionId: string): Promise<void> {
   unwatchSse(sessionId);
   return invoke("harness_sse_close", { sessionId });
-}
-
-export type HarnessBinaryInspection = {
-  path: string;
-  version?: string;
-  error?: string;
-};
-
-export function inspectHarnessBinary(
-  provider: ConfigurableBinaryProvider,
-  binaryPath?: string | null,
-): Promise<HarnessBinaryInspection> {
-  return resolveHarnessBinary(provider, binaryPath).then(async (resolved) => {
-    if (provider === "antigravity") {
-      return { path: resolved.path, version: "ACP server" };
-    }
-    try {
-      const version = (
-        await execChild(
-          resolved.path,
-          ["--version"],
-          undefined,
-          provider,
-          binaryPath,
-        )
-      ).trim();
-      return /\d+\.\d+\.\d+/.test(version)
-        ? { path: resolved.path, version }
-        : { path: resolved.path, error: "CLI returned no valid version." };
-    } catch (error) {
-      return {
-        path: resolved.path,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  });
-}
-
-/** Runs the CLI's own self-update against the binary OmniCode uses. */
-export async function updateHarnessCli(
-  provider: ConfigurableBinaryProvider,
-): Promise<void> {
-  const resolved = await resolveHarnessBinary(provider);
-  await invoke("harness_update", {
-    command: resolved.path,
-    binaryProvider: provider,
-    binaryPath: runtimeProviderBinaryPath(provider),
-  });
 }
 
 export function execChild(

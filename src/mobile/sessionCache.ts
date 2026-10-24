@@ -1,9 +1,7 @@
-import {
-  REMOTE_PROVIDERS,
-  type HostSessionSummary,
-} from "../features/connections/model/protocol";
+import { REMOTE_PROVIDERS } from "../contracts/provider";
+import { type HostSessionSummary } from "../contracts/protocol";
 import { sortMobileSessions } from "./sessionList";
-import { sessionRecencyAt } from "../features/sessions/model/sessionActivity";
+import { sessionRecencyAt } from "../domain/sessionActivity";
 
 // One envelope keeps storage bounded even after pairing with several Hosts.
 // Conversation contents and credentials never enter this cache.

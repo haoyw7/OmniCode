@@ -10,15 +10,13 @@ import { createPortal } from "react-dom";
 import { allowsProjectNotification } from "../../notifications/model/notificationPreferences";
 import { knownNotificationProject } from "../../notifications/model/notificationProjects";
 import { useProjectNotificationPreferences } from "../../notifications/hooks/useProjectNotificationPreferences";
-import type { ApprovalDecision } from "../../../integrations/harness";
-import type { PendingApprovalNotice } from "../../notifications/model/approvalToast";
+import type { ApprovalDecision } from "../../../contracts/harness";
+import type { PendingApprovalNotice } from "../../../domain/pendingInput";
 import { LAYER } from "../../../shared/lib/layers";
-import {
-  HARNESS_TITLE,
-  sessionDisplayTitle,
-  type Session,
-} from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import { sessionDisplayTitle } from "../model/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type Session } from "../../../contracts/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 
 type Notice = PendingApprovalNotice & { session: Session };
 

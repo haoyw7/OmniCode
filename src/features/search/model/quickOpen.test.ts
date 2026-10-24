@@ -1,14 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { translate } from "../../../shared/i18n/language";
-import {
-  loadRecentCommands,
-  parseQuickOpenQuery,
-  quickOpenQueryFor,
-  rankCommands,
-  rankProjects,
-  rankSessions,
-  rememberCommand,
-} from "./quickOpen";
+import { loadRecentCommands, parseQuickOpenQuery, quickOpenQueryFor, rankCommands, rankProjects, rankSessions, rememberCommand } from "./quickOpen";
 
 beforeEach(() => {
   const data = new Map<string, string>();

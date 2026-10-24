@@ -3,10 +3,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { clearInboxCache, type InboxItem } from "../model/githubTasks";
+import { clearInboxCache } from "../model/githubTasks";
+import { type InboxItem } from "../../../contracts/session";
 import { InboxDetail } from "./InboxDetail";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../connections/model/inboxHost", async () => ({ inboxHostCommand: (await import("@tauri-apps/api/core")).invoke }));
 
 const item: InboxItem = {
   provider: "github",

@@ -1,11 +1,6 @@
-import type { HarnessEvent } from "./types";
-import { isFailedStatus } from "../../../features/sessions/model/transcriptActivity";
-import {
-  agentToolTitle,
-  isAgentTool,
-  isAgentToolName,
-  mergeToolPreview,
-} from "./preview";
+import type { HarnessEvent } from "../../../contracts/harness";
+import { isFailedStatus } from "../../../domain/toolStatus";
+import { agentToolTitle, isAgentTool, isAgentToolName, mergeToolPreview } from "../../../domain/preview";
 
 type Step = Extract<HarnessEvent, { type: "agent.step" }>;
 

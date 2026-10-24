@@ -5,20 +5,13 @@ import { cloneElement, useEffect, useRef, useState, type ReactElement, type Ref 
 import { useProjectBranchesState } from "../hooks/useProjectBranches";
 import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
 import { isEqualOrInside, pathKey, prettyCwd } from "../../../shared/lib/paths";
-import { NO_BRANCH_LABEL, registeredWorktreeAt, type Worktree } from "../model/worktrees";
+import type { Worktree } from "../../../contracts/worktree";
+import { NO_BRANCH_LABEL, registeredWorktreeAt } from "../model/worktrees";
 import { BranchPicker } from "./BranchPicker";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
-import { GitPickerTrigger } from "./GitPickerTrigger";
+import { GitPickerTrigger } from "../../../shared/ui/forms/GitPickerTrigger";
 import { Popover } from "../../../shared/ui/Popover";
-import {
-  Check,
-  FolderTree,
-  GitBranch,
-  Loader,
-  Plus,
-  Search,
-  Settings,
-} from "../../../shared/ui/icons";
+import { Check, FolderTree, GitBranch, Loader, Plus, Search, Settings } from "../../../shared/ui/icons";
 
 export function WorktreePicker({
   cwd,

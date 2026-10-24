@@ -20,15 +20,10 @@ import { enqueueSchedules, retryDelay } from "./scheduler";
 import { checkPolicy, fields, id, object, validatePolicy } from "./policy";
 import { followSession, hasBotPermission, isExplicitlyWatchedSession, isWatchedSession, watchIncludesSession } from "../../../src/features/bots/model/botSessions";
 import { executeBotAction, BOT_ACTIONS } from "./control";
-import { modelsFor } from "../../../src/features/sessions/model/models";
-import { RUNTIME_MODES, type TurnOrigin } from "../../../src/features/sessions/model/session";
-import {
-  isRemoteProvider,
-  type HostModelCatalog,
-  type HostSession,
-  type RemoteProvider,
-  type RemoteAttachment,
-} from "../../../src/features/connections/model/protocol";
+import { modelsFor } from "../../../src/integrations/harness/core/modelCatalog";
+import { RUNTIME_MODES, type TurnOrigin } from "../../../src/contracts/session";
+import { isRemoteProvider, type RemoteProvider } from "../../../src/contracts/provider";
+import { type HostModelCatalog, type HostSession, type RemoteAttachment } from "../../../src/contracts/protocol";
 import {
   BOT_PERSONA_PRESETS,
   type BotEventKind,

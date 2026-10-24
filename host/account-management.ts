@@ -6,7 +6,7 @@ import { isAbsolute, join, sep } from "node:path";
 import { providerLaunch, resolveProvider } from "./process";
 import { claudeUsageKeychainService } from "./claude-usage";
 import { desktopProviderAccounts, providerUsageProfile, ACCOUNT_PROVIDERS } from "./provider-accounts";
-import type { HostProviderAccounts } from "../src/features/connections/model/protocol";
+import type { HostProviderAccounts } from "../src/contracts/protocol";
 
 type Provider = (typeof ACCOUNT_PROVIDERS)[number];
 type Profile = { id: string; label: string; dataHome?: string; managedHome?: boolean };

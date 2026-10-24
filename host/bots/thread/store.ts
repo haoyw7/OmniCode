@@ -18,7 +18,7 @@ import {
 } from "../../../src/features/bots/model/botView";
 import { memoryLines } from "./memory";
 import { parsePlaybook, type Playbook } from "./playbooks";
-import type { RemoteAttachment } from "../../../src/features/connections/model/protocol";
+import type { RemoteAttachment } from "../../../src/contracts/protocol";
 
 export function signature(value: unknown): string {
   const canonical = (v: unknown): unknown =>

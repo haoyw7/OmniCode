@@ -1,19 +1,16 @@
-import { AttachmentList } from "../../sessions/ui/AttachmentList";
-import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
-import type { HostModelCatalog, RemoteAttachment } from "../../connections/model/protocol";
+import { AttachmentList } from "../../../shared/ui/attachments/AttachmentList";
+import { AttachmentChip } from "../../../shared/ui/attachments/AttachmentChip";
+import type { HostModelCatalog, RemoteAttachment } from "../../../contracts/protocol";
 import { Fragment, memo, type HTMLAttributes, type ReactNode } from "react";
 import type { BotMessage, SessionReference } from "../model/botView";
 import { splitBotReply } from "../model/botReply";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { QuestionForm } from "../../sessions/ui/QuestionForm";
-import { questionRecordAnswers } from "../../sessions/model/questionHistory";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
-import { AfterTextReveal } from "../../sessions/ui/useTranscriptRenderingPlatform";
+import { QuestionForm } from "../../../shared/ui/messaging/QuestionForm";
+import { questionRecordAnswers } from "../../../domain/questionHistory";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
+import { AfterTextReveal } from "../../../shared/ui/markdown/useTranscriptRenderingPlatform";
 import { BotSessionCard } from "./BotSessionCard";
-import {
-  BotMessageMeta,
-  BotMessageTime,
-} from "./BotMessageMeta";
+import { BotMessageMeta, BotMessageTime } from "./BotMessageMeta";
 import { BotDateSeparator } from "./BotDateSeparator";
 import { CornerDownRight } from "../../../shared/ui/icons";
 import { BotMessageImage, type ReadBotImage } from "./BotMessageImage";

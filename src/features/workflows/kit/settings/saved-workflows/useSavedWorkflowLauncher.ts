@@ -4,10 +4,7 @@
 // （实参窗行内 / toast），用户留在中枢。「失败在会话存在之前」（不变式 2）：createSession
 // 被拒时不发 start、不留会话；start 被拒时立即 deleteSession 收回刚建的空会话。
 import { useCallback, useRef, useState } from "react";
-import {
-  savedWorkflowStartRejectionReasonSchema,
-  type SavedWorkflowStartRejectionReason,
-} from "../../_shims/protocol.js";
+import { savedWorkflowStartRejectionReasonSchema, type SavedWorkflowStartRejectionReason } from "../../_shims/protocol.js";
 import type { WorkspaceConnectionAgentService } from "../../v4/workspaceConnectionRegistry.js";
 import { workflowRequest } from "../../../model/workflowClient";
 import { logger } from "../../logger.js";

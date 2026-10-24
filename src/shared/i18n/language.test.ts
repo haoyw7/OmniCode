@@ -1,25 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  getUiLanguage,
-  loadUiLanguage,
-  refreshUiLanguage,
-  resolveUiLanguage,
-  setUiLanguage,
-  subscribeUiLanguage,
-  translate,
-  UI_LANGUAGE_KEY,
-} from "./language";
-import {
-  searchSettings,
-  settingsSectionsByGroup,
-  filterKeybindings,
-  KEYBINDINGS,
-} from "../../features/settings/model/settings";
-import {
-  HARNESS_LABEL,
-  sessionDisplayTitle,
-} from "../../features/sessions/model/session";
+import { getUiLanguage, loadUiLanguage, refreshUiLanguage, resolveUiLanguage, setUiLanguage, subscribeUiLanguage, translate, UI_LANGUAGE_KEY } from "./language";
+import { searchSettings, settingsSectionsByGroup, filterKeybindings, KEYBINDINGS } from "../../features/settings/model/settings";
+import { sessionDisplayTitle } from "../../features/sessions/model/session";
+import { HARNESS_LABEL } from "../../contracts/session";
 
 beforeEach(() => {
   localStorage.clear();

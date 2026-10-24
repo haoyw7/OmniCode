@@ -8,15 +8,12 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it, vi } from "vitest";
-import type { HarnessEvent } from "../src/integrations/harness/core/types";
+import type { HarnessEvent } from "../src/contracts/harness";
 import {
   acquireHarnessBridge,
   configureChildBackend,
 } from "../src/integrations/harness/core/child";
-import type {
-  OrchestrationRun,
-  OrchestrationTask,
-} from "../src/features/orchestration/model/orchestrationState";
+import type { OrchestrationRun, OrchestrationTask } from "../src/contracts/session";
 import { HostStore } from "./store";
 import { HostEngine } from "./engine";
 import { HostChildBackend } from "./child-backend";

@@ -18,7 +18,7 @@ import { HostStore } from "./store";
 import { WorkspaceCommands } from "./workspace-commands";
 import { discoverHostSkills, HostSkills } from "./skills";
 import { HostOrchestrationWorkspace } from "./orchestration-workspace";
-import type { OrchestrationRun, OrchestrationTask } from "../src/features/orchestration/model/orchestrationState";
+import type { OrchestrationRun, OrchestrationTask } from "../src/contracts/session";
 import type { HostProvider } from "./providers";
 import { evalSnippet } from "./workflows/compile";
 import { listSavedWorkflows, saveSavedWorkflow } from "./workflows/saved/store";

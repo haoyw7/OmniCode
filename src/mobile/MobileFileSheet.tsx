@@ -1,10 +1,10 @@
 import { useContext, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { isLongText, ReadonlyTextView } from "../shared/ui/ReadonlyTextView";
-import { TranscriptPlatformContext } from "../features/sessions/ui/TranscriptPlatform";
-import { AgentMarkdown } from "../features/sessions/ui/AgentMarkdown";
-import { sniffImageMime } from "../features/connections/files/model/filePreview";
-import { FileTypeIcon } from "../features/connections/files/ui/FileTypeIcon";
-import { displayPath } from "../shared/lib/paths";
+import { TranscriptPlatformContext } from "../shared/ui/markdown/TranscriptPlatform";
+import { AgentMarkdown } from "../shared/ui/markdown/AgentMarkdown";
+import { sniffImageMime } from "../domain/imageBytes";
+import { FileTypeIcon } from "../shared/ui/FileTypeIcon";
+import { displayPath } from '../domain/pathDisplay';
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { MobileSheet, MobileSheetHeader } from "./MobileSheet";
 

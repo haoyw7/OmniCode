@@ -1,4 +1,4 @@
-import type { ToolPreview } from "../../../../features/sessions/model/session";
+import type { ToolPreview } from "../../../../contracts/session";
 
 /**
  * fx tool metadata recovery.

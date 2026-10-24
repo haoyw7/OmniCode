@@ -1,29 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { takeBotNotification as takeAssistantNotification } from "../features/bots/model/botNotifications";
+import { type BotNotificationActivity as AssistantNotificationActivity } from "../contracts/botActivity";
 import type { MobileClient } from "./client";
 import type { SessionSnapshotStore } from "./sessionSnapshotStore";
-import { pendingSessionInputKey } from "../features/sessions/model/sessionActivity";
-import {
-  loadMobileActivity,
-  saveMobileActivity,
-  type ActivityNotice,
-  type MobileActivity,
-} from "./activity";
+import { pendingSessionInputKey } from "../domain/sessionActivity";
+import { loadMobileActivity, saveMobileActivity, type ActivityNotice, type MobileActivity } from "./activity";
 import { playCue } from "../features/settings/model/sounds";
-import {
-  MobileNotifications,
-  mobileNotificationPermission,
-  mobileNotificationTexts,
-  nativeActivityNotifications,
-  showBrowserActivityNotification,
-  showBrowserAssistantNotification,
-  type MobileNotificationPermission,
-  type MobileNotificationTarget,
-} from "./notifications";
+import { MobileNotifications, mobileNotificationPermission, mobileNotificationTexts, nativeActivityNotifications, showBrowserActivityNotification, showBrowserAssistantNotification, type MobileNotificationPermission, type MobileNotificationTarget } from "./notifications";
 import { translate } from "../shared/i18n/language";
 import { NativeActivitySync } from "./nativeActivitySync";
-import type { HostSessionSummary } from "../features/connections/model/protocol";
-import type { BotNotificationActivity as AssistantNotificationActivity } from "../features/bots/model/botNotifications";
+import type { HostSessionSummary } from "../contracts/protocol";
+
 
 const ENABLED_KEY = "omnicode.mobileNotifications";
 

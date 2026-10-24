@@ -1,4 +1,4 @@
-import { ask } from "@tauri-apps/plugin-dialog";
+import { confirmNativeAction } from "../../../platform/tauri/dialogs";
 import type { FilePaneTab } from "../../workspace/model/layout";
 import { getPtyStatus } from "../../../platform/tauri/pty";
 import { terminalTabLabel } from "./terminalTab";
@@ -29,7 +29,7 @@ export async function confirmCloseTerminal(file: FilePaneTab): Promise<boolean> 
   if (running.length === 0) return true;
   const { process } = running[0];
   const label = terminalTabLabel(file);
-  return ask(
+  return confirmNativeAction(
     `"${process}" is still running in ${label}. Close this terminal anyway?`,
     { title: "OmniCode", kind: "warning" },
   );
@@ -41,7 +41,7 @@ export async function confirmCloseTerminals(files: FilePaneTab[]): Promise<boole
   if (running.length === 0) return true;
   if (running.length === 1) {
     const { file, process } = running[0];
-    return ask(
+    return confirmNativeAction(
       `"${process}" is still running in ${terminalTabLabel(file)}. Close this terminal anyway?`,
       { title: "OmniCode", kind: "warning" },
     );
@@ -49,7 +49,7 @@ export async function confirmCloseTerminals(files: FilePaneTab[]): Promise<boole
   const lines = running
     .map(({ file, process }) => `• ${terminalTabLabel(file)} (${process})`)
     .join("\n");
-  return ask(
+  return confirmNativeAction(
     `These terminals are still running:\n${lines}\n\nClose them anyway?`,
     { title: "OmniCode", kind: "warning" },
   );

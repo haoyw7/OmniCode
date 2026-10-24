@@ -1,54 +1,18 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  FolderOpen,
-  FolderPlus,
-  MessageSquare,
-  Search,
-  Zap,
-} from "../../../shared/ui/icons";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
-  type ReactNode,
-} from "react";
+import { FolderOpen, FolderPlus, MessageSquare, Search, Zap } from "../../../shared/ui/icons";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import {
-  loadProjectFiles,
-  peekProjectFiles,
-  rankProjectFiles,
-  recentOpenedFiles,
-  rememberOpenedFile,
-  type RankedFile,
-} from "../../connections/files/model/fileIndex";
+import { loadProjectFiles, peekProjectFiles, rankProjectFiles, recentOpenedFiles, rememberOpenedFile, type RankedFile } from "../../connections/files/model/fileIndex";
 import { LAYER } from "../../../shared/lib/layers";
-import {
-  looksLikeProject,
-  type RecentProject,
-} from "../../projects/model/recents";
-import type { OpenFileFn } from "../model/search";
+import { looksLikeProject, type RecentProject } from "../../projects/model/recents";
+import type { OpenFileFn } from "../../../shared/lib/fileNavigation";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
 import { MatchText } from "../../../shared/ui/MatchText";
 import { projectName } from "../../../shared/lib/paths";
 import { MOD } from "../../../platform/tauri/platform";
 import type { TranslationValues } from "../../../shared/i18n/language";
-import {
-  loadRecentCommands,
-  parseQuickOpenQuery,
-  quickOpenQueryFor,
-  rankCommands,
-  rankProjects,
-  rankSessions,
-  rememberCommand,
-  type QuickOpenCommand,
-  type QuickOpenMode,
-  type RankedCommand,
-  type SessionRow,
-} from "../model/quickOpen";
+import { loadRecentCommands, parseQuickOpenQuery, quickOpenQueryFor, rankCommands, rankProjects, rankSessions, rememberCommand, type QuickOpenCommand, type QuickOpenMode, type RankedCommand, type SessionRow } from "../model/quickOpen";
 import type { ConversationHit, ProjectHit } from "../model/appSearch";
 
 type Item =

@@ -2,7 +2,7 @@
  * 沙箱入口文件的落盘。
  *
  * 为什么有这个文件：Windows 的命令行上限是 32,767 字符，payload 不能再过 argv。harness 把
- * {@link import("./child-source.js").renderChildEntry} 渲染出的 ESM 写到
+ * {@link import("./child-source").renderChildEntry} 渲染出的 ESM 写到
  * `<cwd>/.omnicode/workflow-runs/<runId>.mjs`，spawn 时命令行只剩这条路径。
  *
  * 裁决：

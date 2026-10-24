@@ -1,5 +1,6 @@
+import type { Skill } from "../contracts/skills";
 import { describe, expect, it } from "vitest";
-import type { Skill } from "../features/skills/model/skillTypes";
+
 import { insertMobileSkill } from "./skillCommands";
 const review: Skill = {
   kind: "file",

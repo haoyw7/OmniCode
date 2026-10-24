@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  REMOTE_PROVIDERS,
-  type HostModelCatalog,
-} from "../features/connections/model/protocol";
+import { REMOTE_PROVIDERS } from "../contracts/provider";
+import { type HostModelCatalog } from "../contracts/protocol";
 import { newSession } from "../features/sessions/model/session";
 import { mobileContextUsage } from "./contextUsage";
 

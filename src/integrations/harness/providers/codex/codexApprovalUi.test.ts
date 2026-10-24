@@ -1,23 +1,20 @@
 // @vitest-environment happy-dom
 import { act, createElement, Fragment } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { QuestionForm } from "../../../../features/sessions/ui/QuestionForm";
+import { QuestionForm } from "../../../../shared/ui/messaging/QuestionForm";
 import { ApprovalToasts } from "../../../../features/sessions/ui/ApprovalToasts";
 import { AgentTranscript } from "../../../../features/sessions/ui/AgentTranscript";
 import { hiddenApprovalNotices } from "../../../../features/notifications/model/approvalToast";
 import { useInputNotifications } from "../../../../features/notifications/hooks/useInputNotifications";
-import {
-  newSession,
-  type Session,
-} from "../../../../features/sessions/model/session";
-import {
-  probeNotificationPermission,
-  saveNotificationsEnabled,
-  setWindowFocused,
-} from "../../../../features/notifications/model/notifications";
-import { applyHarnessEvent } from "../../core/apply";
-import type { HarnessEvent } from "../../core/types";
+import { newSession } from "../../../../features/sessions/model/session";
+import { type Session } from "../../../../contracts/session";
+import { probeNotificationPermission, saveNotificationsEnabled, setWindowFocused } from "../../../../features/notifications/model/notifications";
+import { createSessionProjection } from "../../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
+import type { HarnessEvent } from "../../../../contracts/harness";
 import type * as ChildModule from "../../core/child";
 
 const sent: Array<Record<string, unknown>> = [];

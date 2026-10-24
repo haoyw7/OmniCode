@@ -17,11 +17,11 @@ import { Popover, PopoverAnchor, PopoverContent, PopoverTitle } from "../../../.
 import { Spinner } from "../../../../../shared/ui/primitives/Spinner.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
-import { ModelControlPills, ModelPicker } from "../../../../sessions/ui/ModelPicker";
+import { useWorkflowPresentation } from "../../../ui/workflowPresentation";
 import { isWorkflowHarness } from "../../../../../integrations/workflow/modelConfig";
-import type { WorkflowAgentRuntime } from "../../../../../integrations/workflow/createWorkflow";
-import type { WorkflowRunSettings } from "../../../../../integrations/workflow/sessionTypes";
-import type { HarnessId } from "../../../../sessions/model/session";
+import type { WorkflowAgentRuntime, WorkflowRunSettings } from "../../../../../contracts/workflow";
+
+import type { HarnessId } from "../../../../../contracts/session";
 import { FieldLabel, WorkflowRunSettingsBoundField } from "./WorkflowRunSettingsFields.js";
 import { workflowRunSettingsCeiling } from "./workflowRunSettings.js";
 
@@ -86,6 +86,7 @@ function RuntimeRow({ label, draft, seed, cwd, placeholder, onChange, onReset }:
   onChange: (draft: RuntimeDraft) => void;
   onReset?: () => void;
 }) {
+  const presentation = useWorkflowPresentation();
   const { t } = useTranslation();
   const shown = draft;
   return (
@@ -101,21 +102,7 @@ function RuntimeRow({ label, draft, seed, cwd, placeholder, onChange, onReset }:
       </div>
       {shown ? (
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <ModelPicker
-            harness={shown.harness}
-            model={shown.model}
-            values={shown.modelSettings}
-            project={cwd}
-            hideSettings
-            onChange={(harness, model) => onChange({ harness, model, modelSettings: harness === shown.harness ? shown.modelSettings : {} })}
-            onSettingsChange={(modelSettings) => onChange({ ...shown, modelSettings })}
-          />
-          <ModelControlPills
-            harness={shown.harness}
-            model={shown.model}
-            values={shown.modelSettings}
-            onSettingsChange={(modelSettings) => onChange({ ...shown, modelSettings })}
-          />
+          {presentation?.renderRuntimePicker({ runtime: shown, cwd, onChange })}
         </div>
       ) : (
         <button

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchGithubPrChecks, type GithubPrChecks } from "../model/githubPrChecks";
+import type { GithubPrChecks } from "../../../contracts/github";
+import { fetchGithubPrChecks } from "../model/githubPrChecks";
 
 const POLL_MS = 30_000;
 

@@ -1,28 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  hydrateCachedModelCatalogs,
-  resetHarnessModelOverlays,
-  resolveModel,
-  setHarnessModels,
-} from "../../../features/sessions/model/models";
-import type { HarnessId } from "../../../features/sessions/model/session";
-import {
-  HARNESS_IDLE_PARK_MS,
-  bindHarnessSession,
-  canCompactHarnessContext,
-  canRunHarnessTextPrompt,
-  runHarnessTextPrompt,
-  canRewindHarnessLastTurn,
-  compactHarnessContext,
-  generateHarnessBranchName,
-  isLiveHarness,
-  listHarnesses,
-  refreshHarnessCatalogs,
-  registerHarness,
-  resetHarnessIdlePark,
-  sendHarnessTurn,
-  type HarnessAdapter,
-} from "./registry";
+import { resetHarnessModelOverlays } from "./modelCatalog";
+import type { HarnessId } from "../../../contracts/session";
+import { HARNESS_IDLE_PARK_MS, bindHarnessSession, canCompactHarnessContext, canRunHarnessTextPrompt, runHarnessTextPrompt, canRewindHarnessLastTurn, compactHarnessContext, generateHarnessBranchName, isLiveHarness, listHarnesses, registerHarness, resetHarnessIdlePark, sendHarnessTurn, type HarnessAdapter } from "./registry";
 import type { SendTurnInput, SteerTurnInput } from "./types";
 import { registerBuiltinHarnesses } from "../register";
 
@@ -252,81 +231,6 @@ describe("harness registry", () => {
     expect(adapter.refreshCatalog).toBeTypeOf("function");
     expect(adapter).not.toHaveProperty("generateTitle");
     expect(adapter.generateCommitMessage).toBeUndefined();
-  });
-
-  it("refreshes only the requested catalogs", async () => {
-    const pi = vi.fn(async () => undefined);
-    const claude = vi.fn(async () => undefined);
-    registerHarness(stub("pi", { refreshCatalog: pi }));
-    registerHarness(stub("claude", { refreshCatalog: claude }));
-
-    await refreshHarnessCatalogs(["claude"]);
-
-    expect(claude).toHaveBeenCalledOnce();
-    expect(pi).not.toHaveBeenCalled();
-  });
-
-  it("publishes adapter-owned catalog results and retains native capabilities", async () => {
-    const refreshCatalog = vi.fn(async () => [{ id: "cursor:returned", nativeId: "returned", name: "Provider value", supportsImages: false }]);
-    registerHarness(stub("cursor", { refreshCatalog }));
-    await refreshHarnessCatalogs(["cursor"]);
-    expect(resolveModel("cursor", "cursor:returned")).toMatchObject({
-      harness: "cursor", id: "cursor:returned", nativeId: "returned", name: "Provider value", supportsImages: false,
-    });
-    await refreshHarnessCatalogs(["cursor"]);
-    expect(refreshCatalog).toHaveBeenCalledOnce();
-  });
-
-  it("does not spawn a catalog probe twice after a live list lands", async () => {
-    const pi = vi.fn(async () => {
-      setHarnessModels("pi", [
-        {
-          id: "pi:opus",
-          harness: "pi",
-          name: "Opus",
-          nativeId: "anthropic/opus",
-        },
-      ]);
-    });
-    registerHarness(stub("pi", { refreshCatalog: pi }));
-
-    await refreshHarnessCatalogs(["pi"]);
-    await refreshHarnessCatalogs(["pi"]);
-
-    expect(pi).toHaveBeenCalledOnce();
-  });
-
-  it("re-reads a catalog cached by an earlier run once", async () => {
-    const pi = vi.fn(async () => {
-      setHarnessModels("pi", [
-        { id: "pi:opus", harness: "pi", name: "Opus", nativeId: "anthropic/opus" },
-      ]);
-    });
-    registerHarness(stub("pi", { refreshCatalog: pi }));
-    const store = new Map<string, string>();
-    vi.stubGlobal("localStorage", {
-      getItem: (key: string) => store.get(key) ?? null,
-      setItem: (key: string, value: string) => void store.set(key, value),
-      removeItem: (key: string) => void store.delete(key),
-    });
-    store.set(
-      "omnicode.liveModelCatalogs",
-      JSON.stringify({ pi: [{ id: "pi:old", harness: "pi", name: "Old" }] }),
-    );
-    hydrateCachedModelCatalogs();
-
-    await refreshHarnessCatalogs(["pi"]);
-    await refreshHarnessCatalogs(["pi"]);
-
-    expect(pi).toHaveBeenCalledOnce();
-    vi.unstubAllGlobals();
-  });
-
-  it("skips catalog refresh when no harness is in use", async () => {
-    const pi = vi.fn(async () => undefined);
-    registerHarness(stub("pi", { refreshCatalog: pi }));
-    await refreshHarnessCatalogs([]);
-    expect(pi).not.toHaveBeenCalled();
   });
 
   it("parks a live child a few minutes after the turn settles", async () => {

@@ -1,12 +1,7 @@
 import type { ReactNode } from "react";
 import { Check } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import {
-  MOBILE_SKINS,
-  MOBILE_SKIN_INFO,
-  type MobileSkin,
-  type MobileSkinPreference,
-} from "./theme/skin";
+import { MOBILE_SKINS, MOBILE_SKIN_INFO, type MobileSkin, type MobileSkinPreference } from "./theme/skin";
 
 /** A live miniature: the skin's own tokens paint a tiny thread and composer. */
 function SkinScene({ skin }: { skin: MobileSkin }) {

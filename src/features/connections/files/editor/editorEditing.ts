@@ -1,24 +1,7 @@
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
-import {
-  bracketMatching,
-  getIndentUnit,
-  indentOnInput,
-  indentUnit,
-  syntaxTree,
-} from "@codemirror/language";
-import {
-  Facet,
-  Prec,
-  StateField,
-  type EditorState,
-  type Extension,
-} from "@codemirror/state";
-import {
-  Decoration,
-  EditorView,
-  keymap,
-  type DecorationSet,
-} from "@codemirror/view";
+import { bracketMatching, getIndentUnit, indentOnInput, indentUnit, syntaxTree } from "@codemirror/language";
+import { Facet, Prec, StateField, type EditorState, type Extension } from "@codemirror/state";
+import { Decoration, EditorView, keymap, type DecorationSet } from "@codemirror/view";
 import type { SyntaxNode } from "@lezer/common";
 import { basename } from "../../../../platform/tauri/fs";
 

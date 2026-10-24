@@ -1,19 +1,10 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { RefreshCw } from "../../../shared/ui/icons";
-import { HarnessIcon } from "./HarnessIcon";
-import {
-  fetchPiUsage,
-  piBillingProvider,
-  piUsageProvider,
-  type PiUsageProvider,
-} from "../../providers/model/piUsage";
-import {
-  idleRateLimits,
-  RATE_LIMIT_MIN_REFETCH_MS,
-  RATE_LIMIT_POLL_MS,
-  type ProviderRateLimits,
-} from "../../providers/model/rateLimits";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { fetchPiUsage, piBillingProvider, piUsageProvider, type PiUsageProvider } from "../../providers/model/piUsage";
+import { idleRateLimits, RATE_LIMIT_MIN_REFETCH_MS, RATE_LIMIT_POLL_MS } from "../../../domain/rateLimits";
+import { type ProviderRateLimits } from "../../../contracts/session";
 import { UsageProviderChip } from "./UsageProviderChip";
 
 export function PiUsage({

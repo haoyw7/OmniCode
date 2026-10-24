@@ -1,16 +1,19 @@
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
+import { desktopTranscriptServices } from "../../../platform/tauri/transcriptServices";
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 // @vitest-environment happy-dom
 import { act, createElement, Fragment } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Attachment, GeneratedImageMeta } from "../model/session";
+import type { Attachment, GeneratedImageMeta } from "../../../contracts/session";
 import * as fs from "../../../platform/tauri/fs";
 import { GeneratedImage } from "./GeneratedImage";
 
 vi.mock("../../../platform/tauri/fs", () => ({
   readBinaryFile: vi.fn(),
 }));
-import { AttachmentChip } from "./AttachmentChip";
+import { AttachmentChip } from "../../../shared/ui/attachments/AttachmentChip";
 import { UserMessageBlock } from "./transcript/UserMessageBlock";
 
 const attachment: Attachment = {
@@ -125,7 +128,7 @@ describe("AttachmentChip image preview", () => {
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
 
     await act(async () => {
-      root.render(createElement(GeneratedImage, { image }));
+      root.render(createElement(TranscriptPlatformContext.Provider, { value: desktopTranscriptServices }, createElement(GeneratedImage, { image })));
       await Promise.resolve();
       await Promise.resolve();
     });

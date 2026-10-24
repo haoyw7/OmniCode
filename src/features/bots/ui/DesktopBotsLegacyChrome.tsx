@@ -3,36 +3,15 @@ import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
-import { AttachmentList } from "../../sessions/ui/AttachmentList";
+import { AttachmentList } from "../../../shared/ui/attachments/AttachmentList";
 import { BotAttachmentPreview } from "./BotAttachmentPreview";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type {
-  BotChatChrome,
-  BotComposerProps,
-  BotControlsProps,
-  BotHeaderProps,
-  BotMessageMenuProps,
-  BotSettingsPanelProps,
-} from "./BotChatChrome";
-import {
-  AnimatedCollapse,
-  useCollapseMotion,
-} from "../../../shared/ui/AnimatedCollapse";
+import type { BotChatChrome, BotComposerProps, BotControlsProps, BotHeaderProps, BotMessageMenuProps, BotSettingsPanelProps } from "./BotChatChrome";
+import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  ArrowLeft,
-  ArrowUp,
-  LoaderCircle,
-  Pause,
-  Play,
-  Plus,
-  Settings,
-  Sparkles,
-  Square,
-  X,
-} from "../../../shared/ui/icons";
+import { ArrowLeft, ArrowUp, LoaderCircle, Pause, Play, Plus, Settings, Sparkles, Square, X } from "../../../shared/ui/icons";
 import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ExplorerMenu } from "../../../shared/ui/primitives/ExplorerMenu";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 
 export function DesktopBotsMessageMenu({

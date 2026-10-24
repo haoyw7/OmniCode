@@ -1,9 +1,9 @@
-import { invoke } from "@tauri-apps/api/core";
+import { listDesktopConnections } from "../../../platform/tauri/connections";
 import { useSyncExternalStore } from "react";
 import { remoteRequest } from "./connections";
 import { sharedHostEnvironment, sharedHostMachineId } from "./remoteProjects";
-import type { HostConnectionDefinition, HostConnections } from "./hostState";
-import type { HostDescriptor, RemoteMachine } from "./protocol";
+import type { HostConnectionDefinition, HostConnections } from "../../../contracts/hostState";
+import type { HostDescriptor, RemoteMachine } from "../../../contracts/protocol";
 import type { HostStateRequest } from "./hostWorkspace";
 import { translate } from "../../../shared/i18n/language";
 import { hostStateTransportUnavailable } from "./hostStateOffline";
@@ -140,7 +140,7 @@ export async function initializeHostConnections(options?: {
       .catch((error) => { if (directory === next) publish(String(error)); });
   };
   if (!options && !import.meta.env.DEV) {
-    const machines = await invoke<RemoteMachine[]>("remote_machines");
+    const machines = await listDesktopConnections();
     const definitions = machines.filter((machine) => !machine.wsl && machine.environmentId !== environmentId).map(connectionDefinition);
     await next.patch(Object.fromEntries(definitions.map((entry) => [entry.id, entry])), true);
   }

@@ -1,28 +1,12 @@
-import type {
-  Attachment,
-  RuntimeMode,
-  TaskListItem,
-  ToolPreview,
-  TurnIntent,
-  TurnMetrics,
-} from "../../../../features/sessions/model/session";
-import {
-  attachmentPath,
-  attachmentPathText,
-  isVisionImage,
-  normalizeImageMime,
-  promptText,
-} from "../../../../features/sessions/model/attachments";
-import { displayPath } from "../../../../shared/lib/paths";
-import { normalizeTaskListStatus } from "../../../../features/sessions/model/taskList";
-import {
-  composeToolTitle,
-  extractToolPreview,
-  formatAgentType,
-} from "../../core/preview";
-import { formatShellIntent, inferShellIntent } from "../../core/shellIntent";
-import { streamTextDelta } from "../../core/streamText";
-import type { HarnessEvent } from "../../core/types";
+import { asRecord } from "../../../../domain/records";
+import type { Attachment, RuntimeMode, TaskListItem, ToolPreview, TurnIntent, TurnMetrics } from "../../../../contracts/session";
+import { attachmentPath, attachmentPathText, isVisionImage, normalizeImageMime, promptText } from "../../../../domain/attachmentPrompt";
+import { displayPath } from '../../../../domain/pathDisplay';
+import { normalizeTaskListStatus } from "../../../../domain/taskList";
+import { composeToolTitle, extractToolPreview, formatAgentType } from "../../../../domain/preview";
+import { formatShellIntent, inferShellIntent } from "../../../../domain/shellIntent";
+import { streamTextDelta } from "../../../../domain/streamText";
+import type { HarnessEvent } from "../../../../contracts/harness";
 import { botAgentsMcpName, type HarnessBotContext } from "../../core/botContext";
 
 /** Per-server overrides merge with the CLI's user configuration, without writing it. */
@@ -247,13 +231,6 @@ export function isRecoverableThreadResumeError(error: unknown): boolean {
     "missing thread",
     "thread id",
   ].some((snippet) => message.includes(snippet));
-}
-
-export function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
 }
 
 export function stringField(

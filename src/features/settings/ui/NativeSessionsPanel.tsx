@@ -1,39 +1,14 @@
 import { Switch } from "../../../shared/ui/forms/Switch";
-import { isTauri } from "@tauri-apps/api/core";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type ReactNode,
-} from "react";
+import { isDesktopShell } from "../../../platform/tauri/window";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { RefreshCw, Search } from "../../../shared/ui/icons";
-import {
-  dismissStatusToast,
-  showStatusToast,
-  updateStatusToast,
-  withStatusToast,
-} from "../../../shared/ui/StatusToast";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import {
-  discoverNativeSessions,
-  importNativeSession,
-  importNativeSessions,
-  nativeSessionSnapshot,
-  setNativeAutoSync,
-  subscribeNativeSessions,
-  syncNativeSessions,
-} from "../../sessions/data/nativeSessions";
-import {
-  NATIVE_SESSION_PROVIDERS,
-  nativeProviderLabel,
-  nativeSourceKey,
-  type NativeSessionFile,
-  type NativeSessionProvider,
-} from "../../../integrations/harness/core/nativeSessions";
+import { dismissStatusToast, showStatusToast, updateStatusToast, withStatusToast } from "../../../shared/ui/StatusToast";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { discoverNativeSessions, importNativeSession, importNativeSessions, nativeSessionSnapshot, setNativeAutoSync, subscribeNativeSessions, syncNativeSessions } from "../../sessions/data/nativeSessions";
+import { NATIVE_SESSION_PROVIDERS, nativeProviderLabel, nativeSourceKey } from "../../../integrations/harness/core/nativeSessions";
+import { type NativeSessionFile, type NativeSessionProvider } from "../../../contracts/session";
 
 const PAGE = 20;
 
@@ -106,7 +81,7 @@ export function NativeSessionsPanel({
   const [imported, setImported] = useState<Record<string, string>>({});
   const [bulk, setBulk] = useState<{ done: number; total: number }>();
   const bulkRun = useRef<{ cancelled: boolean }>(undefined);
-  const desktop = typeof isTauri === "function" && isTauri();
+  const desktop = typeof isDesktopShell === "function" && isDesktopShell();
   useEffect(() => {
     if (desktop) void discoverNativeSessions().catch(() => undefined);
   }, [desktop]);

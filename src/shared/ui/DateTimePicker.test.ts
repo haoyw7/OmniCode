@@ -2,11 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  DateTimePicker,
-  parseLocalDateTime,
-  toLocalDateTime,
-} from "./DateTimePicker";
+import { DateTimePicker, parseLocalDateTime, toLocalDateTime } from "./DateTimePicker";
 
 let container: HTMLDivElement;
 let root: Root;

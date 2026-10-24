@@ -1,18 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useId, useRef, useState } from "react";
-import {
-  Check,
-  Lock,
-  Pencil,
-  Shield,
-  Sparkles,
-} from "../../../shared/ui/icons";
-import {
-  RUNTIME_MODES,
-  RUNTIME_MODE_HINT,
-  RUNTIME_MODE_LABEL,
-  type RuntimeMode,
-} from "../../sessions/model/session";
+import { Check, Lock, Pencil, Shield, Sparkles } from "../../../shared/ui/icons";
+import { RUNTIME_MODES, type RuntimeMode } from "../../../contracts/session";
+import { RUNTIME_MODE_HINT, RUNTIME_MODE_LABEL } from "../../../contracts/session";
 
 const ICONS = {
   supervised: Lock,

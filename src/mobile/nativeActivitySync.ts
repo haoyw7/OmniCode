@@ -1,4 +1,4 @@
-import type { HostSessionSummary } from "../features/connections/model/protocol";
+import type { HostSessionSummary } from "../contracts/protocol";
 
 /** The fields Android's activity tracker reads; nothing else crosses the bridge. */
 const NATIVE_FIELDS = [

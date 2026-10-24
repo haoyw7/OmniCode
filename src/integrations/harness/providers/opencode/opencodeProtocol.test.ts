@@ -1,30 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  flattenOpenCodeModels,
-  openCodeProviderName,
-  parseAgentListCliOutput,
-  parseModelsCliOutput,
-} from "./opencodeCatalog";
-import {
-  buildOpenCodePermissionRules,
-  compareSemver,
-  contextUsedFromMessageInfo,
-  turnMetricsFromMessageInfo,
-  detailFromToolPart,
-  eventSessionId,
-  inferDefaultAgent,
-  inferDefaultVariant,
-  isOpenCodeDefaultTitle,
-  isOpenCodeNotFound,
-  mergeOpenCodeAssistantText,
-  openCodeVariantLabel,
-  parseOpenCodeModelSlug,
-  parseOpenCodeVersion,
-  parseServerUrlFromOutput,
-  sortOpenCodeVariants,
-  toOpenCodePermissionReply,
-  toolKindFromName,
-} from "./opencodeProtocol";
+import { flattenOpenCodeModels, openCodeProviderName, parseAgentListCliOutput, parseModelsCliOutput } from "./opencodeCatalog";
+import { buildOpenCodePermissionRules, compareSemver, contextUsedFromMessageInfo, turnMetricsFromMessageInfo, detailFromToolPart, eventSessionId, inferDefaultAgent, inferDefaultVariant, isOpenCodeDefaultTitle, isOpenCodeNotFound, mergeOpenCodeAssistantText, openCodeVariantLabel, parseOpenCodeModelSlug, parseOpenCodeVersion, parseServerUrlFromOutput, sortOpenCodeVariants, toOpenCodePermissionReply, toolKindFromName } from "./opencodeProtocol";
 
 describe("eventSessionId", () => {
   it.each([

@@ -1,14 +1,11 @@
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useMemo, useState } from "react";
-import {
-  ChevronRight,
-  LoaderCircle,
-} from "../../../shared/ui/icons";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import { ChevronRight, LoaderCircle } from "../../../shared/ui/icons";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
 import { formatInteger } from "../../../shared/lib/numbers";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
-import type { GithubPrDiff } from "../model/githubTasks";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
+import type { GithubPrDiff } from "../../../contracts/session";
 
 const EXCERPT_LINES = 4;
 const EXCERPT_CHARS = 360;

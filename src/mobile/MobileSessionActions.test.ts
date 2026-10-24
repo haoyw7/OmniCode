@@ -2,7 +2,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { HostSession } from "../features/connections/model/protocol";
+import type { HostSession } from "../contracts/protocol";
 import { MobileSessionActions } from "./MobileSessionActions";
 import { mobileTranscriptPlatform } from "./transcriptPlatform";
 

@@ -7,7 +7,7 @@ import { WhatsNewBody } from "../shell/WhatsNewDialog";
 import { UpdateAvailableDialog } from "../shell/UpdateAvailableDialog";
 import { ReleaseNotesSurface } from "./ReleaseNotesSurface";
 
-vi.mock("../../features/sessions/ui/AgentMarkdown", () => ({
+vi.mock("../../shared/ui/markdown/AgentMarkdown", () => ({
   AgentMarkdown: ({ text }: { text: string }) =>
     createElement("div", null, text),
 }));

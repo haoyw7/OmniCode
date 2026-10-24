@@ -563,7 +563,7 @@ function processAlive(pid: number): boolean {
   catch (error) { return (error as NodeJS.ErrnoException).code !== "ESRCH"; }
 }
 
-async function withRuntimeLock<T>(parent: string, work: () => Promise<T>): Promise<T> {
+export async function withProviderRuntimeLock<T>(parent: string, work: () => Promise<T>): Promise<T> {
   await mkdir(parent, { recursive: true });
   const lock = within(parent, ".runtime-lock");
   const until = Date.now() + 30_000;
@@ -593,7 +593,7 @@ async function withRuntimeLock<T>(parent: string, work: () => Promise<T>): Promi
 export async function leaseProviderRuntime(artifact: ProviderRuntimeArtifact): Promise<() => Promise<void>> {
   const parent = dirname(resolve(artifact.directory));
   const lease = within(parent, `.leases/${randomUUID()}.json`);
-  await withRuntimeLock(parent, async () => {
+  await withProviderRuntimeLock(parent, async () => {
     if (!(await lstat(artifact.command)).isFile()) throw new Error("Provider runtime disappeared before launch");
     await mkdir(dirname(lease), { recursive: true });
     await writeFile(lease, JSON.stringify({ pid: process.pid, directory: basename(artifact.directory) }), { flag: "wx", mode: 0o600 });
@@ -602,7 +602,7 @@ export async function leaseProviderRuntime(artifact: ProviderRuntimeArtifact): P
   return async () => {
     if (released) return;
     released = true;
-    await withRuntimeLock(parent, () => rm(lease, { force: true }));
+    await withProviderRuntimeLock(parent, () => rm(lease, { force: true }));
   };
 }
 
@@ -625,7 +625,7 @@ export async function pruneProviderRuntimes(provider: RuntimeProvider, platform:
   const parent = join(root, provider, platform);
   const preserved = new Set(keep.map((path) => resolve(path)));
   const removed: string[] = [];
-  return withRuntimeLock(parent, async () => {
+  return withProviderRuntimeLock(parent, async () => {
     let leaseFiles: string[] = [];
     try { leaseFiles = await readdir(join(parent, ".leases")); } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;

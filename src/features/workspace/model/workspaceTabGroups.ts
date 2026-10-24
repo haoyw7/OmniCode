@@ -1,23 +1,8 @@
-import {
-  closeLeaf,
-  focusedFileTab,
-  isAppViewOnlyTab,
-  isAppViewTab,
-  firstLeafId,
-  leaf,
-  leafIds,
-  placePane,
-  replaceLeafId,
-  splitPane,
-  type PaneEdge,
-  type WorkspaceTab,
-} from "./layout";
+import { closeLeaf, focusedFileTab, isAppViewOnlyTab, isAppViewTab, firstLeafId, leaf, leafIds, placePane, replaceLeafId, splitPane, type PaneEdge, type WorkspaceTab } from "./layout";
 import { projectName } from "../../../shared/lib/paths";
 import { sameProjectPath } from "../../projects/model/recents";
-import {
-  sessionExecutionCwd,
-  type Session,
-} from "../../sessions/model/session";
+import { sessionExecutionCwd } from "../../../domain/session";
+import { type Session } from "../../../contracts/session";
 
 export function workspaceTabCwd(
   tab: WorkspaceTab,

@@ -1,204 +1,80 @@
+import { useContext } from "react";
+import { SessionPresentationContext } from "../model/sessionPresentation";
+import { isWorkspaceModeShortcut } from "../../workspace/model/workspaceShortcut";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { MessageInput } from "../../../shared/ui/messaging/MessageInput";
 import { motion } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
-import { MessageQueue } from "./MessageQueue";
-import { captureQueueReturnPosition } from "../model/messageQueue";
+import { MessageQueue } from "../../../shared/ui/messaging/MessageQueue";
+import { captureQueueReturnPosition } from "../../../domain/messageQueue";
 import { ComposerEnvironmentPicker } from "./ComposerEnvironmentPicker";
 import { useComposerEnvironment } from "./useComposerEnvironment";
 import { parseWslPath } from "../../../shared/lib/wslPaths";
 import { showStatusToast } from "../../../shared/ui/StatusToast";
 import { MenuHover } from "../../../shared/ui/MenuHover";
-import type { SessionModelSettings } from "../model/models";
+import type { SessionModelSettings, ContextUsage, InboxComposerCard, HandoffComposerCard, Attachment, HarnessId, MessageQueueStatus, QueuedMessage, QueueReturnPosition, UsageLimit, RuntimeMode, WorkspaceMode, ComposerTurnOptions, UserQuestionPrompt, UserQuestionReply, WorktreeCreation, NoteComposerCard } from "../../../contracts/session";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  AiIdea,
-  Check,
-  CircleDashed,
-  CursorMagicSelection,
-  FilePlus,
-  Folder,
-  Link,
-  Plus,
-  Share,
-  Terminal,
-  X,
-} from "../../../shared/ui/icons";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type ClipboardEvent,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import {
-  attachmentsFromFiles,
-  attachmentsFromPaths,
-  filesFromClipboard,
-  mergeAttachments,
-  pickAttachments,
-  revokeAttachment,
-} from "../model/attachments";
-import {
-  growComposer,
-  isInsertion,
-  resizeComposer,
-} from "../model/composerResize";
-import {
-  isFileReferenceText,
-  messageFilesFromClipboard,
-  nativeClipboardAttachments,
-} from "../../../platform/tauri/clipboard";
-import {
-  EXPLORER_FILE_POINTER_DRAG_EVENT,
-  type ExplorerFilePointerDragDetail,
-} from "../../../shared/lib/drag";
+import { AiIdea, Check, CircleDashed, CursorMagicSelection, FilePlus, Folder, Link, Plus, Share, Terminal, X } from "../../../shared/ui/icons";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ClipboardEvent, type KeyboardEvent, type ReactNode } from "react";
+import { subscribeNativeFileDrop } from "../../../platform/tauri/webview";
+import { attachmentsFromFiles, attachmentsFromPaths, filesFromClipboard, mergeAttachments, pickAttachments, revokeAttachment } from "../model/attachments";
+import { growComposer, isInsertion, resizeComposer } from "../model/composerResize";
+import { isFileReferenceText, messageFilesFromClipboard, nativeClipboardAttachments } from "../../../platform/tauri/clipboard";
+import { EXPLORER_FILE_POINTER_DRAG_EVENT, type ExplorerFilePointerDragDetail } from "../../../shared/lib/drag";
 import { dragPointToClient } from "../../../shared/lib/dragPoint";
-import type { ContextUsage } from "../model/contextUsage";
-import {
-  peekProjectFiles,
-} from "../../connections/files/model/fileIndex";
-import {
-  mentionLabel,
-  mentionTokenAt,
-  replaceMentionToken,
-  type MentionToken,
-} from "../../connections/files/model/fileMentions";
-import type { ProjectFile } from "../../../platform/tauri/fs";
-import {
-  composeInboxMessage,
-  type InboxComposerCard,
-} from "../../inbox/model/githubTasks";
-import type { HandoffComposerCard } from "../model/handoff";
-import {
-  looksLikeProject,
-  isRemoteProjectPath,
-  type RecentProject,
-} from "../../projects/model/recents";
-import type {
-  Attachment,
-  HarnessId,
-  MessageQueueStatus,
-  QueuedMessage,
-  QueueReturnPosition,
-  UsageLimit,
-  RuntimeMode,
-  WorkspaceMode,
-  ComposerTurnOptions,
-} from "../model/session";
-import { HARNESS_TITLE, harnessSupportsAttachments } from "../model/session";
-import type {
-  UserQuestionPrompt,
-  UserQuestionReply,
-} from "../model/userQuestion";
+
+import { peekProjectFiles } from "../../connections/files/model/fileIndex";
+import { mentionLabel, mentionTokenAt, replaceMentionToken, type MentionToken } from "../../connections/files/model/fileMentions";
+import type { ProjectFile } from "../../../contracts/workspace";
+import { composeInboxMessage } from "../../inbox/model/githubTasks";
+
+
+import { looksLikeProject, isRemoteProjectPath, type RecentProject } from "../../projects/model/recents";
+
+import { harnessSupportsAttachments } from "../../../domain/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
+
 import { isImeComposition } from "../../../shared/lib/keyboard";
-import {
-  captureDraft,
-  dropPastedText,
-  insertRestoredText,
-} from "../../../shared/lib/draftRestore";
-import {
-  createBlankSkill,
-  rankSkills,
-  hasNativeCommands,
-  isNativeCommandPrompt,
-  replaceSlashToken,
-  slashTokenAt,
-  type Skill,
-  type SlashToken,
-} from "../../skills/model/skills";
+import { captureDraft, dropPastedText, insertRestoredText } from "../../../shared/lib/draftRestore";
+import { createBlankSkill, rankSkills, hasNativeCommands, isNativeCommandPrompt, replaceSlashToken, slashTokenAt, type Skill, type SlashToken } from "../../skills/model/skills";
 import { AccessPicker } from "./AccessPicker";
 import { ContextMeter } from "./ContextMeter";
 import { ComposerAttachments } from "./ComposerAttachments";
-import { BranchPicker } from "../../source-control/ui/BranchPicker";
-import { WorktreePicker } from "../../source-control/ui/WorktreePicker";
-import {
-  isWorkspaceModeShortcut,
-  WorkspaceIdentity,
-  WorkspacePicker,
-  WorktreeBasePicker,
-} from "../../workspace/ui/WorkspacePicker";
 import { WorkspaceMenuRows } from "./WorkspaceMenuRows";
-import { registeredWorktreeAt, type Worktree } from "../../source-control/model/worktrees";
+import type { Worktree } from "../../../contracts/worktree";
+import { registeredWorktreeAt } from "../../source-control/model/worktrees";
 import { useProjectWorktrees } from "../../source-control/hooks/useProjectWorktrees";
 import { resolveWorktreeBase } from "../../source-control/model/worktreeBase";
-import { CwdPicker } from "../../projects/ui/CwdPicker";
 import { FileMentionPicker } from "./FileMentionPicker";
 import { McpServerPicker } from "./McpServerPicker";
-import { InboxMiniCard } from "../../inbox/ui/InboxMiniCard";
-import { NoteMiniCard } from "../../notes/ui/NoteMiniCard";
 import { HandoffMiniCard } from "./HandoffMiniCard";
 import { ModelControlPills, ModelPicker } from "./ModelPicker";
-import { QuestionForm } from "./QuestionForm";
-import { SkillPicker } from "../../skills/ui/SkillPicker";
+import { QuestionForm } from "../../../shared/ui/messaging/QuestionForm";
 import { projectKey, projectName } from "../../../shared/lib/paths";
-import type { WorktreeCreation } from "../../source-control/model/worktreeCreation";
+
 import { consumeQuoteRequest, type QuoteRequest } from "../model/quoteDraft";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
-import {
-  MODEL_CONTROLS_DEFAULT,
-  loadModelControls,
-  loadNotesEnabled,
-  subscribeModelControls,
-  subscribeNotesEnabled,
-} from "../../settings/model/settings";
-import {
-  isNoteMentionPath,
-  type NoteComposerCard,
-} from "../../notes";
+import { MODEL_CONTROLS_DEFAULT, loadModelControls, loadNotesEnabled, subscribeModelControls, subscribeNotesEnabled } from "../../settings/model/settings";
+import { isNoteMentionPath } from "../../notes";
+
 import { resolveTabGroupLogo } from "../../workspace/model/tabGroups";
-import { useComposerSkills } from "./useComposerSkills";
+import { useComposerSkills } from "../../skills/model/useComposerSkills";
 import { UsageLimitNotice } from "./UsageLimitNotice";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import { consumePlanCommand, PLAN_COMMAND } from "../model/plan";
-import {
-  consumeOperatorCommand,
-  OPERATOR_COMMAND,
-} from "../model/operatorCommand";
-import {
-  consumeOrchestratorCommand,
-  ORCHESTRATOR_COMMAND,
-} from "../model/orchestratorCommand";
+import { consumePlanCommand, PLAN_COMMAND } from "../../../domain/plan";
+import { consumeOperatorCommand, OPERATOR_COMMAND } from "../../../domain/operatorCommand";
+import { consumeOrchestratorCommand, ORCHESTRATOR_COMMAND } from "../model/orchestratorCommand";
 import { consumeDraftCommand, DRAFT_COMMAND } from "../model/draftCommand";
-import {
-  leadingModeCommand,
-  MODE_COMMAND_INDENT,
-  ModeCommandPill,
-} from "./modeCommands";
-import {
-  BTW_COMMAND,
-  consumeBtwCommand,
-  consumeBtwPrefix,
-  supportsBtwHarness,
-} from "../model/btw";
+import { leadingModeCommand, MODE_COMMAND_INDENT, ModeCommandPill } from "./modeCommands";
+import { BTW_COMMAND, consumeBtwCommand, consumeBtwPrefix } from "../model/btw";
+import { supportsBtwHarness } from "../../../domain/btw";
 import { COMPACT_COMMAND, isCompactCommand } from "../model/compact";
 import { MCP_COMMAND, isMcpCommand } from "../model/mcpCommand";
-import {
-  mcpContextText,
-  newMcpTag,
-  taggedMcpServers,
-} from "../model/mcpPicker";
-import {
-  beginComposerAttachmentRead,
-  getComposerQueuedDraft,
-  parkedComposerDrafts,
-  peekComposerAttachments,
-  setComposerAttachmentCount,
-  setComposerDraft,
-  setComposerQueuedDraft,
-  stashComposerAttachments,
-  takeComposerAttachments,
-  type QueuedComposerDraft,
-} from "../model/draftCache";
+import { mcpContextText, newMcpTag, taggedMcpServers } from "../model/mcpPicker";
+import { beginComposerAttachmentRead, getComposerQueuedDraft, parkedComposerDrafts, peekComposerAttachments, setComposerAttachmentCount, setComposerDraft, setComposerQueuedDraft, stashComposerAttachments, takeComposerAttachments, type QueuedComposerDraft } from "../model/draftCache";
 import type { LastTurnRecall } from "../model/editLastTurn";
 import { useComposerMcpPicker } from "./useComposerMcpPicker";
 import { useComposerMentionCatalog } from "./useComposerMentionCatalog";
@@ -414,6 +290,7 @@ export function Composer({
   onEditingLastTurnChange,
   children,
 }: Props) {
+  const { BranchPicker, WorktreePicker, WorkspaceIdentity, WorkspacePicker, WorktreeBasePicker, CwdPicker, InboxMiniCard, NoteMiniCard, SkillPicker } = useContext(SessionPresentationContext);
   const { t: uiT } = useTranslation();
   const composerEnvironment = useComposerEnvironment(sessionId, cwd ?? executionCwd, onCwdChange);
   const needsEnvironmentProject = !remoteSession && !startedSession && composerEnvironment.needsProject;
@@ -1170,8 +1047,7 @@ export function Composer({
     );
 
     let unlisten: (() => void) | undefined;
-    void getCurrentWebview()
-      .onDragDropEvent((event) => {
+    void subscribeNativeFileDrop((event) => {
         if (cancelled) return;
         if (event.payload.type === "leave") {
           setFileDrag(false);
@@ -1492,6 +1368,7 @@ export function Composer({
       borrowedAttachmentIdsRef.current,
     );
     const resendSelectedMcp = selectedMcp;
+    let submissionRejected = false;
     onDraftChange?.("");
     const accepted = onSubmit(
       mcpContextText(
@@ -1500,6 +1377,19 @@ export function Composer({
       ),
       files,
       {
+        onSubmissionRejected: () => {
+          if (submissionRejected) return;
+          submissionRejected = true;
+          if (draftRevisionRef.current !== resendDraftRevision || !ref.current) return;
+          restoreDraft(value, files, resendBorrowedAttachmentIds);
+          setSelectedMcp(resendSelectedMcp);
+          setPlanSelected(planSelected);
+          setOperatorSelected(operatorSelected);
+          setOrchestrationSelected(orchestrationSelected);
+          setResendEdited(resendEdited);
+          onEditingLastTurnChange?.(resendEdited);
+          setRestoredQueueMessage(restoredQueueMessage);
+        },
         ...(restoredQueueMessage ? {
           noteCard, handoffCard,
           ...(restoredQueueMessage.queueReturnPosition ? { queueReturnPosition: restoredQueueMessage.queueReturnPosition } : {}),
@@ -1558,6 +1448,7 @@ export function Composer({
     setRestoredQueueMessage(undefined);
     const parked = parkedDrafts.pop();
     if (parked) {
+      draftRevisionRef.current += 1;
       restoreDraft(parked.text, parked.attachments, parked.borrowedIds);
       setPlanSelected(parked.intent === "plan");
       setOrchestrationSelected(parked.intent === "orchestrate");

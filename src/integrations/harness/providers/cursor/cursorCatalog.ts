@@ -1,19 +1,8 @@
 import { homeDir } from "../../../../platform/tauri/fs";
-import {
-  setHarnessModels,
-  type AgentModel,
-  type ModelSetting,
-  type ModelSettingChoice,
-} from "../../../../features/sessions/model/models";
+import { setHarnessModels } from "../../core/modelCatalog";
+import { type AgentModel, type ModelSetting, type ModelSettingChoice } from "../../../../contracts/session";
 import { AcpClient } from "../../core/acp";
-import {
-  execChild,
-  killChild,
-  resolveCursorBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
+import { execChild, killChild, resolveCursorBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
 
 const PROBE_ID = "omnicode-cursor-probe";
 const DISCOVERY_TIMEOUT_MS = 15_000;

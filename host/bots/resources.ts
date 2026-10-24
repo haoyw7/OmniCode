@@ -3,7 +3,7 @@ import type { HostStore } from "../store";
 import { currentMachineIO, withMachineIO } from "../machine-io";
 import { checkoutKindsConflict, notifyCheckoutRelease, onCheckoutRelease, checkoutExecutionPrefix, checkoutPath, checkoutPathsOverlap, checkoutResources, initCheckoutGuards, withCheckoutOwner } from "../checkout-guards";
 
-import type { ResourceBlocker } from "../../src/features/sessions/model/session";
+import type { ResourceBlocker } from "../../src/contracts/session";
 
 export type ResourceAcquisition = { acquired: true; ids: readonly string[] } | { acquired: false; blockers: ResourceBlocker[] };
 

@@ -1,22 +1,12 @@
-import { probeHarnessAvailability } from "../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
+import { probeHarnessAvailability } from "../../providers/model/harnessAvailability";
+import { refreshHostModelCatalogs } from "../../providers/model/hostModelCatalog";
 import { useEffect, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { emit, listen, type Event } from "@tauri-apps/api/event";
+import { takeQuickComposerLaunch, acknowledgeQuickComposerLaunch, subscribeQuickComposerSignal, publishQuickComposerCatalog, type QuickComposerSignal } from "../../../platform/tauri/quickComposer";
 import { loadQuickComposerEnabled, loadQuickComposerShortcut } from "../../settings/model/settings";
 import { subscribeSharedPreferences } from "../../settings/model/sharedPreferences";
 import { launchReceiver } from "../model/launchDelivery";
 import { prepareQuickComposerWhenIdle } from "../model/prepareQuickComposer";
-import {
-  liveQuickCatalog,
-  isHarnessId,
-  QUICK_COMPOSER_CATALOG_EVENT,
-  QUICK_COMPOSER_CATALOG_REQUEST_EVENT,
-  QUICK_COMPOSER_LAUNCH_EVENT,
-  quickComposerSupported,
-  setQuickComposerShortcut,
-  type QuickLaunch,
-} from "../model/quickComposer";
+import { liveQuickCatalog, isHarnessId, QUICK_COMPOSER_CATALOG_REQUEST_EVENT, QUICK_COMPOSER_LAUNCH_EVENT, quickComposerSupported, setQuickComposerShortcut, type QuickLaunch } from "../model/quickComposer";
 
 /**
  * Claims the global shortcut per the setting, answers the panel's requests for
@@ -50,9 +40,9 @@ export function useQuickComposerLaunches(
 
     let disposed = false;
     const receive = launchReceiver({
-      take: () => invoke("quick_composer_take"),
+      take: () => takeQuickComposerLaunch(),
       accept: (launch, id) => onLaunchRef.current(launch, id),
-      ack: (id) => invoke("quick_composer_ack", { id }),
+      ack: (id) => acknowledgeQuickComposerLaunch(id),
       disposed: () => disposed,
       accepted: accepted.current,
       accepting: accepting.current,
@@ -67,10 +57,10 @@ export function useQuickComposerLaunches(
     const onFocus = () => void take();
     const subscriptions: Array<() => void> = [];
     const subscribe = async (
-      event: string,
-      handler: (event: Event<unknown>) => void,
+      event: QuickComposerSignal,
+      handler: (event: { payload: unknown }) => void,
     ) => {
-      const stop = await listen(event, handler);
+      const stop = await subscribeQuickComposerSignal(event, handler);
       if (disposed) stop();
       else subscriptions.push(stop);
     };
@@ -80,12 +70,12 @@ export function useQuickComposerLaunches(
         void probeHarnessAvailability()
           .then(async () => {
             if (disposed) return;
-            void emit(QUICK_COMPOSER_CATALOG_EVENT, liveQuickCatalog());
+            void publishQuickComposerCatalog(liveQuickCatalog());
             // Only probe the provider the user opened, like the workspace picker.
             if (isHarnessId(event.payload)) {
-              await refreshHarnessCatalogs([event.payload]);
+              await refreshHostModelCatalogs([event.payload]);
               if (!disposed)
-                void emit(QUICK_COMPOSER_CATALOG_EVENT, liveQuickCatalog());
+                void publishQuickComposerCatalog(liveQuickCatalog());
             }
           })
           .catch(() => undefined);

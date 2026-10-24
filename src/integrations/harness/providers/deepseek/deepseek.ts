@@ -1,41 +1,10 @@
 import { JsonRpcClient, type JsonRpcHandlers, type JsonRpcId } from "../../core/jsonRpc";
-import {
-  hasHeadlessChildBackend,
-  killChild,
-  prepareDeepseekBridge,
-  selectedChildMachine,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import {
-  measureGenerationTurn,
-  generationStreamDelta,
-  reportGenerationStreamUsage,
-  generationRequestStarted,
-} from "../../core/generationMetrics";
-import {
-  asRecord,
-  DEEPSEEK_BRIDGE_PROTOCOL,
-  DEEPSEEK_RUNTIME_VERSION,
-  deepseekSelection,
-  deepseekContent,
-  deepseekQuestions,
-  deepseekAnswer,
-  deepseekErrorMessage,
-  DeepseekEventMapper,
-} from "./deepseekProtocol";
-import type {
-  ApprovalDecision,
-  HarnessEvent,
-  SendTurnInput,
-  SteerTurnInput,
-  UserQuestionReply,
-} from "../../core/types";
-import {
-  saveGeneratedImage,
-  deleteGeneratedImages,
-} from "../../../../platform/tauri/fs";
+import { killChild, prepareDeepseekBridge, selectedChildMachine, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { measureGenerationTurn, generationStreamDelta, reportGenerationStreamUsage, generationRequestStarted } from "../../core/generationMetrics";
+import { asRecord, DEEPSEEK_BRIDGE_PROTOCOL, DEEPSEEK_RUNTIME_VERSION, deepseekSelection, deepseekContent, deepseekQuestions, deepseekAnswer, deepseekErrorMessage, DeepseekEventMapper } from "./deepseekProtocol";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput, SteerTurnInput } from "../../core/types";
+import type { UserQuestionReply } from "../../../../contracts/session";
 import { translate } from "../../../../shared/i18n/language";
 
 type Live = {
@@ -229,31 +198,8 @@ async function start(input: SendTurnInput): Promise<Live> {
           }
           if (frame.type === "end") reportGenerationStreamUsage(live.emit);
         }
-        for (const event of live.mapper.events(params, live.root)) {
-          if (
-            event.type === "image.generated" &&
-            "data" in event &&
-            !hasHeadlessChildBackend()
-          ) {
-            const saved = await saveGeneratedImage({
-              data: event.data,
-              name: event.name,
-            });
-            if (live.cancelled) await deleteGeneratedImages([saved.path]);
-            else
-              live.emit({
-                type: "image.generated",
-                itemId: event.itemId,
-                path: saved.path,
-                name: event.name,
-                mimeType: saved.mimeType,
-                size: saved.size,
-                ...(event.agentCallId
-                  ? { agentCallId: event.agentCallId }
-                  : {}),
-              });
-          } else live.emit(event);
-        }
+        for (const event of live.mapper.events(params, live.root))
+          live.emit(event);
       });
       live.output.catch((error) => live.done?.reject(error));
     },

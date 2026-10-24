@@ -3,7 +3,7 @@ import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FilePaneTab } from "../model/layout";
-import { SurfaceTabs } from "./SurfaceTabs";
+import { SurfaceTabs } from "../../../app/ui/SurfaceTabs";
 
 const actions = vi.hoisted(() => ({
   copyText: vi.fn(async () => {}),
@@ -21,7 +21,7 @@ vi.mock("../../../platform/tauri/fs", async (importOriginal) => ({
   revealPath: actions.revealPath,
 }));
 
-vi.mock("../../connections/files/ui/FileTypeIcon", () => ({
+vi.mock("../../../shared/ui/FileTypeIcon", () => ({
   FileTypeIcon: ({ name }: { name: string }) =>
     createElement("span", { "data-icon": name }),
 }));
@@ -34,7 +34,7 @@ vi.mock("../../workflows/model/workflowSessionWatch", () => ({
     release: () => {},
   }),
 }));
-vi.mock("../../sessions/ui/HarnessIcon", () => ({
+vi.mock("../../../shared/ui/HarnessIcon", () => ({
   HarnessIcon: ({ harness }: { harness: string }) => createElement("span", { "data-harness": harness }),
 }));
 

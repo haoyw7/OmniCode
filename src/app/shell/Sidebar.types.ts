@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import type { WorktreeFocus } from "../../features/source-control/model/worktreeFocus";
 import type { SidebarTabId } from "../../features/settings/model/appearance";
-import type { OpenFileFn } from "../../features/search/model/search";
-import type { LinkedWorkItem } from "../../features/sessions/model/session";
+import type { OpenFileFn } from "../../shared/lib/fileNavigation";
+import type { LinkedWorkItem } from "../../contracts/session";
 import type { SessionSummary } from "../../features/sessions/data/sessionStore";
-import type { SessionReminder } from "../../features/sessions/model/sessionReminders";
+import type { SessionReminder } from "../../contracts/reminders";
 import type { PaneEdge } from "../../features/workspace/model/layout";
 import type { RecentProject } from "../../features/projects/model/recents";
 type SidebarTab = SidebarTabId;

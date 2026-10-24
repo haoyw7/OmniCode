@@ -1,13 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  clearInboxCache,
-  githubPrDiff,
-  githubWorkItemDetails,
-  githubWorkItemThread,
-} from "./githubTasks";
+import { clearInboxCache, githubPrDiff, githubWorkItemDetails, githubWorkItemThread } from "./githubTasks";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../connections/model/inboxHost", async () => ({ inboxHostCommand: (await import("@tauri-apps/api/core")).invoke }));
 
 const mocked = vi.mocked(invoke);
 

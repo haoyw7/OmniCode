@@ -1,4 +1,5 @@
-import { asRecord, stringField } from "./codexProtocol";
+import { asRecord } from "../../../../domain/records";
+import { stringField } from "./codexProtocol";
 
 /** Only confirmations can be represented faithfully by the Allow/Deny UI. */
 export function codexMcpConfirmation(params: unknown): {

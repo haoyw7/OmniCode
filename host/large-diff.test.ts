@@ -1,9 +1,10 @@
+import type { GitFileDiff } from "../src/contracts/workspace";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import type { GitFileDiff } from "../src/platform/tauri/fs";
+
 import { HostStore } from "./store";
 import { WorkspaceCommands } from "./workspace-commands";
 

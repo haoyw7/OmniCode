@@ -1,35 +1,26 @@
 import type { Dispatch, SetStateAction } from "react";
-import {
-  type Automation,
-  type AutomationRun,
-} from "../../features/automations/model/automations";
+import type { Automation, AutomationRun } from "../../contracts/automations";
+
 import { DesktopBots } from "../../features/bots/ui/DesktopBots";
+import { BotFilePaneContext } from "../../features/bots/ui/BotFilePanel";
+import { BotFilePane } from "./BotFilePane";
 import { BotModelPickerContext } from "../../features/bots/ui/BotChatChrome";
 import { DesktopBotModelPicker } from "./DesktopBotModelPicker";
 import type { CiRepairRequest } from "../../features/inbox/model/ciRepair";
-import type { InboxProvider } from "../../features/inbox/model/githubTasks";
-import { type InboxItem } from "../../features/inbox/model/githubTasks";
+import type { InboxProvider, InboxItem, LinkedWorkItem, Session } from "../../contracts/session";
+
 import type { InboxSessionPortal } from "../../features/inbox/ui/InboxDiscussionPanel";
 import type { RecentProject } from "../../features/projects/model/recents";
 import { ProjectsPage } from "../../features/projects/ui/ProjectsPage";
-import { type OpenFileFn } from "../../features/search/model/search";
+import type { OpenFileFn } from "../../shared/lib/fileNavigation";
 import { type SessionSummary } from "../../features/sessions/data/sessionStore";
-import {
-  type LinkedWorkItem,
-  type Session,
-} from "../../features/sessions/model/session";
+
 import { requestTranscriptJump } from "../../features/sessions/model/transcriptJump";
 import { type SettingsSectionId } from "../../features/settings/model/settings";
 import { WorkflowsView } from "../../features/workflows/ui/WorkflowsView";
 import { type AppViewRenderer } from "../../features/workspace/ui/AppViewHost";
 import { type DesktopMode } from "../model/desktopMode";
-import {
-  AutomationsView,
-  InboxView,
-  NotesView,
-  SearchView,
-  SettingsView,
-} from "../ui/workspaceSurfaces";
+import { AutomationsView, InboxView, NotesView, SearchView, SettingsView } from "../ui/workspaceSurfaces";
 
 type Options = {
   desktopMode: DesktopMode;
@@ -189,11 +180,13 @@ export function createWorkspacePageRenderer({
       case "assistant":
         return (
           <BotModelPickerContext.Provider value={DesktopBotModelPicker}>
+          <BotFilePaneContext.Provider value={BotFilePane}>
             <DesktopBots
               selectedMachineId={assistantMachineId}
               onLocalSession={onSelectHistorySession}
               onRemoteSession={onSelectRemoteSession}
             />
+          </BotFilePaneContext.Provider>
           </BotModelPickerContext.Provider>
         );
       case "search":

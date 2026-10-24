@@ -1,6 +1,7 @@
-import type { OrchestrationRun, TaskStatus } from "./orchestration";
+import type { OrchestrationRun, TaskStatus } from "../../../contracts/session";
 import type { OrchestrationReadRun } from "./orchestrationClient";
-import { sessionNeedsInput, type HarnessId, type Session } from "../../sessions/model/session";
+import { sessionNeedsInput } from "../../../domain/session";
+import { type HarnessId, type Session } from "../../../contracts/session";
 
 /** Small history projection; never includes prompts, results or credentials. */
 export type OrchestrationSummary = {

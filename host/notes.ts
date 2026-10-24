@@ -8,10 +8,14 @@ import {
   realpathSync,
   rmSync,
   writeFileSync,
+  existsSync,
+  readdirSync,
+  lstatSync,
 } from "node:fs";
+import { createHash } from "node:crypto";
 import { extname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import type { Note, NoteUpsert } from "../src/features/notes/notesText";
-import type { NoteImageAsset } from "../src/features/notes/noteImagesText";
+import type { Note, NoteUpsert } from "../src/contracts/session";
+import type { NoteImageAsset } from "../src/contracts/notes";
 
 export const NOTE_IMAGE_MAX_BYTES = 20 * 1024 * 1024;
 const MIME: Record<string, string> = {
@@ -100,8 +104,7 @@ function readNote(row: Record<string, unknown>): Note {
   };
 }
 
-/** Only owns the notes schema. Pairing changes select a new store on the next RPC;
- * a broken paired directory is an error, never a silent headless fallback. */
+/** Host owns notes and assets. Desktop storage is only a one-time import source. */
 export class HostNotes {
   private connection?: { db: DatabaseSync; directory: string; path: string };
   constructor(
@@ -110,12 +113,14 @@ export class HostNotes {
   ) {}
 
   private storage() {
-    const desktop = this.desktopDirectory();
-    const directory = resolve(desktop || this.hostDirectory);
-    const path = join(directory, desktop ? "omnicode.db" : "notes.db");
-    if (this.connection?.path === path) return this.connection;
+    const directory = resolve(this.hostDirectory);
+    const path = join(directory, "notes.db");
+    if (this.connection?.path === path) {
+      this.importDesktop(this.connection.db, directory);
+      return this.connection;
+    }
     this.close();
-    if (!desktop) mkdirSync(directory, { recursive: true });
+    mkdirSync(directory, { recursive: true });
     const db = new DatabaseSync(path);
     try {
       db.exec(`PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL;
@@ -125,7 +130,8 @@ export class HostNotes {
           source_session_id TEXT, source_cwd TEXT, slug_pending INTEGER NOT NULL DEFAULT 0,
           created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
         );
-        CREATE INDEX IF NOT EXISTS notes_updated_idx ON notes (updated_at DESC, id);`);
+        CREATE INDEX IF NOT EXISTS notes_updated_idx ON notes (updated_at DESC, id);
+        CREATE TABLE IF NOT EXISTS notes_imports (source TEXT PRIMARY KEY, imported_at INTEGER NOT NULL);`);
       const columns = db.prepare("PRAGMA table_info(notes)").all();
       if (!columns.some((column) => column.name === "tags_json"))
         db.exec(
@@ -135,11 +141,61 @@ export class HostNotes {
         db.exec(
           "ALTER TABLE notes ADD COLUMN slug_pending INTEGER NOT NULL DEFAULT 0",
         );
+      this.importDesktop(db, directory);
     } catch (error) {
       db.close();
       throw error;
     }
     return (this.connection = { db, directory, path });
+  }
+
+  private importDesktop(db: DatabaseSync, directory: string) {
+    const configured = this.desktopDirectory();
+    if (!configured) return;
+    const sourceDirectory = realpathSync(configured);
+    const sourcePath = join(sourceDirectory, "omnicode.db");
+    if (!existsSync(sourcePath)) return;
+    const sourceKey = createHash("sha256").update(sourcePath).digest("hex");
+    if (db.prepare("SELECT 1 FROM notes_imports WHERE source=?").get(sourceKey)) return;
+    const source = new DatabaseSync(sourcePath, { readOnly: true });
+    try {
+      if (!source.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='notes'").get()) return;
+      const rows = source.prepare("SELECT * FROM notes ORDER BY created_at, id").all();
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        for (const row of rows) {
+          const note = readNote(row);
+          validateId(note.id);
+          // An existing Host note (including edits) always wins on id collision.
+          if (db.prepare("SELECT 1 FROM notes WHERE id=?").get(note.id)) continue;
+          if (db.prepare("SELECT 1 FROM notes WHERE slug=?").get(note.slug))
+            throw new Error(`Desktop note slug conflicts with a Host note: ${note.slug}`);
+          const legacyAssets = join(sourceDirectory, "note-assets", note.id);
+          if (existsSync(legacyAssets)) {
+            this.contained(sourceDirectory, legacyAssets);
+            const targetAssets = join(directory, "note-assets", note.id);
+            mkdirSync(targetAssets, { recursive: true });
+            this.contained(directory, targetAssets);
+            for (const entry of readdirSync(legacyAssets)) {
+              validateNoteAssetPath(`/note-assets/${note.id}/${entry}`);
+              const asset = join(legacyAssets, entry);
+              if (!lstatSync(asset).isFile()) throw new Error("Invalid legacy note image");
+              const bytes = readFileSync(asset);
+              const destination = join(targetAssets, entry);
+              if (existsSync(destination)) {
+                this.contained(targetAssets, destination);
+                if (!readFileSync(destination).equals(bytes)) throw new Error("Legacy note image conflicts with a Host image");
+              } else writeFileSync(destination, bytes, { flag: "wx" });
+            }
+          }
+          db.prepare(`INSERT INTO notes (id,slug,title,body,tags_json,source_session_id,source_cwd,slug_pending,created_at,updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?)`).run(note.id, note.slug, note.title, note.body, JSON.stringify(note.tags),
+            note.sourceSessionId ?? null, note.sourceCwd ?? null, Number(note.slugPending), note.createdAt, note.updatedAt);
+        }
+        db.prepare("INSERT INTO notes_imports (source, imported_at) VALUES (?,?)").run(sourceKey, Date.now());
+        db.exec("COMMIT");
+      } catch (error) { db.exec("ROLLBACK"); throw error; }
+    } finally { source.close(); }
   }
 
   list(): Note[] {
@@ -187,8 +243,7 @@ export class HostNotes {
         ? undefined
         : trim(note.sourceSessionId) || undefined;
     const { db } = this.storage();
-    // Reserve the writer before reading the old note and allocating its slug,
-    // including when the desktop is writing through its own SQLite connection.
+    // Reserve the writer before reading the old note and allocating its slug.
     db.exec("BEGIN IMMEDIATE");
     try {
       const row = db.prepare("SELECT * FROM notes WHERE id = ?").get(note.id);

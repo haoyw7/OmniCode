@@ -1,3 +1,4 @@
+import type { GitChangedFile, GitDiffIndex, GitFileDiffKind } from "../../../contracts/workspace";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
@@ -6,95 +7,20 @@ import { MenuHover } from "../../../shared/ui/MenuHover";
 import { Button } from "../../../shared/ui/forms/Button";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { Textarea } from "../../../shared/ui/forms/Textarea";
-import {
-  AnimatedCollapse,
-  useCollapseMotion,
-} from "../../../shared/ui/AnimatedCollapse";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../../../shared/ui/SurfaceVisibility";
-import { ask } from "@tauri-apps/plugin-dialog";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  CloudUpload,
-  ExternalLink,
-  FileDiff,
-  FolderTree,
-  GitBranch,
-  GitPullRequest,
-  ListBullet,
-  Loader,
-  Minus,
-  MoreHorizontal,
-  Plus,
-  RefreshCw,
-  Undo2,
-  WandSparkles,
-  X,
-} from "../../../shared/ui/icons";
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-  type CSSProperties,
-} from "react";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
-import {
-  GitHistoryGraph,
-  GraphResizeSash,
-  GRAPH_PANEL_DEFAULT,
-  GRAPH_PANEL_MIN,
-  loadGraphPanelHeight,
-  saveGraphPanelHeight,
-} from "./GitHistoryGraph";
-import {
-  basename,
-  gitCommit,
-  gitDiffIndex,
-  gitDiscardAll,
-  gitDiscardFile,
-  gitHeadMessage,
-  gitPrCreate,
-  gitPrStatus,
-  gitPull,
-  gitPush,
-  gitRangeContext,
-  gitStageAll,
-  gitStageFile,
-  gitSync,
-  gitUnstageAll,
-  gitUnstageFile,
-  notifyGitChanged,
-  setFsWatch,
-  subscribeFsWatch,
-  subscribeGitChanged,
-  type GitChangedFile,
-  type GitDiffIndex,
-  type GitFileDiffKind,
-  type GitHistoryCommit,
-  type GitPr,
-} from "../../../platform/tauri/fs";
-import type { HarnessId } from "../../sessions/model/session";
+import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
+import { confirmNativeAction } from "../../../platform/tauri/dialogs";
+import { openExternalUrl } from "../../../platform/tauri/browser";
+import { Check, ChevronDown, ChevronRight, CloudUpload, ExternalLink, FileDiff, FolderTree, GitBranch, GitPullRequest, ListBullet, Loader, Minus, MoreHorizontal, Plus, RefreshCw, Undo2, WandSparkles, X } from "../../../shared/ui/icons";
+import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
+import { GitHistoryGraph, GraphResizeSash, GRAPH_PANEL_DEFAULT, GRAPH_PANEL_MIN, loadGraphPanelHeight, saveGraphPanelHeight } from "./GitHistoryGraph";
+import { basename, gitCommit, gitDiffIndex, gitDiscardAll, gitDiscardFile, gitHeadMessage, gitPrCreate, gitPrStatus, gitPull, gitPush, gitRangeContext, gitStageAll, gitStageFile, gitSync, gitUnstageAll, gitUnstageFile, notifyGitChanged, setFsWatch, subscribeFsWatch, subscribeGitChanged, type GitHistoryCommit } from "../../../platform/tauri/fs";
+import type { GitPr } from "../../../contracts/workspace";
+import type { HarnessId } from "../../../contracts/session";
 import { recordInboxSelfActivity } from "../../inbox/model/inboxSelfActivity";
-import {
-  loadChangesView,
-  saveChangesView,
-  type ChangesView,
-} from "../../settings/model/appearance";
-import {
-  generateCommitMessage,
-  generatePrContent,
-} from "../../../integrations/harness";
+import { loadChangesView, saveChangesView, type ChangesView } from "../../settings/model/appearance";
+import { generateCommitMessage, generatePrContent } from "../../providers/model/providerAuxiliary";
 import { invalidateWatchedFiles } from "../../connections/files/model/fileWatch";
 import { MOD } from "../../../platform/tauri/platform";
 import { applyProjectDiffStats } from "../hooks/useProjectDiffStats";
@@ -107,7 +33,7 @@ import { pathKey } from "../../../shared/lib/paths";
 const GIT_POLL_MS = 5000;
 
 function confirmNative(message: string, okLabel?: string): Promise<boolean> {
-  return ask(message, {
+  return confirmNativeAction(message, {
     title: "OmniCode",
     kind: "warning",
     ...(okLabel ? { okLabel } : {}),
@@ -744,7 +670,7 @@ function ChangedFiles({
     );
     const number = Number(/\/pull\/(\d+)(?:[/?#]|$)/.exec(url)?.[1]);
     if (Number.isInteger(number) && number > 0) recordPrActivity(number);
-    await openUrl(url.trim());
+    await openExternalUrl(url.trim());
   };
 
   const createPr = async () => {
@@ -839,7 +765,7 @@ function ChangedFiles({
               onSync={() => void sync()}
               onCreatePr={() => void createPr()}
               onViewPr={() => {
-                if (pr?.url) void openUrl(pr.url);
+                if (pr?.url) void openExternalUrl(pr.url);
               }}
             >
               <div className="flex min-w-0 flex-1 items-center gap-1">

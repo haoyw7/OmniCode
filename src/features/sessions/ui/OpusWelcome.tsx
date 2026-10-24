@@ -1,14 +1,7 @@
 import { motion } from "motion/react";
 import { panelTransition, immediateTransition, duration } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { opusStage } from "../model/opusWelcome";
 import "./OpusWelcome.css";
 

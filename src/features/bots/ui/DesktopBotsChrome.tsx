@@ -13,7 +13,7 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Bot, ChevronRight, MoreHorizontal, Pause, Play, Search, Square, X } from "../../../shared/ui/icons";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../shared/ui/primitives/DropdownMenu";
 import { BotNavigationToggle } from "./BotNavigationLayout";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { sessionDisplayTitle } from "../../sessions/model/session";
 
 import { BotAvatar } from "./BotAvatar";

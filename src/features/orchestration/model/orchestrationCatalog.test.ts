@@ -1,18 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("../../providers/model/harnessAvailability", () => ({
   isHarnessAvailable: vi.fn((id: string) => id === "codex" || id === "claude"),
   probeHarnessAvailability: vi.fn(async () => {}),
 }));
-vi.mock("../../../integrations/harness/core/registry", () => ({
-  refreshHarnessCatalogs: vi.fn(async () => {}),
+vi.mock("../../providers/model/hostModelCatalog", () => ({
+  refreshHostModelCatalogs: vi.fn(async () => {}),
 }));
 import { discoverOrchestrationSettings } from "./orchestrationCatalog";
-import {
-  isHarnessAvailable,
-  probeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
-import { resetHarnessModelOverlays, setHarnessModels } from "../../sessions/model/models";
+import { isHarnessAvailable, probeHarnessAvailability } from "../../providers/model/harnessAvailability";
+import { refreshHostModelCatalogs } from "../../providers/model/hostModelCatalog";
+import { resetHarnessModelOverlays, setHarnessModels } from "../../../integrations/harness/core/modelCatalog";
 
 afterEach(() => {
   resetHarnessModelOverlays();
@@ -24,14 +21,14 @@ afterEach(() => {
 
 describe("automatic orchestration catalog", () => {
   it("discovers every installed harness and reads its refreshed models without a user-selected pool", async () => {
-    vi.mocked(refreshHarnessCatalogs).mockImplementationOnce(async () => {
+    vi.mocked(refreshHostModelCatalogs).mockImplementationOnce(async () => {
       setHarnessModels("codex", [
         { id: "codex:live", harness: "codex", name: "Live Codex" },
       ]);
     });
     const settings = await discoverOrchestrationSettings();
     expect(probeHarnessAvailability).toHaveBeenCalledOnce();
-    expect(refreshHarnessCatalogs).toHaveBeenCalledWith(["claude", "codex"]);
+    expect(refreshHostModelCatalogs).toHaveBeenCalledWith(["claude", "codex"]);
     expect(settings.choices).toContainEqual({
       harness: "codex",
       model: "codex:live",

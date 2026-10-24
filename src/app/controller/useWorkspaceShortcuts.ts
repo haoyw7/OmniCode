@@ -1,32 +1,15 @@
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { setNativeAutosave, setNativeKeybindings, subscribeNativeAutosave, subscribeNativeMenuCommand, subscribeTrayConversation, subscribeNotificationClick } from "../../platform/tauri/appShell";
+import { desktopWindow } from "../../platform/tauri/window";
 import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
 import { handleEditorFindKey } from "../../features/connections/files/editor/editorSearch";
-import { NOTIFICATION_CLICK_EVENT } from "../../features/notifications/model/notifications";
-import { type Session } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
 import { resolveAppShortcut } from "../../features/settings/model/appShortcuts";
-import {
-  keybindingPressed,
-  loadAutosave,
-  loadKeybindingOverrides,
-  matchCustomKeybinding,
-  saveAutosave,
-  subscribeAutosave,
-  subscribeKeybindings,
-  type SettingsSectionId,
-} from "../../features/settings/model/settings";
+import { keybindingPressed, loadAutosave, loadKeybindingOverrides, matchCustomKeybinding, saveAutosave, subscribeAutosave, subscribeKeybindings, type SettingsSectionId } from "../../features/settings/model/settings";
 import { resolveZoomKeybinding } from "../../features/settings/model/zoomKeybinding";
-import {
-  shouldHandleListNavigation,
-  tabCommand,
-  tabCommandForKeybinding,
-  tabCommandKeybinding,
-} from "../../features/workspace/model/tabKeys";
+import { shouldHandleListNavigation, tabCommand, tabCommandForKeybinding, tabCommandKeybinding } from "../../features/workspace/model/tabKeys";
 import { IS_MAC } from "../../platform/tauri/platform";
 import type { CommandDispatch } from "../commands/useCommandDispatcher";
-import { TRAY_OPEN_SESSION_EVENT } from "../model/traySessions";
 
 type Options = {
   onArchiveFocusedSession: (event: KeyboardEvent) => void;
@@ -81,14 +64,12 @@ export function useWorkspaceShortcuts({
   useEffect(() => {
     if (!IS_MAC) return;
     const applyAutosave = () => {
-      void invoke("autosave_set_enabled", { enabled: loadAutosave() }).catch(
+      void setNativeAutosave(loadAutosave()).catch(
         console.error,
       );
     };
     const applyKeybindings = () => {
-      void invoke("keybindings_set_overrides", {
-        overrides: loadKeybindingOverrides(),
-      }).catch(console.error);
+      void setNativeKeybindings(loadKeybindingOverrides()).catch(console.error);
     };
     applyAutosave();
     applyKeybindings();
@@ -238,20 +219,19 @@ export function useWorkspaceShortcuts({
     // Commands with a native menu event are subscribed by useCommandDispatcher;
     // these carry a payload or open a specific place.
     const unlisten: Array<Promise<() => void>> = [
-      listen<boolean>("toggle_autosave", ({ payload }) => {
+      subscribeNativeAutosave( ({ payload }) => {
         const saved = saveAutosave(payload);
         if (saved !== payload && IS_MAC) {
-          void invoke("autosave_set_enabled", { enabled: saved });
+          void setNativeAutosave(saved);
         }
       }),
-      listen("sidebar_opacity", () => {
+      subscribeNativeMenuCommand("sidebar_opacity", () => {
         actions.current.openSettings("appearance");
       }),
       // Rust sends this to one window, already shown.
-      listen<{ id: string; project: string }>(
-        TRAY_OPEN_SESSION_EVENT,
+      subscribeTrayConversation(
         ({ payload }) => {
-          const win = getCurrentWindow();
+          const win = desktopWindow();
           void win
             .unminimize()
             .then(() => win.setFocus())
@@ -260,9 +240,9 @@ export function useWorkspaceShortcuts({
         },
       ),
       // Every window hears the click; only the one holding the session acts.
-      listen<string>(NOTIFICATION_CLICK_EVENT, ({ payload: sessionId }) => {
+      subscribeNotificationClick( ({ payload: sessionId }) => {
         if (!sessionsRef.current.some((s) => s.id === sessionId)) return;
-        const win = getCurrentWindow();
+        const win = desktopWindow();
         // Windows leaves a minimized window minimized when it is only focused.
         void win
           .unminimize()

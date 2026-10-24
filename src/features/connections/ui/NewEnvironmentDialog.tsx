@@ -15,8 +15,8 @@ import { listWslDistributions, pickWslFolder } from "../../../platform/tauri/wsl
 import { OPEN_CONNECTIONS_EVENT, OPEN_REMOTE_PROJECT_EVENT, remoteRequest, useRemoteMachines } from "../model/connections";
 import { ensureSharedProject, rememberRemoteProject } from "../model/remoteProjects";
 import { environmentProjectPath, saveHostEnvironment } from "../model/hostEnvironments";
-import type { HostEnvironmentDefinition, HostEnvironments } from "../model/hostState";
-import type { HostDirectory, HostProject } from "../model/protocol";
+import type { HostEnvironmentDefinition, HostEnvironments } from "../../../contracts/hostState";
+import type { HostDirectory, HostProject } from "../../../contracts/protocol";
 import { HostFolderBrowser } from "../../../shared/ui/HostFolderBrowser";
 
 const LOCAL = "local";

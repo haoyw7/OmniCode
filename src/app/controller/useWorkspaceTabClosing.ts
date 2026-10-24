@@ -1,35 +1,12 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback, useEffect } from "react";
-import {
-  rememberRemotePendingExecutionCwd,
-  rememberRemoteSession,
-  remoteSessionFor,
-} from "../../features/connections/model/connections";
+import { rememberRemotePendingExecutionCwd, rememberRemoteSession, remoteSessionFor } from "../../features/connections/model/connections";
 import { sameProjectPath } from "../../features/projects/model/recents";
-import {
-  newSession,
-  type Session,
-} from "../../features/sessions/model/session";
+import { newSession } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
 import { worktreeFocus } from "../../features/source-control/model/worktreeFocus";
-import {
-  confirmCloseTerminal,
-  confirmCloseTerminals,
-} from "../../features/terminal/model/terminalClose";
-import {
-  closeLeaf,
-  closeSurfacePanes,
-  findSurfacePane,
-  firstLeafId,
-  isFilesystemTab,
-  leaf,
-  leafIds,
-  removePane,
-  resetTabToSession,
-  siblingLeafId,
-  surfacePanes,
-  withSurfacePanes,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { confirmCloseTerminal, confirmCloseTerminals } from "../../features/terminal/model/terminalClose";
+import { closeLeaf, closeSurfacePanes, findSurfacePane, firstLeafId, isFilesystemTab, leaf, leafIds, removePane, resetTabToSession, siblingLeafId, surfacePanes, withSurfacePanes, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { planWorkspaceTabClose } from "../../features/workspace/model/workspaceTabGroups";
 import { basename } from "../../platform/tauri/fs";
 import { confirmDiscardUnsaved } from "../model/confirmDiscardUnsaved";

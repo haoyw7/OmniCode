@@ -1,14 +1,5 @@
 import ts from "typescript";
-import {
-  addPlaceholder,
-  cloneValue,
-  emptyValue,
-  liveField,
-  mergeInto,
-  peelPlace,
-  staticIndexKey,
-  type AbstractValue,
-} from "./domain.js";
+import { addPlaceholder, cloneValue, emptyValue, liveField, mergeInto, peelPlace, staticIndexKey, type AbstractValue } from "./domain.js";
 import { applyConstructor } from "./promise-ops.js";
 import type { EvalContext, Evaluator } from "./taint.js";
 

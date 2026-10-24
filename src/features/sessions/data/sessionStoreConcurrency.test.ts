@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
+const mocks = vi.hoisted(() => ({ invoke: vi.fn(), hostOwned: false }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
+// Exercise the retained legacy writer independently of the Host ownership gate.
+vi.mock("../../connections/model/remoteProjects", () => ({ sessionUsesHost: () => mocks.hostOwned }));
 
 type Deferred<T> = {
   promise: Promise<T>;
@@ -38,9 +40,40 @@ function session(id: string) {
 
 afterEach(() => {
   mocks.invoke.mockReset();
+  mocks.hostOwned = false;
 });
 
 describe("session persistence concurrency", () => {
+  it("drops a queued native write when ownership changes before execution", async () => {
+    const pending = deferred<unknown>();
+    mocks.invoke.mockImplementation(() => pending.promise);
+    const { upsertSession } = await loadStore();
+    const first = upsertSession(session("s"));
+    await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(1));
+    const queued = upsertSession(session("s"));
+    mocks.hostOwned = true;
+    pending.resolve({ id: "s", cwd: "/tmp/project" });
+    await first;
+    expect(await queued).toBeNull();
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry a stale native write after Host takes ownership", async () => {
+    const { upsertSession } = await loadStore();
+    const draft = session("s");
+    draft.blocks = Array.from({ length: 10 }, (_, index) => ({
+      id: `u${index}`, role: "user", text: "message",
+    }));
+    mocks.invoke.mockResolvedValueOnce({ id: "s", cwd: "/tmp/project" });
+    await upsertSession(draft);
+    mocks.invoke.mockImplementationOnce(async () => {
+      mocks.hostOwned = true;
+      throw new Error("stale-blocks");
+    });
+    expect(await upsertSession(draft)).toBeNull();
+    expect(mocks.invoke).toHaveBeenCalledTimes(2);
+  });
+
   it("drains worker writes before deleting a lead and strips ownership from later snapshots", async () => {
     const firstWrite = deferred<unknown>();
     const commands: string[] = [];
@@ -62,6 +95,7 @@ describe("session persistence concurrency", () => {
     expect(commands).toEqual([
       "session_upsert",
       "session_upsert",
+      "session_get",
       "session_delete",
     ]);
     await upsertSession(worker);
@@ -100,7 +134,7 @@ describe("session persistence concurrency", () => {
     });
     await Promise.all([writing, lateWrite, deleting]);
 
-    expect(commands).toEqual(["session_upsert", "session_delete"]);
+    expect(commands).toEqual(["session_upsert", "session_get", "session_delete"]);
   });
 
   it("discards a draft-only record before reusing its open session id", async () => {
@@ -131,6 +165,7 @@ describe("session persistence concurrency", () => {
     await Promise.all([draftWrite, discarding, laterTurn]);
     expect(commands).toEqual([
       "session_upsert",
+      "session_get",
       "session_delete",
       "session_upsert",
     ]);
@@ -205,6 +240,7 @@ describe("session persistence concurrency", () => {
     expect(commands).toEqual([
       "session_upsert",
       "session_upsert",
+      "session_get",
       "session_set_archived",
     ]);
     expect(mocks.invoke.mock.calls[1]?.[1]).toMatchObject({

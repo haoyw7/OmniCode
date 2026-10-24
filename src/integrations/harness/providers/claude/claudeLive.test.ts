@@ -1,12 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { applyHarnessEvent } from "../../core/apply";
+import { createSessionProjection } from "../../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { newSession } from "../../../../features/sessions/model/session";
-import {
-  foldableWork,
-  foldedBlocks,
-  groupTurnItems,
-  workSummaryLine,
-} from "../../../../features/sessions/model/transcriptActivity";
+import { foldableWork, foldedBlocks, groupTurnItems, workSummaryLine } from "../../../../features/sessions/model/transcriptActivity";
 
 const sent: string[] = [];
 const spawned: string[][] = [];
@@ -58,8 +55,8 @@ const {
   stopClaudeSession,
   __claudeTestReset,
 } = await import("./claude");
-import type { HarnessEvent } from "../../core/types";
-import type { RuntimeMode, TurnIntent } from "../../../../features/sessions/model/session";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import type { RuntimeMode, TurnIntent } from "../../../../contracts/session";
 
 function parse() {
   return sent.map((line) => JSON.parse(line) as Record<string, unknown>);

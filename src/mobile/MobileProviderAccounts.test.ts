@@ -4,8 +4,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MobileProviderAccounts } from "./MobileProviderAccounts";
 import type { MobileClient } from "./client";
-import type { HostProviderAccounts, HostProviderUsage } from "../features/connections/model/protocol";
-import { parseCodexRateLimits, errorRateLimits, parseClaudeOAuthUsage } from "../features/providers/model/rateLimits";
+import type { HostProviderAccounts, HostProviderUsage } from "../contracts/protocol";
+import { parseCodexRateLimits, errorRateLimits, parseClaudeOAuthUsage } from "../domain/rateLimits";
 import { setUiLanguage } from "../shared/i18n/language";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
 

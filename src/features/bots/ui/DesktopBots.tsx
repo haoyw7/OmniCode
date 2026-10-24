@@ -1,24 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import type { RemoteAttachment } from "../../connections/model/protocol";
+import { stageDesktopAttachment } from "../../../platform/tauri/attachmentStaging";
+import type { RemoteAttachment } from "../../../contracts/protocol";
 import { DesktopBotsWorkspace } from "./DesktopBotsWorkspace";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { BotFilePanel, useBotFilePanel } from "./BotFilePanel";
-import {
-  remoteRequest,
-  refreshRemoteProjectSessions,
-} from "../../connections/model/connections";
-import {
-  sharedHostMachineId,
-  configureSharedHost,
-  rememberRemoteProject,
-} from "../../connections/model/remoteProjects";
+import { remoteRequest, refreshRemoteProjectSessions } from "../../connections/model/connections";
+import { sharedHostMachineId, configureSharedHost, rememberRemoteProject } from "../../connections/model/remoteProjects";
 import { sharedSessionBackend } from "../../sessions/data/sharedSessionBackend";
 import type { SessionReference } from "../model/botView";
 import type { BotTarget } from "../model/botNavigation";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useDesktopBotsHosts } from "../model/useDesktopBotsHosts";
-import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
+import { GradientBlurBackground } from "../../../shared/ui/GradientBlurBackground";
 function DesktopBotsHost({
   selectedMachineId,
   onLocalSession,
@@ -54,7 +47,7 @@ function DesktopBotsHost({
       let path = attachmentPaths.current.get(key);
       if (!path) {
         path = read().then((data) =>
-          invoke<string>("write_attachment", { name: file.name, data }),
+          stageDesktopAttachment(file.name, data),
         );
         attachmentPaths.current.set(key, path);
         path.catch(() => attachmentPaths.current.delete(key));

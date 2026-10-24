@@ -1,7 +1,7 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import type { HarnessId } from "../model/session";
-import { HARNESS_TITLE } from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import type { HarnessId } from "../../../contracts/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { Check, RefreshCw } from "../../../shared/ui/icons";
 
 export type ProviderSignInState = "idle" | "running" | "complete" | "error";
@@ -14,6 +14,7 @@ export function ProviderSignInPanel({
   onComplete,
   completeActionLabel,
   autoFocus = false,
+  available = true,
 }: {
   harness: HarnessId;
   state: ProviderSignInState;
@@ -22,6 +23,7 @@ export function ProviderSignInPanel({
   onComplete?: () => void;
   completeActionLabel?: string;
   autoFocus?: boolean;
+  available?: boolean;
 }) {
   const { t: uiT } = useTranslation();
   const title = HARNESS_TITLE[harness];
@@ -47,7 +49,7 @@ export function ProviderSignInPanel({
               value0: String(title),
             })}
       </p>
-      <button
+      {available || complete ? <button
         type="button"
         autoFocus={autoFocus}
         className="mt-4 inline-flex h-8 items-center  gap-1.5 rounded-lg bg-content px-3.5 text-[12px] font-medium text-background-base transition-transform duration-150 ease-out hover:bg-content/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98] disabled:cursor-default disabled:opacity-55 text-center"
@@ -64,7 +66,9 @@ export function ProviderSignInPanel({
           : complete
             ? (completeActionLabel ?? uiT("Signed in"))
             : uiT("Sign in to {value0}", { value0: String(title) })}
-      </button>
+      </button> : <p className="mt-4 max-w-60 text-[11px] text-content/45" role="status">
+        {uiT("Connect to an updated Host to sign in.")}
+      </p>}
       {state === "error" && error ? (
         <p
           className="mt-2.5 max-w-60 text-[10px] leading-4 text-red-500"

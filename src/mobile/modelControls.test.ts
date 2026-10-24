@@ -2,17 +2,12 @@
 import { createElement, act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  MobileModelControls,
-  configurationForModel,
-  configurationForSession,
-  configurationLabels,
-  type MobileConfiguration,
-} from "./MobileModelControls";
-import type { HostModelCatalog } from "../features/connections/model/protocol";
-import type { AgentModel } from "../features/sessions/model/models";
+import { MobileModelControls, configurationForModel, configurationForSession, configurationLabels, type MobileConfiguration } from "./MobileModelControls";
+import type { HostModelCatalog } from "../contracts/protocol";
+import type { AgentModel } from "../contracts/session";
 import { setUiLanguage } from "../shared/i18n/language";
-import { HARNESS_TITLE, newSession } from "../features/sessions/model/session";
+import { newSession } from "../features/sessions/model/session";
+import { HARNESS_TITLE } from "../contracts/session";
 const catalog: HostModelCatalog = {
   models: {
     codex: [

@@ -1,36 +1,13 @@
-import {
-  useCallback,
-  type Dispatch,
-  type RefObject,
-  type SetStateAction,
-} from "react";
-import { orchestrator } from "../../features/orchestration/model/orchestration";
+import { useCallback, type Dispatch, type RefObject, type SetStateAction } from "react";
+import { hostOrchestrationClient } from "../../features/orchestration/model/orchestrationClient";
 import { isBlankSession } from "../../features/projects/model/projectReturn";
-import {
-  shouldPersistSession,
-  upsertSession,
-} from "../../features/sessions/data/sessionStore";
-import {
-  flushSessionCheckpoint,
-  keepSessionChanges,
-  notifyReviewChanged,
-} from "../../features/sessions/model/checkpoint";
-import { sessionChildHarnesses } from "../../features/sessions/model/handoff";
-import {
-  sessionExecutionCwd,
-  type Session,
-  type WorkspaceMode,
-} from "../../features/sessions/model/session";
-import {
-  listWorktrees,
-  sessionInWorktree,
-  type Worktree,
-} from "../../features/source-control/model/worktrees";
-import {
-  newTab,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import { forgetHarnessSession } from "../../integrations/harness";
+import { shouldPersistSession, upsertSession } from "../../features/sessions/data/sessionStore";
+import { keepSessionChanges, notifyReviewChanged } from "../../features/sessions/model/checkpoint";
+import { sessionExecutionCwd } from "../../domain/session";
+import { type Session, type WorkspaceMode } from "../../contracts/session";
+import type { Worktree } from "../../contracts/worktree";
+import { listWorktrees, sessionInWorktree } from "../../features/source-control/model/worktrees";
+import { newTab, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { notifyGitChanged } from "../../platform/tauri/fs";
 import { isEqualOrInside, pathKey } from "../../shared/lib/paths";
 import type { WorkspaceNavigation } from "../hooks/useWorkspaceNavigation";
@@ -79,7 +56,6 @@ export function useSessionWorktreeActions({
       notifyGitChanged();
       const current = sessionsRef.current.find((s) => s.id === sessionId);
       if (!current) return;
-      void forgetHarnessSession(current.harness, sessionId);
       const next = {
         ...current,
         branch: undefined,
@@ -180,7 +156,7 @@ export function useSessionWorktreeActions({
           "Clear queued messages before changing working copies.",
         );
       }
-      const run = orchestrator.forSession(sessionId);
+      const run = hostOrchestrationClient.forSession(sessionId);
       if (run && ["active", "paused"].includes(run.status)) {
         throw new Error(
           "Stop this orchestration run before changing working copies.",
@@ -229,12 +205,6 @@ export function useSessionWorktreeActions({
           setActiveTabId(tab.id);
           setComposerFocused(true);
           return;
-        }
-        await flushSessionCheckpoint(sessionId);
-        if (!isCurrent()) return;
-        for (const harness of sessionChildHarnesses(source)) {
-          await forgetHarnessSession(harness, sessionId);
-          if (!isCurrent()) return;
         }
         const latest = sessionsRef.current.find((s) => s.id === sessionId);
         if (

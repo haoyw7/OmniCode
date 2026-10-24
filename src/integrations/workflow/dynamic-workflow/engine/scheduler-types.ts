@@ -7,21 +7,9 @@
  * 从这里导入，两侧都不必反向 import 调度器本体。
  */
 
-import { INSTRUCTIONS_HEAD_MAX_CHARS, refToString, WorkflowError } from "./types.js";
+import { INSTRUCTIONS_HEAD_MAX_CHARS, refToString, WorkflowError, type ActorId, type ActorRef, type AskSpec, type AskStats, type Caps, type InstanceRef, type PersonaSpec, type RunEvent, type SessionRef, type ValidateFn, type WorkflowDriver } from "./types.js";
 import type { ImportedActorState } from "./imported-cache.js";
-import type {
-  ActorId,
-  ActorRef,
-  AskSpec,
-  AskStats,
-  Caps,
-  InstanceRef,
-  PersonaSpec,
-  RunEvent,
-  SessionRef,
-  ValidateFn,
-  WorkflowDriver,
-} from "./types.js";
+
 
 /** 一个可外部结算的 promise。 */
 export interface Deferred<T> {

@@ -1,5 +1,5 @@
-import type { HostDescriptor } from "../../connections/model/protocol";
-import type { TurnOrigin } from "../../sessions/model/session";
+import type { HostDescriptor } from "../../../contracts/protocol";
+import type { TurnOrigin } from "../../../contracts/session";
 import type { BotRpc } from "./botRpc";
 import type { BotConfiguration } from "./botView";
 import type { BotsSnapshot } from "./bots";

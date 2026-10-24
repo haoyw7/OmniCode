@@ -18,13 +18,8 @@ export type BackgroundWorkSummary = {
   startedAt: number;
   endedAt?: number;
 };
-import {
-  WORKFLOW_RUNS_LIMITS,
-  workflowRunSchema,
-  type WorkflowRunNode,
-  type WorkflowRunState,
-  type WorkflowRunsState,
-} from "./workflow-runs.js";
+import { WORKFLOW_RUNS_LIMITS, workflowRunSchema, type WorkflowRunNode, type WorkflowRunState } from "./workflow-runs.js";
+import { type WorkflowRunsState } from "../../../contracts/workflow";
 
 /** 每会话最多下发的 run 数：在跑的按启动序在前，其后是最近结束的。 */
 export const SESSION_WORKFLOW_ACTIVITY_MAX_RUNS = 4;

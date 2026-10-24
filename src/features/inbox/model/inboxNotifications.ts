@@ -1,4 +1,4 @@
-import type { InboxItem, InboxProvider } from "./githubTasks";
+import type { InboxItem, InboxProvider } from "../../../contracts/session";
 import { inboxNotificationProject } from "../../notifications/model/notificationProjects";
 import type { NotificationSubject } from "../../notifications/model/notificationPreferences";
 

@@ -1,37 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronRight } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import {
-  DEFAULT_RUNTIME_MODE,
-  HARNESS_TITLE,
-  RUNTIME_MODES,
-  RUNTIME_MODE_LABEL,
-} from "../features/sessions/model/session";
+import { DEFAULT_RUNTIME_MODE, RUNTIME_MODES } from "../contracts/session";
+import { RUNTIME_MODE_LABEL } from "../contracts/session";
+import { HARNESS_TITLE } from "../contracts/session";
 import { RuntimeModeIcon } from "../features/sessions/ui/RuntimeModeIcon";
-import type {
-  HostModelCatalog,
-  HostProviderAccounts,
-} from "../features/connections/model/protocol";
+import type { HostModelCatalog, HostProviderAccounts } from "../contracts/protocol";
 import { MobileSettingsIcon as SettingsIcon } from "./MobileSettingsIcon";
 import { MobileSelect } from "./MobileSelect";
 import { SHEET_WIDTH } from "./MobileSheet";
-import {
-  configurationLabels,
-  MobileModelControls,
-  type MobileConfiguration,
-} from "./MobileModelControls";
-import {
-  accountChoices,
-  configurationForAgent,
-  confirmLegacyAccounts,
-  defaultConfiguration,
-  loadMobileAgentDefaults,
-  saveMobileAgentDefaults,
-  withDefaultAccount,
-  withDefaultConfiguration,
-  type MobileAgentDefaults as Defaults,
-  type MobileDefaultsHost,
-} from "./agentDefaults";
+import { configurationLabels, MobileModelControls, type MobileConfiguration } from "./MobileModelControls";
+import { accountChoices, configurationForAgent, confirmLegacyAccounts, defaultConfiguration, loadMobileAgentDefaults, saveMobileAgentDefaults, withDefaultAccount, withDefaultConfiguration, type MobileAgentDefaults as Defaults, type MobileDefaultsHost } from "./agentDefaults";
 import type { MobilePreferencePanel } from "./mobileSettingsRoutes";
 import type { MobileClient } from "./client";
 import { MobileAgentDefaultsStatus } from "./MobileAgentDefaultsStatus";

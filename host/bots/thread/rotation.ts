@@ -1,5 +1,5 @@
 import type { BotMessage } from "../../../src/features/bots/model/botView";
-import type { Session } from "../../../src/features/sessions/model/session";
+import type { Session } from "../../../src/contracts/session";
 
 /**
  * The public chat never ends, but the brain's provider context does. Every turn

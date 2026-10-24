@@ -1,8 +1,4 @@
-import {
-  forEachDiagnostic,
-  setDiagnosticsEffect,
-  type Diagnostic,
-} from "@codemirror/lint";
+import { forEachDiagnostic, setDiagnosticsEffect, type Diagnostic } from "@codemirror/lint";
 import type { EditorState, Extension } from "@codemirror/state";
 import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 import { Scrollbar } from "../../../../shared/ui/Scrollbar";

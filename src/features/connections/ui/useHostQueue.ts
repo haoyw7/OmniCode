@@ -1,9 +1,5 @@
 import { useCallback, useMemo } from "react";
-import type {
-  CommandReceipt,
-  HostCommand,
-  HostSession,
-} from "../model/protocol";
+import type { CommandReceipt, HostCommand, HostSession } from "../../../contracts/protocol";
 
 type QueueCommand = Extract<HostCommand, { type: "queue" }>;
 // Shared so an empty queue keeps one identity across renders.

@@ -2,7 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { MessageQueue } from "./MessageQueue";
+import { MessageQueue } from "../../../shared/ui/messaging/MessageQueue";
 import { setUiLanguage } from "../../../shared/i18n/language";
 
 vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

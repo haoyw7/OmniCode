@@ -1,22 +1,17 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from "vitest";
-import {
-  pendingRemoteCommand,
-  pendingRemoteFollowup,
-  savePendingRemoteCommand,
-  remotePendingExecutionCwd,
-  rememberRemotePendingExecutionCwd,
-} from "./connections";
-import { loadRemoteOutbox } from "./remoteOutbox";
-import type { HostCommand } from "./protocol";
+import { pendingRemoteCommand, pendingRemoteFollowup, savePendingRemoteCommand, remotePendingExecutionCwd, rememberRemotePendingExecutionCwd, dispatchRemoteCommand, remoteSessionFor } from "./connections";
+import { loadRemoteOutbox } from "../../../platform/tauri/remoteOutbox";
+import type { HostCommand } from "../../../contracts/protocol";
 
-const native = vi.hoisted(() => ({ rows: new Map<string, string>(), fail: false }));
+const native = vi.hoisted(() => ({ rows: new Map<string, string>(), fail: false, dispatch: vi.fn() }));
 vi.mock("@tauri-apps/api/event", () => ({
   emit: vi.fn(async () => undefined),
   listen: vi.fn(async () => () => undefined),
 }));
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async (command: string, args: { key: string; entry: string; keys: string[] }) => {
+    if (command === "remote_request") return native.dispatch(args);
     if (command === "remote_outbox_list") return [...native.rows];
     if (native.fail) throw new Error("disk full");
     if (command === "remote_outbox_put") native.rows.set(args.key, args.entry);
@@ -28,6 +23,7 @@ beforeEach(async () => {
   localStorage.clear();
   native.rows.clear();
   native.fail = false;
+  native.dispatch.mockReset();
   await loadRemoteOutbox();
 });
 const create: HostCommand = {
@@ -44,6 +40,29 @@ const followup: HostCommand = {
   sessionId: "",
   text: "First message",
 };
+
+it("binds a created conversation before a lost first-message receipt and preserves that command", async () => {
+  native.dispatch.mockImplementation(async ({ params }: { params: HostCommand }) => {
+    if (params.type === "send") throw new Error("connection lost");
+    return { commandId: params.commandId, sessionId: "created", revision: 1 };
+  });
+  await expect(dispatchRemoteCommand("machine", "project", "env", create, "shell", followup)).rejects.toThrow("connection lost");
+  expect(remoteSessionFor("shell")).toBe("created");
+  expect(pendingRemoteCommand("project", "env", "created", "shell")).toEqual({ ...followup, sessionId: "created" });
+  expect(native.rows.size).toBe(1);
+});
+
+it("journals a deferred first message and clears an unsupported command instead of replaying forever", async () => {
+  native.dispatch.mockResolvedValueOnce({ commandId: create.commandId, sessionId: "created", revision: 1 });
+  await dispatchRemoteCommand("machine", "project", "env", create, "shell", followup, { deferFollowup: true });
+  expect(native.dispatch).toHaveBeenCalledTimes(1);
+  const saved = pendingRemoteCommand("project", "env", "created", "shell")!;
+  expect(saved).toEqual({ ...followup, sessionId: "created" });
+  native.dispatch.mockRejectedValueOnce(new Error("Host rejected request: Unsupported command"));
+  await expect(dispatchRemoteCommand("machine", "project", "env", saved, "shell")).rejects.toThrow("Unsupported command");
+  expect(pendingRemoteCommand("project", "env", "created", "shell")).toBeUndefined();
+  expect(native.rows.size).toBe(0);
+});
 
 it("migrates an old pending create without losing its execution directory", async () => {
   const key = `omnicode.remote-command.v1:${JSON.stringify(["project", "env"])}:create-1`;

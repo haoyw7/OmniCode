@@ -43,10 +43,7 @@ import type {
   BotAction,
   BotPermission,
 } from "../../../src/features/bots/model/botView";
-import type {
-  HostCommand,
-  HostSession,
-} from "../../../src/features/connections/model/protocol";
+import type { HostCommand, HostSession } from "../../../src/contracts/protocol";
 
 import { BOT_ACTIONS } from "../../../src/features/bots/model/botActions";
 export { BOT_ACTIONS } from "../../../src/features/bots/model/botActions";

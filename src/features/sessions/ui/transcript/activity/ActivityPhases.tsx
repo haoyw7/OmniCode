@@ -2,53 +2,24 @@ import { DisclosureChevron } from "../../../../../shared/ui/DisclosureChevron";
 import { animate, motion, useMotionValue } from "motion/react";
 import { duration, msgTransition, immediateTransition } from "../../../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../../../shared/motion/useMotionPreference";
-import { agentTranscript } from "../../../model/agentTranscript";
+import { agentTranscript } from "../../../../../domain/agentTranscript";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { ChevronRight } from "../../../../../shared/ui/icons";
-import {
-  memo,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { memo, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { useSurfaceVisibility } from "../../../../../shared/ui/SurfaceVisibility";
-import type { ApprovalDecision } from "../../../../../integrations/harness";
-import { TranscriptPlatformContext } from "../../TranscriptPlatform";
+import type { ApprovalDecision } from "../../../../../contracts/harness";
+import { TranscriptPlatformContext } from "../../../../../shared/ui/markdown/TranscriptPlatform";
 import { useLivePhaseScroll } from "../useLivePhaseScroll";
 import { Shimmer } from "../../../../../shared/ui/Shimmer";
-import { type Block } from "../../../model/session";
-import { AgentMarkdown } from "../../AgentMarkdown";
-import {
-  activityPhaseTitle,
-  buildActivityPhases,
-  isSubagentBlock,
-  isThinkingBlock,
-  isProseBlock,
-  needsApproval,
-  subagentBrief,
-  subagentModelName,
-  subagentName,
-  subagentReport,
-  toolCallState,
-  workDiffStats,
-  type ActivityPhase,
-} from "../../../model/transcriptActivity";
+import { type Block } from "../../../../../contracts/session";
+import { AgentMarkdown } from "../../../../../shared/ui/markdown/AgentMarkdown";
+import { activityPhaseTitle, buildActivityPhases, isSubagentBlock, isThinkingBlock, isProseBlock, needsApproval, subagentBrief, subagentModelName, subagentName, subagentReport, toolCallState, workDiffStats, type ActivityPhase } from "../../../model/transcriptActivity";
 import { omniCodeWorkSummary } from "../../../model/omnicodeToolCall";
 import { ActivityPhaseIcon } from "./ActivityPhaseIcon";
 import { OmniCodeMark } from "../ToolCall";
 import { SubagentMascot, subagentStatusLine } from "./SubagentMascot";
-import {
-  ActivityInterjectionRow,
-  ActivityNoteRow,
-  ActivityStatusRow,
-  ActivityThinkingRow,
-  ActivityToolRow,
-} from "./ActivityRows";
+import { ActivityInterjectionRow, ActivityNoteRow, ActivityStatusRow, ActivityThinkingRow, ActivityToolRow } from "./ActivityRows";
 
 
 /*

@@ -1,17 +1,10 @@
-import { getVersion } from "@tauri-apps/api/app";
-import { invoke } from "@tauri-apps/api/core";
-import { ask, message } from "@tauri-apps/plugin-dialog";
-import { relaunch } from "@tauri-apps/plugin-process";
-import {
-  check,
-  type DownloadEvent,
-  type Update,
-} from "@tauri-apps/plugin-updater";
+import { confirmNativeAction, showNativeMessage } from "../../platform/tauri/dialogs";
+import { nativeAppVersion, relaunchDesktopApp, checkDesktopUpdate, type DesktopDownloadEvent, type DesktopUpdate } from "../../platform/tauri/updater";
 import { announceUpdateAvailable } from "../../features/settings/model/sounds";
 import { rememberInstalledUpdate } from "./updateNotice";
 import { formatBuildVersion } from "../../shared/lib/buildVersion";
 import { loadUpdatePreferences } from "./updatePreferences";
-import { localizedReleaseNotes } from "./releaseNotes";
+import { localizedReleaseNotes } from "../../shared/lib/releaseNotes";
 
 export type UpdaterPhase =
   "idle" | "checking" | "current" | "available" | "downloading" | "error";
@@ -26,7 +19,7 @@ export type UpdaterSnapshot = {
   error?: string;
 };
 
-let pendingUpdate: Update | null = null;
+let pendingUpdate: DesktopUpdate | null = null;
 
 type ManualUpdatePresenter = (snapshot: UpdaterSnapshot) => void;
 let manualUpdatePresenter: ManualUpdatePresenter | null = null;
@@ -47,14 +40,14 @@ function isUpdaterNotConfiguredError(error: unknown): boolean {
 
 export async function readAppVersion(): Promise<string> {
   try {
-    return await getVersion();
+    return await nativeAppVersion();
   } catch {
     return "0.0.0";
   }
 }
 
-export async function probeForUpdate(): Promise<Update | null> {
-  const update = await check();
+export async function probeForUpdate(): Promise<DesktopUpdate | null> {
+  const update = await checkDesktopUpdate();
   if (update && loadUpdatePreferences().skippedVersion === update.version) {
     pendingUpdate = null;
     return null;
@@ -73,13 +66,13 @@ export async function runUpdateFlow(
   onProgress?.(base);
 
   try {
-    const update = await check();
+    const update = await checkDesktopUpdate();
     if (!update) {
       pendingUpdate = null;
       const current: UpdaterSnapshot = { phase: "current", currentVersion };
       onProgress?.(current);
       if (manual) {
-        await message("You're on the latest version.", { title: "OmniCode" });
+        await showNativeMessage("You're on the latest version.", { title: "OmniCode" });
       }
       return current;
     }
@@ -105,7 +98,7 @@ export async function runUpdateFlow(
       ? localizedReleaseNotes(update.body.trim())
       : "";
     const detail = notes ? `\n\n${notes}` : "";
-    const yes = await ask(
+    const yes = await confirmNativeAction(
       `OmniCode ${formatBuildVersion(update.version)} is available (you have ${formatBuildVersion(currentVersion)}).${detail}\n\nInstall now?`,
       { title: "Update available", kind: "info" },
     );
@@ -118,7 +111,7 @@ export async function runUpdateFlow(
       const idle: UpdaterSnapshot = { phase: "idle", currentVersion };
       onProgress?.(idle);
       if (manual) {
-        await message(
+        await showNativeMessage(
           "Automatic updates aren't configured for this build.\n\nDownload releases at https://github.com/haoyw7/OmniCode/releases/latest",
           { title: "OmniCode" },
         );
@@ -130,7 +123,7 @@ export async function runUpdateFlow(
     const failed: UpdaterSnapshot = { phase: "error", currentVersion, error };
     onProgress?.(failed);
     if (manual) {
-      await message(`Couldn't check for updates.\n\n${error}`, {
+      await showNativeMessage(`Couldn't check for updates.\n\n${error}`, {
         title: "OmniCode",
       });
     }
@@ -163,7 +156,7 @@ export async function installPendingUpdate(
   onProgress?.(downloading);
 
   try {
-    await update.download((event: DownloadEvent) => {
+    await update.download((event: DesktopDownloadEvent) => {
       if (event.event === "Started") {
         contentLength = event.data.contentLength ?? 0;
         downloaded = 0;
@@ -181,13 +174,11 @@ export async function installPendingUpdate(
         progress,
       });
     });
-    // Windows cannot replace the shared Host's executables while it runs.
-    await invoke("prepare_update_install");
     await update.install();
 
     rememberInstalledUpdate(update.version);
     pendingUpdate = null;
-    await relaunch();
+    await relaunchDesktopApp();
     return {
       phase: "current",
       currentVersion: update.version,
@@ -201,7 +192,7 @@ export async function installPendingUpdate(
       error,
     };
     onProgress?.(failed);
-    await message(`Couldn't install the update.\n\n${error}`, {
+    await showNativeMessage(`Couldn't install the update.\n\n${error}`, {
       title: "OmniCode",
     });
     return failed;

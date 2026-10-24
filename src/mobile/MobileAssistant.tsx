@@ -2,60 +2,24 @@ import { Button } from "../shared/ui/forms/Button";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { lightImpact, attentionHaptic } from "./haptics";
 import { useTranscriptHaptics } from "./useTranscriptHaptics";
-import type { BotFeedbackProps as AssistantFeedbackProps } from "../features/bots/ui/BotChatChrome";
-import type { Block } from "../features/sessions/model/session";
+import type { BotFeedbackProps as AssistantFeedbackProps, BotChatChrome as AssistantChatChrome, BotComposerProps as AssistantComposerProps, BotControlsProps as AssistantControlsProps, BotHeaderProps as AssistantHeaderProps, BotMemoryDetailProps as AssistantMemoryDetailProps, BotMessageMenuProps as AssistantMessageMenuProps, BotSelectProps as AssistantSelectProps, BotSettingsPanelProps as AssistantSettingsPanelProps, BotTimelineProps } from "../features/bots/ui/BotChatChrome";
+import type { Block } from "../contracts/session";
 import { MobileSpinner } from "./MobileSpinner";
-import { AttachmentList } from "../features/sessions/ui/AttachmentList";
+import { AttachmentList } from "../shared/ui/attachments/AttachmentList";
 import { BotAttachmentPreview as AssistantAttachmentPreview } from "../features/bots/ui/BotAttachmentPreview";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ComponentProps,
-  type Ref,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type Ref, type ReactNode } from "react";
 import { BotChat as AssistantChat } from "../features/bots/ui/BotChat";
-import { TranscriptPlatformContext } from "../features/sessions/ui/TranscriptPlatform";
+import { TranscriptPlatformContext } from "../shared/ui/markdown/TranscriptPlatform";
 import { mobileTranscriptPlatform } from "./transcriptPlatform";
-import type {
-  BotChatChrome as AssistantChatChrome,
-  BotComposerProps as AssistantComposerProps,
-  BotControlsProps as AssistantControlsProps,
-  BotHeaderProps as AssistantHeaderProps,
-  BotMemoryDetailProps as AssistantMemoryDetailProps,
-  BotMessageMenuProps as AssistantMessageMenuProps,
-  BotSelectProps as AssistantSelectProps,
-  BotSettingsPanelProps as AssistantSettingsPanelProps,
-  BotTimelineProps,
-} from "../features/bots/ui/BotChatChrome";
+
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
 import { Shimmer } from "../shared/ui/Shimmer";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
-import {
-  ArrowLeft,
-  ArrowUp,
-  Check,
-  ChevronRight,
-  Copy,
-  CornerDownRight,
-  MoreHorizontal,
-  Pause,
-  Play,
-  Plus,
-  Settings,
-  Square,
-  X,
-} from "../shared/ui/icons";
+import { ArrowLeft, ArrowUp, Check, ChevronRight, Copy, CornerDownRight, MoreHorizontal, Pause, Play, Plus, Settings, Square, X } from "../shared/ui/icons";
 import { MobileSheet, SHEET_WIDTH } from "./MobileSheet";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
-import { HARNESS_TITLE } from "../features/sessions/model/session";
+import { HarnessIcon } from "../shared/ui/HarnessIcon";
+import { HARNESS_TITLE } from "../contracts/session";
 import { preserveInputFocus, usePreserveInputFocusOnTouch } from "./inputFocus";
 import { useMobileTextareaAutosize } from "./useMobileTextareaAutosize";
 import { keyboardHeight, keyboardMotionRemaining, onKeyboardMotion } from "./keyboardMotion";

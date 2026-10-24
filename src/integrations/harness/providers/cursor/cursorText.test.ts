@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { HarnessEvent } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
 
 const sent: string[] = [];
 let onLine: ((line: string) => void) | undefined;

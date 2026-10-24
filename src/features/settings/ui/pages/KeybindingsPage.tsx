@@ -1,30 +1,12 @@
 import { usePreferenceState } from "../../model/usePreferenceState";
-import { invoke } from "@tauri-apps/api/core";
+import { setNativeKeybindings } from "../../../../platform/tauri/appShell";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { RotateCcw, Search } from "../../../../shared/ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IS_MAC } from "../../../../platform/tauri/platform";
-import {
-  filterKeybindings,
-  currentKeybindings,
-  loadKeybindingOverrides,
-  loadQuickComposerEnabled,
-  loadQuickComposerShortcut,
-  saveKeybindingOverride,
-  validateKeybindingShortcut,
-  saveQuickComposerEnabled,
-  saveQuickComposerShortcut,
-  subscribeKeybindings,
-  type KeybindingOverride,
-} from "../../model/settings";
+import { filterKeybindings, currentKeybindings, loadKeybindingOverrides, loadQuickComposerEnabled, loadQuickComposerShortcut, saveKeybindingOverride, validateKeybindingShortcut, saveQuickComposerEnabled, saveQuickComposerShortcut, subscribeKeybindings, type KeybindingOverride } from "../../model/settings";
 import { setQuickComposerShortcut } from "../../../quick-composer/model/quickComposer";
-import {
-  isGlobalShortcut,
-  QUICK_COMPOSER_DEFAULT_SHORTCUT,
-  quickComposerShortcutLabel,
-  quickComposerShortcutPreview,
-  shortcutFromKeyEvent,
-} from "../../../quick-composer/model/quickComposerShortcut";
+import { isGlobalShortcut, QUICK_COMPOSER_DEFAULT_SHORTCUT, quickComposerShortcutLabel, quickComposerShortcutPreview, shortcutFromKeyEvent } from "../../../quick-composer/model/quickComposerShortcut";
 import { Group } from "../settingsLayout";
 
 
@@ -300,7 +282,7 @@ export function KeybindingsPage() {
 
   const save = async (command: string, override: KeybindingOverride) => {
     const next = saveKeybindingOverride(command, override);
-    if (IS_MAC) await invoke("keybindings_set_overrides", { overrides: next });
+    if (IS_MAC) await setNativeKeybindings(next);
   };
 
   return (

@@ -1,28 +1,14 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { MENU_BAR_HEIGHT } from "../../../app/shell/MenuBar";
 import { WINDOW_DRAG_BAR_HEIGHT } from "../../../app/shell/WindowChrome";
 import { windowDragRegion } from "../../../app/shell/startWindowDrag";
-import {
-  gitHistory,
-  subscribeGitChanged,
-  type GitHistoryCommit,
-} from "../../../platform/tauri/fs";
+import { gitHistory, subscribeGitChanged, type GitHistoryCommit } from "../../../platform/tauri/fs";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { prettyCwd } from "../../../shared/lib/paths";
 import { IS_MAC } from "../../../platform/tauri/platform";
 import { FolderTree, GitBranch, RefreshCw } from "../../../shared/ui/icons";
-import {
-  loadMenuBarVisible,
-  subscribeMenuBarVisible,
-} from "../../settings/model/settings";
-import { AppViewDialog } from "../../workspace/ui/AppViewDialog";
+import { loadMenuBarVisible, subscribeMenuBarVisible } from "../../settings/model/settings";
+import { AppViewDialog } from "../../../shared/ui/messaging/AppViewDialog";
 import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
 import { historyItemGraph, layoutGitGraph } from "../model/gitGraph";
 import "./GitGraphDialog.css";

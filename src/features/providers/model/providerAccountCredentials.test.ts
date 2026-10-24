@@ -113,12 +113,6 @@ it("discards identities returned after the shared Host changes", async () => {
   expect(await pending).toBeNull();
 });
 
-it("keeps native desktop imports on their local identity source", async () => {
-  vi.mocked(invoke).mockResolvedValue({ email: "native@example.test" });
-  expect(await readProviderAccountIdentity("codex", "default", "local")).toEqual({ email: "native@example.test" });
-  expect(invoke).toHaveBeenCalledWith("provider_account_identity", { provider: "codex", accountId: "default" });
-});
-
 it("boots from the verified Host cache while offline and retries only reads on reconnect", async () => {
   await loadSharedProviderDefaults();
   const live = vi.mocked(invoke).getMockImplementation()!;

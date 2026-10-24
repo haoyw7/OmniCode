@@ -1,9 +1,5 @@
 import { uiScaleCommand } from "./uiScale";
-import {
-  keybindingPressed,
-  matchCustomKeybinding,
-  type ShortcutEvent,
-} from "./settings";
+import { keybindingPressed, matchCustomKeybinding, type ShortcutEvent } from "./settings";
 
 export type ZoomAction = "zoom-in" | "zoom-out" | "zoom-reset";
 

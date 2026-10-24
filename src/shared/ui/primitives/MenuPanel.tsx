@@ -1,20 +1,7 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { LAYER } from "../../lib/layers";
 import { Popover } from "../Popover";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../SurfaceVisibility";
 
 type Props = ComponentProps<typeof Popover> & {
   appearance?: "composer";

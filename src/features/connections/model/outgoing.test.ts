@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { HostSession } from "./protocol";
+import type { HostSession } from "../../../contracts/protocol";
 import { outgoingPlacement, withOutgoing } from "./outgoing";
 
 function snapshot(overrides: Partial<HostSession> = {}, session: Partial<HostSession["session"]> = {}): HostSession {

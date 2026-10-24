@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
-import type { HostSessionSummary } from "../features/connections/model/protocol";
+import type { HostSessionSummary } from "../contracts/protocol";
 import { setUiLanguage } from "../shared/i18n/language";
-import { HARNESS_ICONS } from "../features/sessions/ui/HarnessIcon";
+import { HARNESS_ICONS } from "../shared/ui/HarnessIcon";
 import { notificationText } from "./notificationText";
 import { mobileNotificationTexts, showBrowserActivityNotification, showBrowserAssistantNotification } from "./notifications";
 

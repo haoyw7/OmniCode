@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { translate } from "../../../shared/i18n/language";
-import { localizeOrchestrationMessage } from "./orchestrationMessages";
+import { localizeOrchestrationMessage } from "../model/orchestrationMessages";
 const t = (text: string, values?: Record<string, string | number>) =>
   translate(text, values, "zh-CN");
 it("localizes Host conflicts while keeping unknown provider error values", () => {

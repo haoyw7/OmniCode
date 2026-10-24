@@ -15,10 +15,7 @@ import { homedir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { configuredProviderAccountHomes } from "../provider-accounts";
-import type {
-  NativeSessionFile,
-  NativeSessionProvider,
-} from "../../src/integrations/harness/core/nativeSessions";
+import type { NativeSessionFile, NativeSessionProvider } from "../../src/contracts/session";
 
 /**
  * Host port of the desktop's `src-tauri/src/native_sessions.rs` listing: the

@@ -1,3 +1,4 @@
+import type { NativeCommand } from "../src/contracts/nativeCommands";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   mkdtempSync,
@@ -10,7 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { discoverHostSkills, HostSkills, skillMetadata } from "./skills";
 import type { HostProvider } from "./providers";
-import type { NativeCommand } from "../src/integrations/harness/core/nativeCommands";
+
 
 const cleanups: Array<() => void> = [];
 afterEach(() => {

@@ -1,11 +1,5 @@
 import ts from "typescript";
-import {
-  innermost,
-  issuesSince,
-  locOf,
-  openRegion,
-  type TraceState,
-} from "./causality-order-state.js";
+import { innermost, issuesSince, locOf, openRegion, type TraceState } from "./causality-order-state.js";
 import { barrier, recordControl, settlesAt } from "./causality-order-settle.js";
 import { strandMark } from "./causality-order-strands.js";
 

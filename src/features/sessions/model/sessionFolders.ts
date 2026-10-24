@@ -2,7 +2,7 @@ import { preferenceStorage } from "../../settings/model/sharedPreferences";
 import { isHexColor } from "../../../shared/lib/colorUtils";
 import { compareSessionSummaries } from "../data/sessionHistory";
 import type { SessionSummary } from "../data/sessionStore";
-import { normalizeProjectPath } from "../../projects/model/recents";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
 import { orderByIds } from "../../../shared/lib/reorder";
 import { TAB_GROUP_COLORS } from "../../workspace/model/tabGroups";
 

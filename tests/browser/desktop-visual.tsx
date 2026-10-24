@@ -1,3 +1,4 @@
+import { TranscriptServices } from "../../src/app/ui/TranscriptServices";
 import { Radio } from "../../src/shared/ui/forms/Radio";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../src/shared/ui/forms/Select";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../../src/shared/ui/primitives/DropdownMenu";
@@ -16,7 +17,7 @@ import { ProjectsPage } from "../../src/features/projects/ui/ProjectsPage";
 import { PaneTree } from "../../src/features/workspace/ui/PaneTree";
 import { TranscriptPool, TranscriptPoolOutlet } from "../../src/features/sessions/ui/TranscriptPool";
 import { stashComposerAttachments } from "../../src/features/sessions/model/draftCache";
-import { newSession, type Attachment, type Block, type Session } from "../../src/features/sessions/model/session";
+import { newSession, type Attachment, type Block, type Session } from "../../src/contracts/session";
 import type { DesktopMode } from "../../src/app/model/desktopMode";
 import type { SessionSummary } from "../../src/features/sessions/data/sessionStore";
 import { SurfaceVisibilityContext } from "../../src/shared/ui/SurfaceVisibility";
@@ -227,6 +228,6 @@ if (query.get("page") === "workspace") {
     stashComposerAttachments("fixture-code", [attachment], new Set());
   }
 }
-createRoot(document.getElementById("root")!).render(query.get("page") === "workspace" ? <DesktopWorkspaceFixture /> : query.get("page") === "settings"
+createRoot(document.getElementById("root")!).render(<TranscriptServices>{query.get("page") === "workspace" ? <DesktopWorkspaceFixture /> : query.get("page") === "settings"
  ? <PresenceBoundary><AppViewDialog title="Settings" onClose={noop}><SettingsView section={(query.get("section") ?? "appearance") as never} cwd="" sessions={[]} onClose={noop} onOpenSession={noop} onArchiveSession={noop} onDeleteSession={noop} onOpenWhatsNew={noop} /></AppViewDialog></PresenceBoundary>
- : <Gallery />);
+ : <Gallery />}</TranscriptServices>);

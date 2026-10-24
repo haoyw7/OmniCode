@@ -1,12 +1,5 @@
-import {
-  Fragment,
-  type ReactNode,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
-import { formatMobileRelativeTime } from "../../../mobile/relativeTime";
+import { Fragment, type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { formatRelativeTime } from "../../../shared/lib/relativeTime";
 import { gitHistory, type GitHistoryCommit } from "../../../platform/tauri/fs";
 import { LAYER } from "../../../shared/lib/layers";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -438,7 +431,7 @@ export function ReviewSourceSelect({
                 >
                   <span data-code-label className="min-w-0 truncate">{commit.subject}</span>
                   <span className="shrink-0 text-ui-caption text-foreground-subtle">
-                    {formatMobileRelativeTime(commit.timestamp * 1000)}
+                    {formatRelativeTime(commit.timestamp * 1000)}
                   </span>
                   <span className="ml-auto grid size-4 shrink-0 place-items-center">
                     {selected ? (

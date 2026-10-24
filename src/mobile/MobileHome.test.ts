@@ -1,12 +1,10 @@
 import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motionTestClock";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  HostProject,
-  HostSessionSummary,
-} from "../features/connections/model/protocol";
+import type { HostProject, HostSessionSummary } from "../contracts/protocol";
 import { setUiLanguage } from "../shared/i18n/language";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
 import { MobileHome } from "./MobileHome";

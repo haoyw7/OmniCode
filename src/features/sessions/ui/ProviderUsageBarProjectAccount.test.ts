@@ -4,22 +4,12 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import type { ProviderRateLimits } from "../../providers/model/rateLimits";
-import {
-  clearCachedRateLimits,
-  setCachedRateLimits,
-} from "../../providers/model/rateLimitsCache";
-import {
-  DEFAULT_PROVIDER_ACCOUNT_ID,
-  renameProviderAccount,
-  saveProviderAccount,
-  selectedProviderAccountId,
-} from "../../providers/model/providerAccounts";
-import {
-  newSession,
-  retargetSessionToProject,
-  type Session,
-} from "../model/session";
+import type { ProviderRateLimits, Session } from "../../../contracts/session";
+import { clearCachedRateLimits, setCachedRateLimits } from "../../providers/model/rateLimitsCache";
+import { DEFAULT_PROVIDER_ACCOUNT_ID } from "../../../domain/providerAccount";
+import { renameProviderAccount, saveProviderAccount, selectedProviderAccountId } from "../../providers/model/providerAccounts";
+import { newSession, retargetSessionToProject } from "../model/session";
+
 import { ProviderUsageBar } from "./ProviderUsageBar";
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 

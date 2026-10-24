@@ -1,25 +1,10 @@
 import ts from "typescript";
 import type { ScriptLoc, WorkflowProgram } from "../compiler/compile.js";
-import {
-  findWorkflowBody,
-  type IterationCandidate,
-  type PhaseMarkerSite,
-  type SiteTable,
-} from "./sites.js";
+import { findWorkflowBody, type IterationCandidate, type PhaseMarkerSite, type SiteTable } from "./sites.js";
 import type { ApplicationVia } from "./state.js";
 import { UNPHASED_ID, type JumpKind, type TraceRegionKind } from "./constants.js";
-import type {
-  ControlFact,
-  OrderEvent,
-  OrderOracle,
-  OrderRegion,
-  PhaseInfo,
-} from "./causality-order-types.js";
-import {
-  asScriptFunction,
-  collectRecursiveFunctions,
-  type ScriptFunction,
-} from "./causality-order-functions.js";
+import type { ControlFact, OrderEvent, OrderOracle, OrderRegion, PhaseInfo } from "./causality-order-types.js";
+import { asScriptFunction, collectRecursiveFunctions, type ScriptFunction } from "./causality-order-functions.js";
 import { innermostOpenStrand, type Frame, type StrandRecord } from "./causality-order-strands.js";
 
 // causality-order.ts 顶到 oxlint max-lines 上限（400 行），把 traceOrder 原本以

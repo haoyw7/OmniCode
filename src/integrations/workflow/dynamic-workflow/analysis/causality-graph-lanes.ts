@@ -1,13 +1,5 @@
 import { KIND_RANK } from "./causality-reduce.js";
-import {
-  UNKNOWN_LANE,
-  WORKSPACE_LANE,
-  type CausalityGraph,
-  type Certainty,
-  type Fact,
-  type OrderEdge,
-  type Step,
-} from "./causality-graph-types.js";
+import { UNKNOWN_LANE, WORKSPACE_LANE, type CausalityGraph, type Certainty, type Fact, type OrderEdge, type Step } from "./causality-graph-types.js";
 
 // causality-graph.ts 顶到 oxlint max-lines 上限（400 行），把成品图上的机械改写与
 // 事实层的小工具（may-set 车道展开 expandMaySetLanes 及其两个常量、dedupeFacts、weakest）拆到

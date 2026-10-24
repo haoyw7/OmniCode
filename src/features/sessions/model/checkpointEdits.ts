@@ -1,6 +1,6 @@
-import { isEditTool } from "../../../integrations/harness/core/preview";
+import { isEditTool } from "../../../domain/preview";
 import { CONTINUE_PROMPT } from "./inFlight";
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 
 /** Successful edits from the latest turn and its interrupted continuations. */
 export function sessionEditPaths(blocks: readonly Block[]): string[] {

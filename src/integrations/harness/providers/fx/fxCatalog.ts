@@ -1,11 +1,7 @@
 import { homeDir } from "../../../../platform/tauri/fs";
-import { setHarnessModels } from "../../../../features/sessions/model/models";
+import { setHarnessModels } from "../../core/modelCatalog";
 import { execChild, resolveFxBinary } from "../../core/child";
-import {
-  mergeFxCatalogModels,
-  modelFromFxStatusOutput,
-  modelsFromFxOutput,
-} from "./fxProtocol";
+import { mergeFxCatalogModels, modelFromFxStatusOutput, modelsFromFxOutput } from "./fxProtocol";
 
 let inflight: Promise<void> | null = null;
 

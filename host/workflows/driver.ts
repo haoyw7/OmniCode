@@ -24,8 +24,8 @@ import {
   type WorkflowReportSink,
   type WorldReadOp,
 } from "../../src/integrations/workflow/dynamic-workflow/index.js";
-import type { ControlOutcome } from "../../src/features/orchestration/model/orchestrationRuntime";
-import type { WorkflowAgentRuntime } from "../../src/integrations/workflow/createWorkflow.js";
+import type { ControlOutcome } from "../../src/domain/orchestrationRuntime";
+import type { WorkflowAgentRuntime } from "../../src/contracts/workflow";
 import type { WorkflowResolvedRuntime } from "../../src/integrations/workflow/modelConfig.js";
 import { executeArtifactPublish } from "./artifact-publish.js";
 import { executeWorldRead } from "./world-read.js";

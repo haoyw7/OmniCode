@@ -8,21 +8,13 @@ vi.mock("motion/react", async (importOriginal) => {
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  loadNotificationPreferences,
-  updateNotificationPreferences,
-} from "../../notifications/model/notificationPreferences";
+import { loadNotificationPreferences, updateNotificationPreferences } from "../../notifications/model/notificationPreferences";
 import { rememberNotificationProjects } from "../../notifications/model/notificationProjects";
 import { ActivityBar } from "../../../app/shell/ActivityBar";
 import { invoke } from "@tauri-apps/api/core";
-import { inboxItemKey, listInboxItems, type InboxItem } from "../model/githubTasks";
-import {
-  clearKnownInboxItems,
-  isInboxEntryUnseen,
-  markInboxItemsSeen,
-  rememberInboxItems,
-  seedInboxSeenIfNeeded,
-} from "../model/inboxSeen";
+import { inboxItemKey, listInboxItems } from "../model/githubTasks";
+import { type InboxItem } from "../../../contracts/session";
+import { clearKnownInboxItems, isInboxEntryUnseen, markInboxItemsSeen, rememberInboxItems, seedInboxSeenIfNeeded } from "../model/inboxSeen";
 import { useInboxActivity } from "../hooks/useInboxUnseen";
 
 vi.mock("../model/githubTasks", async (importOriginal) => ({

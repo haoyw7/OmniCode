@@ -1,13 +1,6 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Plus } from "../../../shared/ui/icons";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type ReactNode,
-  type MouseEvent as ReactMouseEvent,
-} from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type MouseEvent as ReactMouseEvent } from "react";
 import { isLocalProject } from "../../projects/model/recents";
 import { isValidSkillName, slugSkillName, type Skill } from "../model/skills";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";

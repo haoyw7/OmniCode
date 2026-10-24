@@ -1,262 +1,75 @@
+import { SessionPresentationContext } from "../model/sessionPresentation";
+import type { SessionPaneProps } from "../model/sessionPane";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { AnimatePresence } from "motion/react";
-import { sessionComposerConfiguration } from "../model/composerConfiguration";
-import { SessionWorktreeIcon } from "./SessionWorktreeIcon";
+import { sessionComposerConfiguration } from "../../../domain/composerConfiguration";
+import { SessionWorktreeIcon } from "../../../shared/ui/SessionWorktreeIcon";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { GripVertical, X } from "../../../shared/ui/icons";
 import { JumpToBottomButton } from "../../../shared/ui/messaging/JumpToBottomButton";
-import {
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type CSSProperties,
-  type ReactNode,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { memo, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { useNativeSessionAccess } from "./useNativeSessionAccess";
 import { Composer } from "./Composer";
-import { lastQueueUserMessageId } from "../model/messageQueue";
-import type { Worktree } from "../../source-control/model/worktrees";
-import {
-  orchestrationCheckoutCwd,
-  sameCheckout,
-} from "../../orchestration/model/orchestration";
-import { OrchestrationRuntimeContext } from "../../orchestration/ui/OrchestrationActions";
+import { lastQueueUserMessageId } from "../../../domain/messageQueue";
+import { orchestrationCheckoutCwd } from "../../../domain/orchestrationState";
+import { sameCheckout } from "../../../domain/orchestrationRuntime";
+import { OrchestrationRuntimeContext } from "../../orchestration/model/OrchestrationActions";
 import { DiscussionEmpty } from "./DiscussionEmpty";
-import { LinkedWorkItemUpdateNotice } from "../../inbox/ui/LinkedWorkItemUpdateNotice";
 import { SessionReview } from "./SessionReview";
 import { PromptOutline } from "./PromptOutline";
-import {
-  canCompactHarnessContext,
-  canStopHarnessBackgroundTask,
-  stopHarnessBackgroundTask,
-  type ApprovalDecision,
-  type UserQuestionReply,
-} from "../../../integrations/harness";
-import {
-  looksLikeProject,
-  type RecentProject,
-} from "../../projects/model/recents";
-import {
-  sessionDisplayTitle,
-  sessionDraftBlock,
-  sessionExecutionCwd,
-  type Attachment,
-  type Block,
-  type HarnessId,
-  type LinkedWorkItem,
-  type ModelTarget,
-  type PlanBuildTarget,
-  type QueuedMessage,
-  type QueueReturnPosition,
-  type RuntimeMode,
-  type Session,
-  type WorkspaceMode,
-  type ComposerTurnOptions,
-} from "../model/session";
-import { sessionHasBtwThreads, supportsBtwHarness } from "../model/btw";
+import { canCompactHarnessContext, canStopHarnessBackgroundTask, stopHarnessBackgroundTask } from "../../../integrations/harness";
+import { type ApprovalDecision } from "../../../contracts/harness";
+import { type UserQuestionReply } from "../../../contracts/session";
+import { looksLikeProject, isRemoteProjectPath } from "../../projects/model/recents";
+import { sessionDisplayTitle } from "../model/session";
+import { sessionDraftBlock, sessionExecutionCwd } from "../../../domain/session";
+import type { Block, HarnessId, PlanBuildTarget, QueuedMessage, QueueReturnPosition, QuestionAnswer } from "../../../contracts/session";
+import { sessionHasBtwThreads } from "../model/btw";
+import { supportsBtwHarness } from "../../../domain/btw";
 import { BtwSheet, useBtwConversation } from "./BtwSheet";
 import { AgentTranscript } from "./AgentTranscript";
-import { PooledTranscript, type TranscriptPool } from "./TranscriptPool";
-import { agentWaitingForWorktree } from "../../source-control/model/worktreeCreation";
+import { PooledTranscript } from "./TranscriptPool";
+import { agentWaitingForWorktree } from "../../../domain/worktreeCreation";
 import { TranscriptFind } from "./TranscriptFind";
 import { SessionStatusPanel } from "./SessionStatusPanel";
 import { hasSessionUsage, usageSessionFor } from "../../providers/model/sessionUsage";
 import { useOpenSubagent } from "./SubagentTabsContext";
 import { useProjectDiffStats } from "../../source-control/hooks/useProjectDiffStats";
 import { useProjectBranches } from "../../source-control/hooks/useProjectBranches";
-import {
-  clearTranscriptJump,
-  peekTranscriptJump,
-  subscribeTranscriptJump,
-} from "../model/transcriptJump";
+import { clearTranscriptJump, peekTranscriptJump, subscribeTranscriptJump } from "../model/transcriptJump";
 import { EmptySession } from "./EmptySession";
 import { useComposerDockMotion } from "./useComposerDockMotion";
 import { useShortcutLabel } from "../../../app/commands/useCommandShortcut";
-import {
-  acknowledgeQuoteRequest,
-  ADD_TO_CHAT_EVENT,
-  type AddToChatRequest,
-  type QuoteRequest,
-} from "../model/quoteDraft";
-import { createNote, noteTitle } from "../../notes";
-import {
-  loadNotesEnabled,
-  subscribeNotesEnabled,
-} from "../../settings/model/settings";
+import { acknowledgeQuoteRequest, ADD_TO_CHAT_EVENT, type AddToChatRequest, type QuoteRequest } from "../model/quoteDraft";
+import { createNote } from "../../notes";
+import { noteTitle } from "../../../domain/notesText";
+import { loadNotesEnabled, subscribeNotesEnabled } from "../../settings/model/settings";
 import { getComposerDraft, setComposerDraft } from "../model/draftCache";
-import { resolveModel } from "../model/models";
+import { resolveModel } from "../../../integrations/harness/core/modelCatalog";
 import { isAstraModel } from "../model/astraWelcome";
 import { isOpus55Model } from "../model/opusWelcome";
 import { AstraWelcome } from "./AstraWelcome";
 import { OpusWelcome } from "./OpusWelcome";
 import { projectKey } from "../../../shared/lib/paths";
 import { canEditLastTurn, lastTurnRecall } from "../model/editLastTurn";
-import {
-  loadProjectChatBackgroundSettings,
-  projectChatBackgroundImageRevision,
-  projectChatBackgroundRevision,
-  subscribeProjectChatBackground,
-} from "../../projects/model/projectChatBackground";
-import { useProjectBackgroundEffect } from "../../projects/ui/useProjectBackgroundEffect";
-import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
-import {
-  loadChatBackgroundPath,
-  loadNewThreadBackgroundEffect,
-  subscribeChatBackgroundPath,
-} from "../../settings/model/appearance";
+import { loadProjectChatBackgroundSettings, projectChatBackgroundImageRevision, projectChatBackgroundRevision, subscribeProjectChatBackground } from "../../projects/model/projectChatBackground";
+import { useProjectBackgroundEffect } from "../../projects/model/useProjectBackgroundEffect";
+import { GradientBlurBackground } from "../../../shared/ui/GradientBlurBackground";
+import { loadChatBackgroundPath, loadNewThreadBackgroundEffect, subscribeChatBackgroundPath } from "../../settings/model/appearance";
 import { markLinkedSessionUpdateSeen } from "../../inbox/model/linkedSessionSeen";
-import { RemoteSession } from "../../connections/ui/RemoteSession";
-import { isRemoteProjectPath } from "../../projects/model/recents";
-import { isChatFolder } from "../../projects/model/chatFolderPath";
-import {
-  latestAnswerableQuestionId,
-  questionAnswerableLater,
-  questionFollowUp,
-} from "../model/questionHistory";
-import type { QuestionAnswer } from "../model/userQuestion";
+
+import { isChatFolder } from "../../../domain/chatFolderPath";
+import { latestAnswerableQuestionId, questionAnswerableLater, questionFollowUp } from "../../../domain/questionHistory";
+
 import { QuestionHistoryForm } from "./QuestionHistoryForm";
-import {
-  IMPLEMENT_PLAN_PROMPT,
-  skipPlanDecision,
-  usePlanDecision,
-} from "../model/planDecision";
+import { IMPLEMENT_PLAN_PROMPT, skipPlanDecision, usePlanDecision } from "../model/planDecision";
 import { PlanDecision } from "./PlanPreview";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { remoteProjectFor, sessionUsesHost } from "../../connections/model/remoteProjects";
-import type { HostSession } from "../../connections/model/protocol";
 
 /** Closed question panels stay closed when the pane remounts. */
 const dismissedDockQuestions = new Set<string>();
 
-export type SessionPaneProps = {
-  clockOffsetMs?: number;
-  session: Session;
-  workspaceSwitchingSessionId?: string;
-  reviewUndoLocked?: boolean;
-  visible: boolean;
-  focused: boolean;
-  addToChatTarget?: boolean;
-  inSplit: boolean;
-  /** Replaces the split heading using the resolved local or Host session. */
-  renderHeader?: (session: Session) => ReactNode;
-  composerFocused: boolean;
-  composerFocusToken?: number;
-  recents: RecentProject[];
-  hideProjectPicker?: boolean;
-  onFocus: (sessionId: string) => void;
-  onClose: (sessionId: string) => void;
-  onCwdChange: (sessionId: string, cwd: string) => void;
-  onBranchChange: (sessionId: string) => void;
-  onWorktreeChange?: (sessionId: string, tree: Worktree) => Promise<void>;
-  onRemoteSnapshot?: (shellId: string, snapshot?: HostSession) => void;
-  onWorkspaceModeChange: (
-    sessionId: string,
-    mode: WorkspaceMode,
-    base?: string,
-  ) => void;
-  onWorktreeBaseChange: (sessionId: string, base: string) => void;
-  onManageWorktrees?: () => void;
-  onModelChange: (sessionId: string, harness: HarnessId, model: string) => void;
-  onModelSettingsChange: (
-    sessionId: string,
-    settings: Record<string, string>,
-  ) => void;
-  onRuntimeModeChange: (sessionId: string, mode: RuntimeMode) => void;
-  onSubmit: (
-    sessionId: string,
-    text: string,
-    attachments: Attachment[],
-    options?: ComposerTurnOptions,
-  ) => boolean | void;
-  onSaveDraft: (
-    sessionId: string,
-    text: string,
-    attachments: Attachment[],
-  ) => boolean | void;
-  onRemoveDraft: (sessionId: string, draftBlockId: string) => boolean | void;
-  onStop: (sessionId: string) => void;
-  onStopBackgroundTask?: (sessionId: string, taskId: string) => Promise<void>;
-  onCompactContext: (sessionId: string) => boolean;
-  onDeleteQueuedMessage: (sessionId: string, messageId: string) => void;
-  onReorderQueuedMessage: (
-    sessionId: string,
-    messageId: string,
-    beforeId?: string,
-  ) => void;
-  onSteerQueuedMessage: (sessionId: string, messageId: string) => void;
-  onResumeQueue: (sessionId: string) => void;
-  onUsageLimitResume: (sessionId: string) => void;
-  /** Omitted where nothing can resume the session once the limit resets. */
-  onUsageLimitResumeAtReset?: (sessionId: string, enabled: boolean) => void;
-  onUsageLimitDismiss: (sessionId: string) => void;
-  onInboxCardDismiss?: (sessionId: string) => void;
-  onLinkedWorkItemUpdateCardDismiss?: (sessionId: string) => void;
-  onNoteCardDismiss?: (sessionId: string) => void;
-  onHandoffCardDismiss?: (sessionId: string) => void;
-  onOpenLinkedWorkItem?: (item: LinkedWorkItem, sessionId: string) => void;
-  onArchiveSession?: (sessionId: string, archived: boolean) => Promise<boolean>;
-  onDeleteSession?: (sessionId: string) => Promise<boolean>;
-  onApproval: (
-    sessionId: string,
-    requestId: number,
-    decision: ApprovalDecision,
-  ) => void;
-  onQuestionReply: (
-    sessionId: string,
-    requestId: number,
-    reply: UserQuestionReply,
-  ) => void;
-  onQuestionInteraction?: (sessionId: string, requestId: number) => void;
-  onOpenFile: (path: string) => void;
-  onOpenBot?: (sessionId: string, origin: NonNullable<Block["origin"]>) => void | Promise<void>;
-  onOpenDiff: (
-    path?: string,
-    session?: { sessionId: string; cwd: string; turnId?: string },
-  ) => void;
-  onOpenPlan: (sessionId: string, blockId: string) => void;
-  onBuildPlan: (
-    sessionId: string,
-    blockId: string,
-    target?: PlanBuildTarget,
-  ) => void;
-  onSecondOpinion?: (
-    sessionId: string,
-    target: ModelTarget,
-    turn: Block[],
-  ) => void;
-  onHandoff?: (sessionId: string, target: ModelTarget, turn: Block[]) => void;
-  onBtwSubmit?: (
-    sessionId: string,
-    turn: Block[],
-    threadId: string,
-    messageId: string,
-    text: string,
-    model?: string,
-    modelSettings?: Record<string, string>,
-  ) => boolean | void;
-  onBtwRetry?: (sessionId: string, turn: Block[], threadId: string) => void;
-  onBtwDelete?: (sessionId: string, turn: Block[], threadId: string) => void;
-  onBtwStop?: (sessionId: string, turn: Block[], threadId: string) => void;
-  onBtwModelChange?: (
-    sessionId: string,
-    turn: Block[],
-    threadId: string,
-    model: string,
-    modelSettings: Record<string, string>,
-  ) => void;
-
-  onPaneDragStart?: (event: ReactPointerEvent<HTMLElement>) => void;
-  /** Keeps this transcript mounted after the pane closes. */
-  transcriptPool?: TranscriptPool;
-  /** History received by the first Host sync after opening or returning to a tab. */
-  transcriptHistory?: readonly Block[];
-};
 
 const TRANSCRIPT_BREAKPOINTS = [28] as const;
 
@@ -276,6 +89,7 @@ type Props = SessionPaneProps & {
 };
 
 export const SessionPane = memo(function SessionPane(props: SessionPaneProps) {
+  const { RemoteSession } = useContext(SessionPresentationContext);
   // Both local and remote Host projects use the Host runtime. Location only
   // controls filesystem access and desktop presentation.
   const project = remoteProjectFor(props.session.cwd);
@@ -370,6 +184,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   transcriptHistory,
   initialPromptId,
 }: Props) {
+  const { LinkedWorkItemUpdateNotice } = useContext(SessionPresentationContext);
   const { t: uiT } = useTranslation();
   const openSubagent = useOpenSubagent(session);
   const closePaneLabel = useShortcutLabel("Close Pane", "Pane: Close");

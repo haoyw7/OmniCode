@@ -2,15 +2,7 @@ import ts from "typescript";
 import { isFunctionLike } from "./sites.js";
 import { applyAt, walkCall } from "./causality-order-calls.js";
 import { walkLoop } from "./causality-order-loops.js";
-import {
-  innermost,
-  issuesSince,
-  jump,
-  locOf,
-  openRegion,
-  phaseIdOf,
-  type TraceState,
-} from "./causality-order-state.js";
+import { innermost, issuesSince, jump, locOf, openRegion, phaseIdOf, type TraceState } from "./causality-order-state.js";
 import { barrier, bindSteps, recordControl, settlesAt } from "./causality-order-settle.js";
 import { bindStrands, strandMark, strandsSince } from "./causality-order-strands.js";
 

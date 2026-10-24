@@ -5,16 +5,9 @@ import { formatBuildVersion } from "../../shared/lib/buildVersion";
 import { Button } from "../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../shared/ui/Modal";
 import { CalendarDays, Loader } from "../../shared/ui/icons";
-import { AgentMarkdown } from "../../features/sessions/ui/AgentMarkdown";
-import {
-  formatUpdateReleaseDate,
-  localizedReleaseNotes,
-  presentReleaseNotes,
-} from "../model/releaseNotes";
-import {
-  loadUpdatePreferences,
-  saveUpdatePreferences,
-} from "../model/updatePreferences";
+import { AgentMarkdown } from "../../shared/ui/markdown/AgentMarkdown";
+import { formatUpdateReleaseDate, localizedReleaseNotes, presentReleaseNotes } from "../../shared/lib/releaseNotes";
+import { loadUpdatePreferences, saveUpdatePreferences } from "../model/updatePreferences";
 import type { UpdaterSnapshot } from "../model/updater";
 
 export function UpdateAvailableDialog({

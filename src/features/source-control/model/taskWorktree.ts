@@ -1,11 +1,8 @@
-import type { HarnessId } from "../../sessions/model/session";
+import type { HarnessId } from "../../../contracts/session";
 import { generateConfiguredWorktreeName } from "../../sessions/model/titleModelClient";
-import { generateHarnessBranchName } from "../../../integrations/harness/core/registry";
+import { generateHostBranchName } from "../../providers/model/providerAuxiliary";
 import { gitBranches } from "../../../platform/tauri/fs";
-import {
-  availableWorktreeBranch,
-  generateWorktreeBranch,
-} from "./worktreeNaming";
+import { availableWorktreeBranch, generateWorktreeBranch } from "../../../domain/worktreeNaming";
 import { createWorktree, listWorktrees } from "./worktrees";
 
 export async function createTaskWorktree(
@@ -22,7 +19,7 @@ export async function createTaskWorktree(
       () => generateConfiguredWorktreeName(cwd, message),
       () =>
         isCurrent()
-          ? generateHarnessBranchName(harness, cwd, message)
+          ? generateHostBranchName(harness, cwd, message)
           : Promise.resolve(null),
     ]);
   } catch (error) {

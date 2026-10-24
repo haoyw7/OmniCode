@@ -1,12 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  DEFAULT_GLASS_SETTINGS,
-  GLASS_SETTINGS_KEY,
-  glassVariables,
-  normalizeGlassSettings,
-  readGlassSettings,
-  saveGlassSettings,
-} from "./glassSettings";
+import { DEFAULT_GLASS_SETTINGS, GLASS_SETTINGS_KEY, glassVariables, normalizeGlassSettings, readGlassSettings, saveGlassSettings } from "./glassSettings";
 
 function installStorage(initial: Record<string, string> = {}, fail = false) {
   const values = new Map(Object.entries(initial));

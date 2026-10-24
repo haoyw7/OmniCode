@@ -6,11 +6,8 @@ import { InboxPrChecks, PrChecksTab } from "./InboxPrChecks";
 import { InboxDetail } from "./InboxDetail";
 import { LinkedWorkItemPanel } from "./LinkedWorkItemPanel";
 import type { GithubPrChecksView } from "../hooks/useGithubPrChecks";
-import type {
-  GithubCheckDetails,
-  GithubPrCheck,
-  GithubPrChecksOverall,
-} from "../model/githubPrChecks";
+import type { GithubCheckDetails, GithubPrCheck } from "../../../contracts/github";
+import type { GithubPrChecksOverall } from "../model/githubPrChecks";
 
 const { openUrl, invoke } = vi.hoisted(() => ({
   openUrl: vi.fn(),
@@ -18,6 +15,7 @@ const { openUrl, invoke } = vi.hoisted(() => ({
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
+vi.mock("../../connections/model/inboxHost", () => ({ inboxHostCommand: invoke }));
 vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: () => ({
     isMaximized: async () => false,

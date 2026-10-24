@@ -1,11 +1,8 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { parseQuickLaunch } from "./quickComposer";
-import {
-  quickLaunchAttachments,
-  storeQuickAttachments,
-} from "./quickAttachments";
-import type { Attachment } from "../../sessions/model/session";
+import { quickLaunchAttachments, storeQuickAttachments } from "./quickAttachments";
+import type { Attachment } from "../../../contracts/session";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 const image: Attachment = {

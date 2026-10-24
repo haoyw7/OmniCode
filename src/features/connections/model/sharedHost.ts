@@ -1,91 +1,34 @@
-import { invoke } from "@tauri-apps/api/core";
+import { cachedSharedHost, listHostProjections, loadHostProjection } from "../../../platform/tauri/hostProjectionCache";
+import { prepareDesktopHost, type PreparedDesktopHost } from "../../../platform/tauri/connections";
+import { readLegacyWorkspaceSnapshot } from "../../../platform/tauri/appShell";
+import { configureLocalExecutionDiagnostics } from "../../../shared/lib/localExecutionDiagnostics";
 import { hostOrchestrationClient } from "../../orchestration/model/orchestrationClient";
-import type {
-  HostProject,
-  HostSession,
-  HostSessionSummary,
-  RemoteMachine,
-} from "./protocol";
-import type {
-  NativeSessionAccess,
-  NativeSourceListing,
-} from "../../../integrations/harness/core/nativeSessions";
-import {
-  loadRemoteSession,
-  remoteRequest,
-  rememberRemoteSession,
-  remoteSessionFor,
-  refreshRemoteMachines,
-  forgetDeletedRemoteBindings,
-  forgetUnknownRemoteBindings,
-  remoteSessionScopeFor,
-  cachedRemoteSessions,
-  hasCachedRemoteProjectSessions,
-} from "./connections";
+import type { HostProject, HostSession, HostSessionSummary } from "../../../contracts/protocol";
+import type { NativeSessionAccess, NativeSourceListing } from "../../../contracts/session";
+import { loadRemoteSession, remoteRequest, rememberRemoteSession, remoteSessionFor, refreshRemoteMachines, forgetDeletedRemoteBindings, forgetUnknownRemoteBindings, remoteSessionScopeFor } from "./connections";
 import { hostStateTransportUnavailable } from "./hostStateOffline";
-import {
-  configureSharedHost,
-  ensureSharedProject,
-  sharedHostEnvironment,
-  sharedProjects,
-  sharedProjectKey,
-  projectPath,
-} from "./remoteProjects";
-import {
-  normalizeProjectPath,
-  rememberImportedProject,
-} from "../../projects/model/recents";
-import {
-  OUTBOX_PREFIX,
-  deleteOutboxEntries,
-  loadRemoteOutbox,
-  outboxEntry,
-  outboxKeys,
-} from "./remoteOutbox";
+import { configureSharedHost, ensureSharedProject, sharedHostEnvironment, sharedProjects, sharedProjectKey, projectPath } from "./remoteProjects";
+import { rememberImportedProject } from "../../projects/model/recents";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
+import { OUTBOX_PREFIX, deleteOutboxEntries, loadRemoteOutbox, outboxEntry, outboxKeys } from "../../../platform/tauri/remoteOutbox";
 import { setSharedSessionBackend } from "../../sessions/data/sharedSessionBackend";
 import { setRetiredSessionIds, isRetiredSession } from "../../sessions/model/retiredSessions";
-import type {
-  SessionSummary,
-  SessionSearchHit,
-} from "../../sessions/data/sessionStore";
+import type { SessionSummary, SessionSearchHit } from "../../sessions/data/sessionStore";
 
-type PreparedHost = {
-  machine: RemoteMachine;
-  projects: HostProject[];
-  sessions: { id: string; cwd: string; deleted?: boolean; projectId?: string }[];
-  retiredSessionIds?: string[];
-};
 
-const BOOTSTRAP_POINTER = "omnicode.shared-host-bootstrap.current";
-const bootstrapKey = (environmentId: string) => `omnicode.shared-host-bootstrap.v1:${encodeURIComponent(environmentId)}`;
 
-/** Only successful native pairing can create this cache; it contains no credential. */
-async function prepareSharedHost(): Promise<{ prepared: PreparedHost; offline: boolean }> {
+/** Native cache lookup verifies saved endpoint, environment and credential hash. */
+async function prepareSharedHost(): Promise<{ prepared: PreparedDesktopHost; offline: boolean }> {
   try {
-    const prepared = await invoke<PreparedHost>("shared_host_prepare");
-    try {
-      localStorage.setItem(bootstrapKey(prepared.machine.environmentId), JSON.stringify(prepared));
-      localStorage.setItem(BOOTSTRAP_POINTER, prepared.machine.environmentId);
-    } catch { /* A cache failure must not prevent a live verified startup. */ }
-    return { prepared, offline: false };
+    return { prepared: await prepareDesktopHost(), offline: false };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const startupUnavailable = /^Could not start shared conversation service(?::|$)/i.test(message)
       && !/unauthori[sz]ed|forbidden|authentication|identity|revoked|\b401\b|\b403\b|unsupported/i.test(message);
     if (!hostStateTransportUnavailable(error) && !startupUnavailable) throw error;
-    const environmentId = localStorage.getItem(BOOTSTRAP_POINTER);
-    if (!environmentId) throw error;
-    let cached: PreparedHost | null;
-    try { cached = JSON.parse(localStorage.getItem(bootstrapKey(environmentId)) ?? "null"); } catch { throw error; }
-    if (!cached || cached.machine?.environmentId !== environmentId || !Array.isArray(cached.projects) || !Array.isArray(cached.sessions)
-      || !cached.projects.every((entry) => entry && typeof entry.id === "string" && typeof entry.cwd === "string")
-      || !cached.sessions.every((entry) => entry && typeof entry.id === "string" && typeof entry.cwd === "string")) throw error;
-    const machines = await invoke<RemoteMachine[]>("remote_machines");
-    const saved = machines.find((machine) => machine.id === cached.machine.id && machine.environmentId === environmentId && machine.endpoint === cached.machine.endpoint);
-    // Removed credentials, changed endpoints and explicit authentication errors
-    // never become another native conversation backend.
-    if (!saved) throw error;
-    return { prepared: { ...cached, machine: saved }, offline: true };
+    const prepared = await cachedSharedHost<PreparedDesktopHost>().catch(() => null);
+    if (!prepared) throw error;
+    return { prepared, offline: true };
   }
 }
 
@@ -126,15 +69,19 @@ function pendingOutboxIds(): Set<string> {
 
 /** Awaited before workspace restore: there is no fallback to a second runtime. */
 export async function initializeSharedHost(): Promise<void> {
+  configureLocalExecutionDiagnostics(({ cwd }) =>
+    cwd === "~" ? "home-draft" : !sharedHostEnvironment() ? "host-not-ready" : "legacy-local",
+  );
   await loadRemoteOutbox();
   const { prepared, offline } = await prepareSharedHost();
   const projectByPath = new Map(prepared.projects.map(project => [sharedProjectKey(project), project]));
-  const projectForPreparedSession = (row: PreparedHost["sessions"][number]) =>
+  const projectForPreparedSession = (row: PreparedDesktopHost["sessions"][number]) =>
     row.projectId ? prepared.projects.find((project) => project.id === row.projectId) : projectByPath.get(normalizeProjectPath(row.cwd));
   // Older bindings stored only a wire ID. A saved local workspace supplies
   // positive identity evidence; an unknown alias is kept for its own Host.
   const legacyShellIds = new Set<string>();
-  const workspace = await invoke<{ sessions?: { id: string; cwd: string }[] } | null>("workspace_get_snapshot").catch(() => null);
+  const rawWorkspace = await readLegacyWorkspaceSnapshot().catch(() => null);
+  const workspace = rawWorkspace && typeof rawWorkspace === "object" ? rawWorkspace as { sessions?: unknown } : null;
   for (const row of Array.isArray(workspace?.sessions) ? workspace.sessions : []) {
     if (typeof row.id !== "string" || typeof row.cwd !== "string" || row.cwd.startsWith("remote://")) continue;
     const project = projectByPath.get(normalizeProjectPath(row.cwd));
@@ -190,7 +137,12 @@ export async function initializeSharedHost(): Promise<void> {
     const scope = remoteSessionScopeFor(id);
     if (isRetiredSession(id) || scope && scope.environmentId !== prepared.machine.environmentId) return null;
     try {
-      const snapshot = await loadRemoteSession(prepared.machine.id, hostId(id));
+      const snapshot = await loadRemoteSession(prepared.machine.id, hostId(id)).catch(async (error) => {
+        if (!hostStateTransportUnavailable(error)) throw error;
+        const cached = await loadHostProjection(prepared.machine.id, hostId(id));
+        if (!cached) throw error;
+        return { ...cached, session: { ...cached.session, busy: false } };
+      });
       if (scope && snapshot.projectId !== scope.projectId) return null;
       const project = sharedProjects().find(
         (row) => row.projectId === snapshot.projectId,
@@ -234,8 +186,16 @@ export async function initializeSharedHost(): Promise<void> {
             prepared.machine.id, "sessions.list", { projectId: project.projectId },
           );
         } catch (error) {
-          if (!hostStateTransportUnavailable(error) || !hasCachedRemoteProjectSessions(project.key)) throw error;
-          rows = cachedRemoteSessions(project.key);
+          if (!hostStateTransportUnavailable(error)) throw error;
+          const projections = await listHostProjections(prepared.machine.id, project.projectId);
+          const cachedRows = new Map<string, HostSessionSummary>();
+          for (const value of projections) {
+            const { blocks: _blocks, ...session } = value.session;
+            cachedRows.set(session.id, { ...session, projectId: value.projectId, revision: value.revision,
+              updatedAt: value.updatedAt, createdAt: value.createdAt, archived: value.archived, pinned: value.pinned,
+              status: value.status } as HostSessionSummary);
+          }
+          rows = [...cachedRows.values()];
         }
         return rows.map((row) => {
           hostOrchestrationClient.accept({ machineId: prepared.machine.id, project }, row);

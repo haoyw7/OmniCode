@@ -1,13 +1,11 @@
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { saveChatBackground, removeChatBackgroundAsset, saveProjectBackground, removeProjectBackground, nativeAssetUrl } from "../../../platform/tauri/appearanceAssets";
+import { pickNativeFile } from "../../../platform/tauri/dialogs";
 import { activePreferenceStore } from "../../settings/model/sharedPreferences";
 import { parsePreferenceAsset, preferenceAssetUrl, uploadPreferenceBackground } from "../../settings/model/preferenceAssets";
 import { remoteProjectFor, parseRemotePath } from "../../connections/model/remoteProjects";
 
 export async function pickAndSaveChatBackground(): Promise<string | null> {
-  const sourcePath = await open({
-    multiple: false,
-    directory: false,
+  const sourcePath = await pickNativeFile({
     title: "Choose chat background",
     filters: [
       {
@@ -17,19 +15,17 @@ export async function pickAndSaveChatBackground(): Promise<string | null> {
     ],
   });
   if (typeof sourcePath !== "string" || !sourcePath) return null;
-  return invoke<string>("save_chat_background", { sourcePath });
+  return saveChatBackground(sourcePath);
 }
 
 export function removeChatBackground(): Promise<void> {
-  return invoke<void>("remove_chat_background");
+  return removeChatBackgroundAsset();
 }
 
 export async function pickAndSaveProjectChatBackground(
   project: string,
 ): Promise<string | null> {
-  const sourcePath = await open({
-    multiple: false,
-    directory: false,
+  const sourcePath = await pickNativeFile({
     title: "Choose project chat background",
     filters: [
       {
@@ -39,16 +35,13 @@ export async function pickAndSaveProjectChatBackground(
     ],
   });
   if (typeof sourcePath !== "string" || !sourcePath) return null;
-  const saved = await invoke<string>("save_project_chat_background", {
-    project,
-    sourcePath,
-  });
+  const saved = await saveProjectBackground(project, sourcePath);
   return activePreferenceStore() ? uploadPreferenceBackground(saved,
     remoteProjectFor(project)?.environmentId ?? parseRemotePath(project)?.environmentId ?? activePreferenceStore()!.hostId) : saved;
 }
 
 export function clearProjectChatBackground(project: string): Promise<void> {
-  return invoke<void>("remove_project_chat_background", { project });
+  return removeProjectBackground(project);
 }
 
 export function projectChatBackgroundSrc(
@@ -56,5 +49,5 @@ export function projectChatBackgroundSrc(
   revision: number,
 ): string {
   if (parsePreferenceAsset(path)) return preferenceAssetUrl(path) ?? "";
-  return `${convertFileSrc(path)}?v=${revision}`;
+  return `${nativeAssetUrl(path)}?v=${revision}`;
 }

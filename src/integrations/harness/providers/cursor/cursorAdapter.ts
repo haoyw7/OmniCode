@@ -1,25 +1,8 @@
-import { readCursorSessionTitle } from "./cursor";
-import {
-  bindCursorSession,
-  cancelCursorTurn,
-  forgetCursorSession,
-  respondCursorApproval,
-  respondCursorQuestion,
-  sendCursorTurn,
-  steerCursorTurn,
-  stopCursorSession,
-} from "./cursor";
+import { readCursorSessionTitle, bindCursorSession, cancelCursorTurn, forgetCursorSession, respondCursorApproval, respondCursorQuestion, sendCursorTurn, steerCursorTurn, stopCursorSession } from "./cursor";
+
 import { refreshCursorCatalog } from "./cursorCatalog";
-import {
-  generateCursorBranchName,
-  generateCursorCommitMessage,
-  generateCursorPrContent,
-} from "./cursorGit";
-import {
-  runCursorTextPrompt,
-  stopCursorTextPrompt,
-  warmupCursorText,
-} from "./cursorText";
+import { generateCursorBranchName, generateCursorCommitMessage, generateCursorPrContent } from "./cursorGit";
+import { runCursorTextPrompt, stopCursorTextPrompt, warmupCursorText } from "./cursorText";
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const cursorAdapter: HarnessAdapter = {

@@ -1,15 +1,28 @@
+import type { FileMtime, FsEntry, GitChangedFile, GitDiffIndex, GitFileDiff, GitFileDiffKind, GitPr, ProjectFile } from "../../contracts/workspace";
+import type { DiscoveredSkill } from "../../contracts/skills";
 import { invoke as invokeLocal } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { slash } from "../../shared/lib/paths";
-import { REMOTE_PATH_PREFIX } from "../../shared/lib/remotePaths";
+import { REMOTE_PATH_PREFIX } from "../../contracts/remotePaths";
 import { WSL_PATH_PREFIX, parseWslPath, parseWslUncPath, wslPath } from "../../shared/lib/wslPaths";
-import type { InterjectionMeta } from "../../features/sessions/model/session";
+import type { InterjectionMeta } from "../../contracts/session";
 
 type RemoteCommandRunner = (
   command: string,
   args: Record<string, unknown>,
 ) => Promise<unknown>;
 let remoteRunner: RemoteCommandRunner | undefined;
+let localWorkspaceRunner: RemoteCommandRunner | undefined;
+let ownsLocalWorkspace: ((command: string, args: Record<string, unknown>) => boolean) | undefined;
+
+/** Host routing is supplied by the client; shell-owned data keeps native IO. */
+export function setLocalWorkspaceRunner(
+  runner: RemoteCommandRunner,
+  owns: (command: string, args: Record<string, unknown>) => boolean,
+) {
+  localWorkspaceRunner = runner;
+  ownsLocalWorkspace = owns;
+}
 
 /** Set once by the connections feature, which knows the connected machines. */
 export function setRemoteCommandRunner(runner: RemoteCommandRunner) {
@@ -21,6 +34,12 @@ const isRemotePath = (value: unknown): boolean =>
     ? value.startsWith(REMOTE_PATH_PREFIX) || value.startsWith(WSL_PATH_PREFIX)
     : Array.isArray(value) && value.some(isRemotePath);
 const PATH_ARGS = ["path", "cwd", "parent", "from", "destParent", "paths"];
+
+/** Group attachment inspection only when every path has the same execution owner. */
+export function workspacePathOwner(command: string, path: string): string {
+  if (isRemotePath(path)) return path.split("/").slice(0, 3).join("/");
+  return ownsLocalWorkspace?.(command, { path }) ? "local-host" : "native-picker";
+}
 
 /** Runs a command on the machine that owns its paths, so the same file and
  * Git UI works for a local project and one on a connected machine. */
@@ -37,6 +56,8 @@ export function invokeWorkspace<T>(command: string, args?: Record<string, unknow
       );
     return remoteRunner(command, args) as Promise<T>;
   }
+  if (args && ownsLocalWorkspace?.(command, args))
+    return localWorkspaceRunner!(command, args) as Promise<T>;
   return invokeLocal<T>(command, args);
 }
 
@@ -88,13 +109,6 @@ export function claudeShellCommands(
   });
 }
 
-export type FsEntry = {
-  name: string;
-  path: string;
-  isDir: boolean;
-  ignored: boolean;
-};
-
 export type ProjectLocation = {
   path: string;
   identity: string;
@@ -126,36 +140,10 @@ export function openInExternalEditor(
   return invoke<void>("open_in_external_editor", { editorId, cwd });
 }
 
-export type ProjectFile = {
-  name: string;
-  path: string;
-  relative: string;
-  isDir?: boolean;
-};
-
 export function listDir(path: string): Promise<FsEntry[]> {
   return invoke<FsEntry[]>("list_dir", { path });
 }
 
-export type DiscoveredSkill = {
-  name: string;
-  description: string;
-  path: string;
-  scope: "project" | "user" | "builtin";
-  source:
-    | "agents"
-    | "claude"
-    | "cursor"
-    | "codex"
-    | "opencode"
-    | "pi"
-    | "omp"
-    | "fx"
-    | "grok"
-    | "hermes"
-    | "antigravity"
-    | "omnicode";
-};
 
 export function listSkills(
   cwd: string,
@@ -181,30 +169,7 @@ export function gitDiffStats(cwd: string): Promise<GitDiffStats> {
   return invoke<GitDiffStats>("git_diff_stats", { cwd });
 }
 
-export type GitChangedFile = {
-  path: string;
-  relative: string;
-  status: "modified" | "added" | "deleted" | "untracked" | string;
-  additions: number;
-  deletions: number;
-  staged: boolean;
-  unstaged: boolean;
-};
 
-export type GitDiffIndex = {
-  branch: string | null;
-  head: string | null;
-  files: GitChangedFile[];
-  additions: number;
-  deletions: number;
-  remote: string | null;
-  upstream: string | null;
-  defaultBranch: string | null;
-  ahead: number;
-  behind: number;
-  aheadOfDefault: number;
-  headPushed: boolean;
-};
 
 export function gitDiffIndex(cwd: string): Promise<GitDiffIndex> {
   return invoke<GitDiffIndex>("git_diff_index", { cwd });
@@ -215,17 +180,7 @@ export function gitDiffFiles(cwd: string): Promise<GitDiffIndex> {
   return invoke<GitDiffIndex>("git_diff_files", { cwd });
 }
 
-export type GitFileDiff = {
-  path: string;
-  relative: string;
-  status: string;
-  original: string;
-  current: string;
-  binary: boolean;
-  tooLarge: boolean;
-};
 
-export type GitFileDiffKind = "staged" | "unstaged";
 
 export function gitFileDiff(
   cwd: string,
@@ -384,13 +339,6 @@ export type GitRangeContext = {
 export function gitRangeContext(cwd: string): Promise<GitRangeContext> {
   return invoke<GitRangeContext>("git_range_context", { cwd });
 }
-
-export type GitPr = {
-  number: number;
-  title: string;
-  url: string;
-  state: string;
-};
 
 export function gitPrStatus(cwd: string): Promise<GitPr | null> {
   return invoke<GitPr | null>("git_pr_status", { cwd });
@@ -593,11 +541,6 @@ export async function pickFiles(title = "Attach files"): Promise<string[] | null
   if (typeof selected === "string" && selected) return [slash(selected)];
   return null;
 }
-
-export type FileMtime = {
-  path: string;
-  mtimeMs: number | null;
-};
 
 export function statFiles(paths: string[]): Promise<FileMtime[]> {
   if (paths.length === 0) return Promise.resolve([]);

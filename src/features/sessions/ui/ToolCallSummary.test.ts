@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { previewFromTool } from "../../../integrations/harness/providers/claude/claudeProtocol";
 import { AgentTranscript } from "./AgentTranscript";
-import type { Block } from "../model/session";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
+import type { Block } from "../../../contracts/session";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
 import { ToolCallSummary } from "./transcript/tools/ToolCallParts";
 import { mobileTranscriptPlatform } from "../../../mobile/transcriptPlatform";
 

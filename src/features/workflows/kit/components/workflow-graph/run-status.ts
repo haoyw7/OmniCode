@@ -1,13 +1,6 @@
-import type {
-  WorkflowRunNode,
-  WorkflowRunState,
-} from "../../_shims/protocol.js";
+import type { WorkflowRunNode, WorkflowRunState } from "../../_shims/protocol.js";
 import { phaseBinder } from "./instance-phases.js";
-import {
-  type StepRunStatus,
-  type StepStatusTable,
-  type WorkflowCausalityGraphData,
-} from "./types.js";
+import { type StepRunStatus, type StepStatusTable, type WorkflowCausalityGraphData } from "./types.js";
 
 /**
  * 实时叠加视图（live view v1）的纯选择器。

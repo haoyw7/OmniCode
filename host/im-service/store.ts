@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { BotScope } from "../../src/features/bots/model/bots";
 import type { HostStore } from "../store";
 import type { ImIncomingMessage } from "../im/core/types";
-import type { RemoteAttachment } from "../../src/features/connections/model/protocol";
+import type { RemoteAttachment } from "../../src/contracts/protocol";
 
 export type ImSettings = {
   bindingId: string;

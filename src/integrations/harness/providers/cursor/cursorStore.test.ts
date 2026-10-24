@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
-import { readStoredCursorSubagentRuns } from "./cursorStore";
-import type { StoredCursorSubagentRun } from "./cursorStore";
+import { readStoredCursorSubagentRuns, type StoredCursorSubagentRun } from "./cursorStore";
+
 const read = vi.hoisted(() => vi.fn());
 vi.mock("../../core/child", () => ({
   hasHeadlessChildBackend: () => true,

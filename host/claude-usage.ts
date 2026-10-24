@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { errorRateLimits, parseClaudeOAuthUsage, unavailableRateLimits } from "../src/features/providers/model/rateLimits";
+import { errorRateLimits, parseClaudeOAuthUsage, unavailableRateLimits } from "../src/domain/rateLimits";
 
 const exec = promisify(execFile);
 type Credentials = { accessToken: string; expiresAt?: number };

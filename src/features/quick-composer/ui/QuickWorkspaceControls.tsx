@@ -1,17 +1,11 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { openNativeGitPopup, finishNativeGitPopup, subscribeNativeGitPopupResult } from "../../../platform/tauri/gitPopup";
 import { Folder, FolderTree } from "../../../shared/ui/icons";
 import { notifyGitChanged } from "../../../platform/tauri/fs";
-import { GitPickerTrigger } from "../../source-control/ui/GitPickerTrigger";
+import { GitPickerTrigger } from "../../../shared/ui/forms/GitPickerTrigger";
 import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
-import {
-  QUICK_GIT_RESULT,
-  type QuickGitKind,
-  type QuickGitRequest,
-  type QuickGitResult,
-} from "../model/quickGitPopup";
+import { type QuickGitKind, type QuickGitRequest } from "../model/quickGitPopup";
 import type { QuickWorkspace } from "../model/quickWorkspace";
 
 export function QuickWorkspaceControls({
@@ -51,7 +45,7 @@ export function QuickWorkspaceControls({
     setOpen(null);
     props.current.onOpenChange(false);
     if (id)
-      void invoke("quick_git_complete", {
+      void finishNativeGitPopup({
         id,
         choice: null,
         restoreFocus: false,
@@ -60,7 +54,7 @@ export function QuickWorkspaceControls({
   useEffect(() => {
     let disposed = false;
     let stop: (() => void) | undefined;
-    void listen<QuickGitResult>(QUICK_GIT_RESULT, ({ payload }) => {
+    void subscribeNativeGitPopupResult<QuickWorkspace>( ({ payload }) => {
       if (payload.id !== active.current) return;
       closedByTrigger.current = payload.triggerKind ?? null;
       active.current = null;
@@ -89,7 +83,7 @@ export function QuickWorkspaceControls({
       toggleIntent.current = null;
       closedByTrigger.current = null;
       if (id)
-        void invoke("quick_git_complete", {
+        void finishNativeGitPopup({
           id,
           choice: null,
           restoreFocus: false,
@@ -133,7 +127,7 @@ export function QuickWorkspaceControls({
     setOpen(kind);
     onOpenChange(true);
     try {
-      await invoke("quick_git_open", { request });
+      await openNativeGitPopup(request);
     } catch (error) {
       if (active.current !== id) return;
       active.current = null;

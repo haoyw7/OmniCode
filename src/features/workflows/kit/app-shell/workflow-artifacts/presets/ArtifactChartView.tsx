@@ -13,43 +13,13 @@ import { workflowEntry, workflowFade } from "./../../../components/workflow-time
  */
 
 import { memo, useMemo } from "react";
-import {
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Line,
-  ReferenceLine,
-  Scatter,
-  XAxis,
-  YAxis,
-  type DotItemDotProps,
-} from "recharts";
-import {
-  applyArtifactItems,
-  type ArtifactItem,
-  type ChartModel,
-} from "./apply.js";
-import {
-  artifactSeriesColorVar,
-  artifactSeriesDash,
-  artifactSeriesSymbol,
-  ARTIFACT_CHART_MAX_SERIES,
-} from "./palette.js";
-import {
-  fieldHeading,
-  PresetEmpty,
-  PresetHeading,
-  REVEAL_ANIMATION_CLASS,
-  type PresetLabels,
-} from "./parts.js";
+import { Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, Scatter, XAxis, YAxis, type DotItemDotProps } from "recharts";
+import { applyArtifactItems, type ArtifactItem, type ChartModel } from "./apply.js";
+import { artifactSeriesColorVar, artifactSeriesDash, artifactSeriesSymbol, ARTIFACT_CHART_MAX_SERIES } from "./palette.js";
+import { fieldHeading, PresetEmpty, PresetHeading, REVEAL_ANIMATION_CLASS, type PresetLabels } from "./parts.js";
 import type { ChartSpec } from "./spec.js";
 import { cn } from "../../../../../../shared/lib/cn";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "../../../../../../shared/ui/primitives/Chart.js";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "../../../../../../shared/ui/primitives/Chart.js";
 
 /** 点多到这个数以上就不画点了：一条挤满圆点的线比没有点更难读。 */
 const MAX_VISIBLE_DOTS = 60;

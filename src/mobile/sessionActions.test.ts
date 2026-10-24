@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileSessionActions } from "./MobileSessionActions";
 import { setUiLanguage } from "../shared/i18n/language";
-import type { HostSession } from "../features/connections/model/protocol";
+import type { HostSession } from "../contracts/protocol";
 
 const clipboard = vi.hoisted(() => ({ copyText: vi.fn(async () => {}) }));
 vi.mock("./transcriptPlatform", () => ({

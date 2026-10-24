@@ -1,16 +1,10 @@
 import type { CiRepairRequest } from "../../features/inbox/model/ciRepair";
-import { type NoteComposerCard } from "../../features/notes";
-import { type ControlOutcome } from "../../features/orchestration/model/orchestration";
-import { type OrchestrationProposal } from "../../features/orchestration/model/orchestrationPlan";
+import type { NoteComposerCard, OrchestrationProposal, HandoffComposerCard, Attachment, ComposerTurnOptions, LinkedWorkItem, PlanBuildTarget, SecondOpinionMeta } from "../../contracts/session";
+import { type ControlOutcome } from "../../domain/orchestrationRuntime";
+
 import { type SessionSummary } from "../../features/sessions/data/sessionStore";
-import { type HandoffComposerCard } from "../../features/sessions/model/handoff";
-import {
-  type Attachment,
-  type ComposerTurnOptions,
-  type LinkedWorkItem,
-  type PlanBuildTarget,
-  type SecondOpinionMeta,
-} from "../../features/sessions/model/session";
+
+
 import { type FollowUpBehavior } from "../../features/settings/model/settings";
 import { type ResumedWorkspace } from "../model/appLifecycle";
 import { type SubmissionAcceptance } from "../model/submissionAcceptance";

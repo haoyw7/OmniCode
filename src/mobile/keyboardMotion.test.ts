@@ -1,15 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { startMotionClock, motionFrame, stopMotionClock } from "./motionTestClock";
-import {
-  anchoredTurnHeight,
-  installKeyboardMotion,
-  keyboardMotionRemaining,
-  onKeyboardMotion,
-  KEYBOARD_EVENT,
-  settledEasing,
-  transcriptFollow,
-} from "./keyboardMotion";
+import { anchoredTurnHeight, installKeyboardMotion, keyboardMotionRemaining, onKeyboardMotion, KEYBOARD_EVENT, settledEasing, transcriptFollow } from "./keyboardMotion";
 
 const scroller = (
   scrollTop: number,

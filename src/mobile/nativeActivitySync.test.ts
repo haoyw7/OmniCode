@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import type { HostSessionSummary } from "../features/connections/model/protocol";
+import type { HostSessionSummary } from "../contracts/protocol";
 import { NativeActivitySync } from "./nativeActivitySync";
 
 function session(id: string, revision: number): HostSessionSummary {

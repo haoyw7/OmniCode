@@ -1,25 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  archiveProject,
-  forgetProject,
-  loadArchivedProjects,
-  loadPinnedProjects,
-  loadProjectRailOrder,
-  loadRecents,
-  looksLikeProject,
-  projectRailItems,
-  projectRailSections,
-  rememberImportedProject,
-  rememberProject,
-  replaceProjectPath,
-  savePinnedProjects,
-  saveProjectRailOrder,
-  syncProjectRailOrder,
-} from "./recents";
-import {
-  loadProjectTreeExpanded,
-  saveProjectTreeExpanded,
-} from "./projectTree";
+import { archiveProject, forgetProject, loadArchivedProjects, loadPinnedProjects, loadProjectRailOrder, loadRecents, looksLikeProject, projectRailItems, projectRailSections, rememberImportedProject, rememberProject, replaceProjectPath, savePinnedProjects, saveProjectRailOrder, syncProjectRailOrder } from "./recents";
+import { loadProjectTreeExpanded, saveProjectTreeExpanded } from "./projectTree";
 
 function mockLocalStorage() {
   const data = new Map<string, string>();

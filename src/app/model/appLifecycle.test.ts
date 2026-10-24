@@ -1,24 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { ask } from "@tauri-apps/plugin-dialog";
-import { forgetHarnessSession } from "../../integrations/harness/core/registry";
+import { bindHarnessSession, forgetHarnessSession, isLiveHarness } from "../../integrations/harness/core/registry";
 import { killAllChildren } from "../../integrations/harness/core/child";
 import { newSession } from "../../features/sessions/model/session";
 import { newTab } from "../../features/workspace/model/layout";
-import {
-  askQuitConfirmation,
-  closeBusyWindow,
-  commitQuit,
-  confirmReload,
-  reportQuitPoll,
-  setQuitWorkspace,
-} from "./appLifecycle";
+import { askQuitConfirmation, closeBusyWindow, commitQuit, confirmReload, reportQuitPoll, setQuitWorkspace } from "./appLifecycle";
 import type { DockSide } from "../../features/projects/model/projectTerminal";
-import {
-  collectWorkspaceSnapshot,
-  hydrateWorkspaceSnapshot,
-  parseWorkspaceSnapshot,
-} from "../../features/workspace/model/workspaceSnapshot";
+import { collectWorkspaceSnapshot, hydrateWorkspaceSnapshot, parseWorkspaceSnapshot } from "../../features/workspace/model/workspaceSnapshot";
 import { loadWorkspaceSnapshot, saveWorkspaceSnapshot } from "../../features/sessions/data/sessionStore";
 import { reconcileProjectReturn } from "../../features/projects/model/projectReturn";
 
@@ -115,7 +104,6 @@ describe("project choices through lifecycle saves", () => {
       () => state.projectCwd,
       () => [],
       () => state.memory,
-      vi.fn(),
     );
     try {
       await handleQuitRequested();
@@ -146,7 +134,6 @@ describe("project choices through lifecycle saves", () => {
       () => state.projectCwd,
       () => [],
       readMemory,
-      vi.fn(),
     );
     try {
       await handleQuitRequested();
@@ -181,7 +168,6 @@ describe("project choices through lifecycle saves", () => {
       () => state.projectCwd,
       () => [],
       () => state.memory,
-      vi.fn(),
     );
     try {
       await closeBusyWindow();
@@ -234,17 +220,16 @@ describe("closing a busy window", () => {
       () => session.cwd,
       () => [],
       () => new Map(),
-      vi.fn(),
     );
     return { session, release };
   }
 
-  it("stops only its sessions and destroys only its window", async () => {
-    const { session, release } = workspace();
+  it("leaves Host sessions running and destroys only its window", async () => {
+    const { release } = workspace();
     try {
       await closeBusyWindow();
       expect(ask).toHaveBeenCalled();
-      expect(forgetHarnessSession).toHaveBeenCalledWith("cursor", session.id);
+      expect(forgetHarnessSession).not.toHaveBeenCalled();
       expect(killAllChildren).not.toHaveBeenCalled();
       expect(invoke).toHaveBeenCalledWith("destroy_window");
       expect(
@@ -289,7 +274,6 @@ describe("coordinated quit", () => {
       () => session.cwd,
       () => [],
       () => new Map(),
-      vi.fn(),
     );
   }
 
@@ -321,7 +305,6 @@ describe("coordinated quit", () => {
       () => session.cwd,
       () => [],
       () => new Map(),
-      vi.fn(),
     );
     try {
       await reportQuitPoll(1);
@@ -419,6 +402,21 @@ describe("remembering the terminal dock side across restarts", () => {
     vi.resetModules();
   });
 
+  it("restores an in-flight Host projection without adding an interruption or clearing busy", async () => {
+    const session = { ...newSession("codex", "/repo"), id: "host-live", busy: true,
+      blocks: [{ id: "user", role: "user" as const, text: "keep working" }] };
+    const tab = newTab(session.id);
+    const store = await import("../../features/sessions/data/sessionStore");
+    vi.mocked(store.getSession).mockResolvedValueOnce(session);
+    vi.mocked(store.listInFlightSessions).mockResolvedValueOnce([{ sessionId: session.id, cwd: session.cwd }]);
+    vi.mocked(store.loadWorkspaceSnapshot).mockResolvedValueOnce(
+      collectWorkspaceSnapshot([tab], [session], tab.id, session.cwd, new Map()),
+    );
+    const { loadResumedWorkspace } = await import("./appLifecycle");
+    const resumed = await loadResumedWorkspace();
+    expect(resumed?.sessions[0]).toEqual(session);
+  });
+
   function dockWorkspace(side: DockSide | null) {
     const sessions = ["a1"].map((id) => ({
       ...newSession("cursor", "/alpha"),
@@ -464,7 +462,6 @@ describe("remembering the terminal dock side across restarts", () => {
       () => state.projectCwd,
       () => [],
       () => new Map(),
-      vi.fn(),
       () => state.side,
     );
     try {

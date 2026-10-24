@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { notifySession, pendingInputNotifications } from "../model/notifications";
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "../../../contracts/session";
 
 export function useInputNotifications(
   sessions: Session[],

@@ -1599,11 +1599,21 @@ it.each(["running", "idle"] as const)("submits an expired Codex question as a du
 });
 
 describe("session checkpoints", () => {
-  const review = { files: [{ path: "notes.txt", relative: "notes.txt", status: "modified", additions: 1, deletions: 1, exact: true, undoable: true }] };
+  const review = { turnId: "turn-1", files: [{ path: "notes.txt", relative: "notes.txt", status: "modified", additions: 1, deletions: 1, exact: true, undoable: true }] };
+  const unlocked = { ...review, wholeTurnUndoOnly: true };
+  /** A provider with a verified conversation rollback and a matching latest turn. */
+  const rewindable = ({ store, provider, id }: ReturnType<typeof setup>) => {
+    provider.checkpointRewind ??= vi.fn(async () => ({ submitted: false }));
+    const value = store.session(id);
+    store.save({ ...value, revision: value.revision + 1, session: { ...value.session, providerSessionId: "thread-1",
+      blocks: [{ id: "user-1", role: "user", text: "Work", checkpointTurnId: "turn-1", providerTurnId: "provider-turn-1" }] } }, { type: "seed" });
+  };
 
   it("checks review status against 1500 histories without reading their transcripts", async () => {
-    const { engine, store, id } = setup();
+    const fixture = setup();
+    const { engine, store, id } = fixture;
     await engine.ready;
+    rewindable(fixture);
     const template = store.session(id);
     store.transaction(() => {
       for (let index = 0; index < 1500; index++)
@@ -1614,7 +1624,7 @@ describe("session checkpoints", () => {
     const history = vi.spyOn(store, "sessions").mockImplementation(() => { throw new Error("Full history scan"); });
     const queries = vi.spyOn(store.db, "prepare");
     for (let index = 0; index < 3; index++)
-      expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(review);
+      expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(unlocked);
     expect(history).not.toHaveBeenCalled();
     expect(queries.mock.calls.filter(([sql]) => /SELECT snapshot FROM sessions/i.test(sql))).toHaveLength(0);
     history.mockRestore();
@@ -1622,8 +1632,10 @@ describe("session checkpoints", () => {
   });
 
   it("shares in-flight status reads, releases failures and reevaluates locks after the read", async () => {
-    const { engine, store, project, id, turns } = setup();
+    const fixture = setup();
+    const { engine, store, project, id, turns } = fixture;
     await engine.ready;
+    rewindable(fixture);
     let release!: (value: typeof review) => void;
     const status = vi.spyOn(engine.checkpoints, "status").mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
     const first = engine.sessionCheckpoint(id, "status", undefined);
@@ -1643,16 +1655,18 @@ describe("session checkpoints", () => {
     store.save({ ...running, revision: running.revision + 2 }, { type: "metadata-caught-up" });
     engine.command({ type: "cancel", commandId: "review-cancel", sessionId: other, runId: running.runId! });
     await vi.waitFor(() => expect(store.session(other).lastCompletedRunId).toBe(running.runId));
-    expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(review);
+    expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(unlocked);
     status.mockRejectedValueOnce(new Error("temporary read failure"));
     const failures = await Promise.allSettled([engine.sessionCheckpoint(id, "status", undefined), engine.sessionCheckpoint(id, "status", undefined)]);
     expect(failures.every(result => result.status === "rejected")).toBe(true);
-    expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(review);
+    expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(unlocked);
   });
 
   it("keeps overlapping checkout and undo protections without scanning history", async () => {
-    const { engine, store, id, directory } = setup();
+    const fixture = setup();
+    const { engine, store, id, directory, provider } = fixture;
     await engine.ready;
+    rewindable(fixture);
     const cwd = join(directory, "checkout");
     const child = join(cwd, "child");
     const unrelated = join(directory, "unrelated");
@@ -1660,16 +1674,18 @@ describe("session checkpoints", () => {
     mkdirSync(unrelated);
     const alias = join(directory, "alias");
     symlinkSync(cwd, alias, process.platform === "win32" ? "junction" : "dir");
+    const moved = store.session(id);
+    store.save({ ...moved, revision: moved.revision + 1, session: { ...moved.session, cwd, executionCwd: cwd } }, { type: "move" });
     const target = store.session(id);
-    store.save({ ...target, revision: target.revision + 1, session: { ...target.session, cwd } }, { type: "move" });
     vi.spyOn(engine.checkpoints, "status").mockResolvedValue(review);
-    const undo = vi.spyOn(engine.checkpoints, "undo").mockImplementation(async () => {
+    const undo = vi.spyOn(engine.checkpoints, "prepareUndo").mockImplementation(async () => {
       expect(store.db.prepare("SELECT 1 FROM checkout_resources WHERE kind='integrating'").get()).toBeDefined();
-      return { files: [] };
+      return { id: "plan", sessionId: id, cwd, turnId: "turn-1", paths: ["notes.txt"] };
     });
+    vi.spyOn(engine.checkpoints, "applyUndo").mockResolvedValue({ files: [] });
     let revision = 0;
     const other = (path: string, status: "running" | "idle") => store.save({ ...target,
-      revision: ++revision, status, session: { ...target.session, id: "other", cwd: path } }, { type: "other" });
+      revision: ++revision, status, session: { ...target.session, id: "other", cwd: path, executionCwd: path } }, { type: "other" });
     for (const path of [cwd, directory, child, alias]) {
       other(path, "running");
       expect(await engine.sessionCheckpoint(id, "status", undefined)).toMatchObject({ undoLocked: true });
@@ -1677,16 +1693,20 @@ describe("session checkpoints", () => {
     }
     expect(undo).not.toHaveBeenCalled();
     other(unrelated, "running");
-    expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(review);
-    expect(await engine.sessionCheckpoint(id, "undo", undefined)).toEqual({ files: [] });
+    expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(unlocked);
+    expect(await engine.sessionCheckpoint(id, "undo", undefined)).toEqual({ files: [], wholeTurnUndoOnly: true });
+    expect(provider.checkpointRewind).toHaveBeenCalledOnce();
+    rewindable(fixture);
     other(cwd, "idle");
-    expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(review);
+    expect(await engine.sessionCheckpoint(id, "status", undefined)).toEqual(unlocked);
     // An unlocked status is only a display hint: undo rechecks after a new run.
     other(cwd, "running");
     await expect(engine.sessionCheckpoint(id, "undo", undefined)).rejects.toThrow("another session is running");
     other(cwd, "idle");
     undo.mockRejectedValueOnce(new Error("changed outside this session"));
     await expect(engine.sessionCheckpoint(id, "undo", undefined)).rejects.toThrow("changed outside this session");
+    // Preflight failures never reach the provider rollback.
+    expect(provider.checkpointRewind).toHaveBeenCalledOnce();
     expect(store.db.prepare("SELECT 1 FROM checkout_resources WHERE kind='integrating'").get()).toBeUndefined();
   });
 
@@ -1750,8 +1770,10 @@ describe("session checkpoints", () => {
     },
   );
 
-  it("captures structured edits for review and undoes them once the turn ends", async () => {
-    const { engine, store, turns, id, directory } = setup("claude");
+  /** One structured edit of notes.txt in a folder without Git, then the turn ends. */
+  async function editedTurn(fixture: ReturnType<typeof setup>) {
+    const { engine, store, turns, id, directory } = fixture;
+    await engine.ready;
     const file = join(directory, "notes.txt");
     writeFileSync(file, "before\n");
     engine.command({ type: "send", commandId: "edit", sessionId: id, text: "Edit notes" });
@@ -1767,11 +1789,120 @@ describe("session checkpoints", () => {
       }));
     await expect(engine.sessionCheckpoint(id, "undo", undefined)).rejects.toThrow(/while the session is running/);
     expect(await engine.sessionCheckpoint(id, "diff", "notes.txt")).toMatchObject({ original: "before\n", current: "after\n" });
-
     turns[0].finish();
     await vi.waitFor(() => expect(store.session(id).status).toBe("idle"));
-    expect(await engine.sessionCheckpoint(id, "undo", undefined)).toEqual({ files: [] });
+    const value = store.session(id);
+    // The provider conversation and, for Codex, its own turn identity.
+    store.save({ ...value, revision: value.revision + 1, session: { ...value.session, providerSessionId: "thread-1",
+      blocks: value.session.blocks.map(block => block.checkpointTurnId ? { ...block, providerTurnId: "provider-turn" } : block) } }, { type: "seed" });
+    return file;
+  }
+  const journal = (store: HostStore, id: string) => {
+    const row = store.db.prepare("SELECT value FROM metadata WHERE key=?").get(`checkpoint-restore:${id}`);
+    return row ? JSON.parse(String(row.value)) as { phase: string; error?: string } : undefined;
+  };
+  const restart = ({ store, provider, directory }: ReturnType<typeof setup>) =>
+    new HostEngine(store, { codex: provider, claude: provider, pi: provider, omp: provider, deepseek: provider }, undefined, {
+      native: { environment: { home: join(directory, "home"), env: {} } },
+    });
+
+  it("refuses undo for providers without a conversation-only rollback and keeps files", async () => {
+    const fixture = setup("claude");
+    const file = await editedTurn(fixture);
+    expect(await fixture.engine.sessionCheckpoint(fixture.id, "status", undefined)).toMatchObject({
+      wholeTurnUndoOnly: true, undoLocked: true, undoUnavailableReason: expect.stringMatching(/cannot safely roll back/),
+    });
+    await expect(fixture.engine.sessionCheckpoint(fixture.id, "undo", undefined)).rejects.toThrow(/cannot safely roll back/);
+    expect(readFileSync(file, "utf8")).toBe("after\n");
+    expect(journal(fixture.store, fixture.id)).toBeUndefined();
+  });
+
+  it("rolls back the provider turn, then restores structured edits once", async () => {
+    const fixture = setup("codex");
+    const { engine, store, provider, id } = fixture;
+    provider.checkpointRewind = vi.fn(async () => ({ submitted: false }));
+    const file = await editedTurn(fixture);
+    expect(await engine.sessionCheckpoint(id, "undo", undefined)).toEqual({ files: [], wholeTurnUndoOnly: true });
+    expect(provider.checkpointRewind).toHaveBeenCalledOnce();
+    expect(provider.checkpointRewind).toHaveBeenCalledWith(expect.objectContaining({ providerTurnId: "provider-turn" }));
     expect(readFileSync(file, "utf8")).toBe("before\n");
+    expect(store.session(id).session.blocks.some(block => block.role === "user")).toBe(false);
+    expect(journal(store, id)).toBeUndefined();
+  });
+
+  it("keeps an uncertain provider rollback journaled and blocks the conversation", async () => {
+    const fixture = setup("pi");
+    const { engine, store, provider, id } = fixture;
+    provider.checkpointRewind = vi.fn(async () => { throw new Error("rollback timed out"); });
+    const file = await editedTurn(fixture);
+    await expect(engine.sessionCheckpoint(id, "undo", undefined)).rejects.toThrow("rollback timed out");
+    expect(readFileSync(file, "utf8")).toBe("after\n");
+    expect(journal(store, id)).toMatchObject({ phase: "provider-uncertain", error: "rollback timed out" });
+    expect(await engine.sessionCheckpoint(id, "status", undefined)).toMatchObject({
+      undoLocked: true, undoUnavailableReason: expect.stringMatching(/could not be confirmed/),
+    });
+    await expect(engine.sessionCheckpoint(id, "undo", undefined)).rejects.toThrow(/could not be confirmed/);
+    await expect(engine.sessionCheckpoint(id, "keep", undefined)).rejects.toThrow(/Finish restoring/);
+    expect(() => engine.command({ type: "send", commandId: "after-uncertain", sessionId: id, text: "Continue" })).toThrow(/Finish restoring/);
+    // A restart keeps the evidence and never retries the provider rollback.
+    const restarted = restart(fixture);
+    try {
+      await restarted.ready;
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(journal(store, id)).toMatchObject({ phase: "provider-uncertain" });
+    } finally {
+      await restarted.workflows.ready;
+      await restarted.close();
+    }
+    expect(provider.checkpointRewind).toHaveBeenCalledOnce();
+    expect(readFileSync(file, "utf8")).toBe("after\n");
+  });
+
+  it("retries only the workspace restore after the provider rolled back, including after a restart", async () => {
+    const fixture = setup("omp");
+    const { engine, store, provider, id } = fixture;
+    let file = "";
+    // Another writer changes the file while the provider rolls back.
+    provider.checkpointRewind = vi.fn(async () => { writeFileSync(file, "user\n"); return { submitted: false }; });
+    file = await editedTurn(fixture);
+    await expect(engine.sessionCheckpoint(id, "undo", undefined)).rejects.toThrow(/Retry Undo/);
+    expect(readFileSync(file, "utf8")).toBe("user\n");
+    expect(journal(store, id)).toMatchObject({ phase: "workspace-failed" });
+    expect(await engine.sessionCheckpoint(id, "status", undefined)).toMatchObject({ restorePending: true, wholeTurnUndoOnly: true,
+      restoreMessage: expect.stringMatching(/Retry Undo/) });
+    expect(store.session(id).session.blocks.some(block => block.role === "user")).toBe(false);
+    await expect(engine.sessionCheckpoint(id, "undo", undefined)).rejects.toThrow(/Retry Undo/);
+    expect(readFileSync(file, "utf8")).toBe("user\n");
+
+    // The user puts the recorded result back; a restarted Host finishes alone.
+    writeFileSync(file, "after\n");
+    const restarted = restart(fixture);
+    try {
+      await restarted.ready;
+      await vi.waitFor(() => expect(journal(store, id)).toBeUndefined());
+      expect(readFileSync(file, "utf8")).toBe("before\n");
+      expect(provider.checkpointRewind).toHaveBeenCalledOnce();
+    } finally {
+      await restarted.workflows.ready;
+      await restarted.close();
+    }
+  });
+
+  it("discards a restoration journal that stopped before the provider rollback", async () => {
+    const fixture = setup("codex");
+    const { engine, store, id, directory } = fixture;
+    await engine.ready;
+    store.db.prepare("INSERT INTO metadata VALUES (?, ?)").run(`checkpoint-restore:${id}`, JSON.stringify({
+      phase: "prepared", turnId: "turn", createdAt: 1, before: store.session(id).session, providerEvents: [],
+      prepared: { id: "plan", sessionId: id, cwd: directory, turnId: "turn", paths: [] } }));
+    const restarted = restart(fixture);
+    try {
+      await restarted.ready;
+      await vi.waitFor(() => expect(journal(store, id)).toBeUndefined());
+    } finally {
+      await restarted.workflows.ready;
+      await restarted.close();
+    }
   });
 });
 

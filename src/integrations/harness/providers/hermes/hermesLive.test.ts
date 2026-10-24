@@ -35,7 +35,7 @@ const {
   sendHermesTurn,
   stopHermesSession,
 } = await import("./hermes");
-import type { HarnessEvent } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
 
 const parse = () => sent.map((line) => JSON.parse(line));
 

@@ -1,11 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it } from "vitest";
 import type { BotMessage } from "./botView";
-import {
-  botNotificationActivity,
-  BotNotificationTracker,
-  takeBotNotification,
-} from "./botNotifications";
+import { botNotificationActivity, BotNotificationTracker, takeBotNotification } from "./botNotifications";
 
 const reply = (revision: number, streaming = false): BotMessage => ({
   id: "reply", kind: "assistant", text: "Done.\n\nDetails", revision, createdAt: 1, streaming,

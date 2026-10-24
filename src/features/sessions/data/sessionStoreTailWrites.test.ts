@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
+// Exercise the retained legacy writer independently of the Host ownership gate.
+vi.mock("../../connections/model/remoteProjects", () => ({ sessionUsesHost: () => false }));
 
 async function loadStore() {
   vi.resetModules();

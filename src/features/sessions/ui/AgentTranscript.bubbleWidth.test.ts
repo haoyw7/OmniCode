@@ -2,7 +2,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { compile } from "tailwindcss";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentTranscript } from "./AgentTranscript";

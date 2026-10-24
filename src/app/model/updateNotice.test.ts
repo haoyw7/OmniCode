@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  consumeInstalledUpdate,
-  rememberInstalledUpdate,
-  type UpdateNoticeStore,
-} from "./updateNotice";
+import { consumeInstalledUpdate, rememberInstalledUpdate, type UpdateNoticeStore } from "./updateNotice";
 
 function memoryStore(): UpdateNoticeStore {
   const values = new Map<string, string>();

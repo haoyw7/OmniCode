@@ -1,11 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  applyPreparedNewThreadBackground,
-  clearPreparedNewThreadBackground,
-  prepareNewThreadBackgroundEffect,
-} from "./newThreadBackgroundEffects";
+import { applyPreparedNewThreadBackground, clearPreparedNewThreadBackground, prepareNewThreadBackgroundEffect } from "./newThreadBackgroundEffects";
 
 afterEach(() => {
   clearPreparedNewThreadBackground();

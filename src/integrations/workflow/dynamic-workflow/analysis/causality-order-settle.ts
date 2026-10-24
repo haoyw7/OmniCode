@@ -3,12 +3,7 @@ import type { TaintOcc } from "./domain.js";
 import { isFunctionLike } from "./sites.js";
 import { boundIdentifiers } from "./causality-order-functions.js";
 import type { TraceState } from "./causality-order-state.js";
-import {
-  currentFrame,
-  isVisiblySettled,
-  joinStrands,
-  type AwaitedOperand,
-} from "./causality-order-strands.js";
+import { currentFrame, isVisiblySettled, joinStrands, type AwaitedOperand } from "./causality-order-strands.js";
 
 // causality-order.ts 顶到 oxlint max-lines 上限（400 行），把 await 屏障与神谕读取
 // 这一组（时间不变量准入、settle-certainty 规则、屏障、变量→step 绑定、守卫的控制依赖）拆到

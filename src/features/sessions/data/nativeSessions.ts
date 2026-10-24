@@ -1,22 +1,12 @@
 import { translate } from "../../../shared/i18n/language";
-import { isTauri } from "@tauri-apps/api/core";
-import {
-  nativeProviderLabel,
-  nativeSyncBlocked,
-  nativeSyncNotice,
-  type NativeSessionFile,
-  type NativeSessionAccess,
-  type NativeSourceListing,
-} from "../../../integrations/harness/core/nativeSessions";
-import type { Session } from "../model/session";
+import { isDesktopShell } from "../../../platform/tauri/window";
+import { nativeProviderLabel, nativeSyncBlocked, nativeSyncNotice } from "../../../integrations/harness/core/nativeSessions";
+import type { NativeSessionFile, NativeSessionAccess, NativeSourceListing, Session } from "../../../contracts/session";
+
 import type { SessionSummary } from "./sessionStore";
 import { sharedSessionBackend } from "./sharedSessionBackend";
 import { remoteProjectFor } from "../../connections/model/remoteProjects";
-import {
-  remoteMachineFor,
-  remoteRequest,
-  remoteSessionFor,
-} from "../../connections/model/connections";
+import { remoteMachineFor, remoteRequest, remoteSessionFor } from "../../connections/model/connections";
 
 /**
  * Native Claude Code, Codex, Pi, omp and OpenCode conversations are listed,
@@ -60,7 +50,7 @@ function publish(patch: Partial<NativeSessionState>) {
   state = { ...state, ...patch };
   for (const listener of listeners) listener();
 }
-const desktop = () => typeof isTauri === "function" && isTauri();
+const desktop = () => typeof isDesktopShell === "function" && isDesktopShell();
 /** The shared Host's native session manager. */
 const hostNative = () => sharedSessionBackend()?.native;
 const hostOwned = (session: Pick<Session, "cwd">) =>

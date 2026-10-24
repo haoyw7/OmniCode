@@ -1,7 +1,9 @@
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
+import { desktopTranscriptServices } from "../../../platform/tauri/transcriptServices";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AgentMarkdown } from "./AgentMarkdown";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
 
 describe("AgentMarkdown text direction", () => {
   it("detects direction independently for RTL and LTR blocks", () => {
@@ -188,9 +190,9 @@ describe("AgentMarkdown code fence highlighting", () => {
 describe("AgentMarkdown note images", () => {
   it("keeps app-owned note image references for the async image resolver", () => {
     const markup = renderToStaticMarkup(
-      createElement(AgentMarkdown, {
+      createElement(TranscriptPlatformContext.Provider, { value: desktopTranscriptServices }, createElement(AgentMarkdown, {
         text: "![Diagram](/note-assets/note-1/123-diagram.png)",
-      }),
+      })),
     );
 
     expect(markup).toContain(

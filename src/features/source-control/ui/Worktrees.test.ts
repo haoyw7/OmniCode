@@ -1,3 +1,5 @@
+import { WORKSPACE_MODE_SHORTCUT } from "../../workspace/model/workspaceShortcut";
+import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
 // @vitest-environment happy-dom
@@ -38,25 +40,14 @@ vi.mock("../../../platform/tauri/fs", async (original) => ({
   revealPath: vi.fn(),
 }));
 
-import {
-  assertWorktreeFilesClosed,
-  checkWorktreeRemoval,
-  listWorktrees,
-  namedWorktreeBranch,
-  orchestrationWorktreeBranchName,
-  temporaryWorktreeBranchName,
-  type Worktree,
-  type Worktrees,
-} from "../model/worktrees";
+import type { Worktree, Worktrees } from "../../../contracts/worktree";
+import { assertWorktreeFilesClosed, checkWorktreeRemoval, listWorktrees, temporaryWorktreeBranchName } from "../model/worktrees";
+import { namedWorktreeBranch } from "../../../domain/worktreeNaming";
 import { newFileTab, newTerminalFile } from "../../workspace/model/layout";
 import { gitCheckout, notifyGitChanged } from "../../../platform/tauri/fs";
 import { useProjectBranchesState } from "../hooks/useProjectBranches";
 import { WorktreePicker } from "./WorktreePicker";
-import {
-  WORKSPACE_MODE_SHORTCUT,
-  WorkspaceIdentity,
-  WorkspacePicker,
-} from "../../workspace/ui/WorkspacePicker";
+import { WorkspaceIdentity, WorkspacePicker } from "../../workspace/ui/WorkspacePicker";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
 import { FolderTree, GitBranch } from "../../../shared/ui/icons";
 import { DeleteWorktreeDialog } from "./DeleteWorktreeDialog";
@@ -145,7 +136,6 @@ it("builds temporary and generated worktree branch names", () => {
   expect(
     temporaryWorktreeBranchName("12345678-90ab-cdef-1234-567890abcdef"),
   ).toBe("oc/12345678");
-  expect(orchestrationWorktreeBranchName("12345678-90ab-cdef")).toBe("oc/orch-1234567890ab");
   expect(namedWorktreeBranch("feature/faster-worktrees")).toBe(
     "oc/feature/faster-worktrees",
   );
@@ -437,7 +427,7 @@ it("keeps the selected worktree base visible beside the workspace mode", async (
 it("keeps the settings rows mounted through focus refreshes and failures", async () => {
   await act(async () =>
     root.render(
-      createElement(WorktreesPage, {
+      createElement(WorktreesPage, { ProjectPicker: SearchableProjectPicker,
         cwd: "/settings-refresh",
         onRemove: vi.fn(),
       }),
@@ -775,7 +765,7 @@ it("uses the shared project picker without leaking late worktree responses", asy
     .mockResolvedValue(result("second"));
   await act(async () =>
     root.render(
-      createElement(WorktreesPage, {
+      createElement(WorktreesPage, { ProjectPicker: SearchableProjectPicker,
         cwd: "/first-project",
         recents: [{ path: "/second-project", openedAt: 1 }],
         onRemove: vi.fn(),
@@ -827,7 +817,7 @@ it("refetches after a Git mutation that arrived during an in-flight read", async
     .mockResolvedValue(result("new-worktree"));
   await act(async () =>
     root.render(
-      createElement(WorktreesPage, {
+      createElement(WorktreesPage, { ProjectPicker: SearchableProjectPicker,
         cwd: "/mutation-during-fetch",
         onRemove: vi.fn(),
       }),
@@ -974,7 +964,7 @@ it("offers cascade deletion for a session-linked worktree but not the main copy"
   const onRemove = vi.fn().mockResolvedValue(undefined);
   await act(async () =>
     root.render(
-      createElement(WorktreesPage, {
+      createElement(WorktreesPage, { ProjectPicker: SearchableProjectPicker,
         cwd: "/repo",
         onDeleteSessions,
         onRemove,
@@ -1030,7 +1020,7 @@ it.each(["file", "terminal", "native"] as const)(
     }
     await act(async () =>
       root.render(
-        createElement(WorktreesPage, {
+        createElement(WorktreesPage, { ProjectPicker: SearchableProjectPicker,
           cwd: `/blocked-${blocker}`,
           onCheckRemove,
           onDeleteSessions,
@@ -1064,7 +1054,7 @@ it("reports partial completion if worktree removal fails after successful prefli
   const onRemove = vi.fn().mockRejectedValue(new Error("Disk unavailable"));
   await act(async () =>
     root.render(
-      createElement(WorktreesPage, {
+      createElement(WorktreesPage, { ProjectPicker: SearchableProjectPicker,
         cwd: "/late-removal-failure",
         onDeleteSessions,
         onRemove,
@@ -1103,7 +1093,7 @@ it.each(["partial", "rejected", "worktree", "refresh"] as const)(
     }
     await act(async () =>
       root.render(
-        createElement(WorktreesPage, {
+        createElement(WorktreesPage, { ProjectPicker: SearchableProjectPicker,
           cwd: `/retry-${failure}`,
           onDeleteSessions,
           onRemove,
@@ -1308,7 +1298,7 @@ it("keeps associated sessions by default when deleting a worktree", async () => 
   const onRemove = vi.fn().mockResolvedValue(undefined);
   await act(async () =>
     root.render(
-      createElement(WorktreesPage, {
+      createElement(WorktreesPage, { ProjectPicker: SearchableProjectPicker,
         cwd: "/keep-sessions",
         onDeleteSessions,
         onRemove,

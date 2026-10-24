@@ -6,9 +6,9 @@ import { Check, ChartBreakoutSquare } from "../../../../shared/ui/icons";
 import { useRef, useState } from "react";
 import { HandoffButton, SecondOpinionButton } from "../SecondOpinionButton";
 import { Popover } from "../../../../shared/ui/Popover";
-import { type HarnessId, type ModelTarget, type TurnMetrics } from "../../model/session";
-import { HarnessIcon } from "../HarnessIcon";
-import { CopyTurnButton } from "../CopyTurnButton";
+import { type HarnessId, type ModelTarget, type TurnMetrics } from "../../../../contracts/session";
+import { HarnessIcon } from "../../../../shared/ui/HarnessIcon";
+import { CopyTurnButton } from "../../../../shared/ui/messaging/CopyTurnButton";
 import { formatClockTime, formatElapsed, formatWorkingDuration } from "./transcriptClock";
 import { SaveNoteButton } from "./TurnActions";
 

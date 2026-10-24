@@ -1,41 +1,20 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../model/projectMascots";
+import { useProjectLogoSource } from "../model/useProjectLogoSource";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTabGroupLogos } from "../hooks/useTabGroupLogos";
 import { basename } from "../../../platform/tauri/fs";
-import {
-  prettyParent,
-  projectKey,
-  projectName,
-} from "../../../shared/lib/paths";
-import {
-  looksLikeProject,
-  projectRailItems,
-  sameProjectPath,
-  subscribeProjectPathsChanged,
-  type RecentProject,
-} from "../model/recents";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupLabels,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLabel,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+import { prettyParent, projectKey, projectName } from "../../../shared/lib/paths";
+import { looksLikeProject, projectRailItems, sameProjectPath, subscribeProjectPathsChanged } from "../model/recents";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupLabels, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLabel, resolveTabGroupLogo, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
 import { Check, ChevronDown, Plus, Search } from "../../../shared/ui/icons";
 import { Popover } from "../../../shared/ui/Popover";
-import { ProjectLogoIcon } from "./ProjectLogoIcon";
-import { ProjectMascot } from "./ProjectMascot";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
+
 
 function loadAppearance() {
   return {
@@ -46,33 +25,7 @@ function loadAppearance() {
   };
 }
 
-type Props = {
-  cwd: string;
-  recents: RecentProject[];
-  /** Project whose rail supplies the choices when it differs from `cwd`. */
-  railCwd?: string;
-  busy?: boolean;
-  mode?: "switch" | "move";
-  className?: string;
-  buttonClassName?: string;
-  appearance?: "ghost" | "filled";
-  compact?: boolean;
-  /** Keep the project name visible when using compact avatar sizing. */
-  showLabel?: boolean;
-  onSelectProject: (path: string) => void;
-  /** Enables a session-scope picker; an empty cwd selects all projects. */
-  onSelectAllProjects?: () => void;
-  onOpenProject?: () => void;
-  /** Opens the project's context menu; the search input receives focus back. */
-  onProjectContextMenu?: (
-    path: string,
-    x: number,
-    y: number,
-    trigger: HTMLElement | null,
-  ) => void;
-  /** Keeps the dropdown open while the project's context menu or its dialogs show. */
-  projectMenuActive?: boolean;
-};
+import type { ProjectPickerProps as Props } from "../presentation";
 
 export function SearchableProjectPicker({
   cwd,
@@ -91,6 +44,7 @@ export function SearchableProjectPicker({
   onProjectContextMenu,
   projectMenuActive = false,
 }: Props) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const { t: uiT } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -272,17 +226,17 @@ export function SearchableProjectPicker({
       >
         {!inProject ? null : logoPath ? (
           <ProjectLogoIcon
-            path={logoPath}
+            src={resolveProjectLogoSrc(logoPath)}
             className={`${compact ? "size-4" : "size-3.5"} shrink-0 rounded-sm`}
             imageClassName={compact ? "size-4" : "size-3.5"}
           />
         ) : (
-          <ProjectMascot
-            project={seed}
-            color={color}
-            name={resolveTabGroupMascot(key, groupMascots)}
+          <Omi compact
+            expression={projectMascot(seed, resolveTabGroupMascot(key, groupMascots)).name}
+            style={{ color: color || undefined }}
+            
             className={`${compact ? "size-3.5" : "size-3"} shrink-0`}
-            active={busy}
+            animated={busy}
           />
         )}
         {!showLabel ? null : (
@@ -395,15 +349,15 @@ export function SearchableProjectPicker({
                         <Check className="size-3.5" strokeWidth={2} />
                       ) : itemLogo ? (
                         <ProjectLogoIcon
-                          path={itemLogo}
+                          src={resolveProjectLogoSrc(itemLogo)}
                           className="size-4 rounded-sm"
                           imageClassName="size-4"
                         />
                       ) : (
-                        <ProjectMascot
-                          project={itemSeed}
-                          color={itemColor}
-                          name={resolveTabGroupMascot(itemKey, groupMascots)}
+                        <Omi compact
+                          expression={projectMascot(itemSeed, resolveTabGroupMascot(itemKey, groupMascots)).name}
+                          style={{ color: itemColor || undefined }}
+                          
                           className="size-3.5"
                         />
                       )}

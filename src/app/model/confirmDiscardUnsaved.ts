@@ -1,6 +1,6 @@
-import { ask } from "@tauri-apps/plugin-dialog";
+import { confirmNativeAction } from "../../platform/tauri/dialogs";
 
 /** Native sheet. `window.confirm` is swallowed when a macOS menu accelerator fires. */
 export function confirmDiscardUnsaved(message: string): Promise<boolean> {
-  return ask(message, { title: "OmniCode", kind: "warning" });
+  return confirmNativeAction(message, { title: "OmniCode", kind: "warning" });
 }

@@ -1,32 +1,10 @@
 import { useEffect, useState } from "react";
-import {
-  TID_WORKFLOW_MOVE_DIALOG,
-  TID_WORKFLOW_MOVE_DIALOG_SUBMIT,
-  TID_WORKFLOW_MOVE_DIALOG_TARGET,
-} from "../../_shims/shared.js";
+import { TID_WORKFLOW_MOVE_DIALOG, TID_WORKFLOW_MOVE_DIALOG_SUBMIT, TID_WORKFLOW_MOVE_DIALOG_TARGET } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../../../../shared/ui/primitives/Dialog.js";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../../../shared/ui/forms/Select.js";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../../../../shared/ui/primitives/Dialog.js";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../../shared/ui/forms/Select.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
-import {
-  findAutomationWorkspaceOptionByKey,
-  reconcileAutomationWorkspaceSelectionKey,
-  resolveAutomationWorkspaceSelectionKey,
-  type AutomationWorkspaceOption,
-} from "../automationWorkspaceOptions.js";
+import { findAutomationWorkspaceOptionByKey, reconcileAutomationWorkspaceSelectionKey, resolveAutomationWorkspaceSelectionKey, type AutomationWorkspaceOption } from "../automationWorkspaceOptions.js";
 
 interface SavedWorkflowMoveDialogProps {
   open: boolean;

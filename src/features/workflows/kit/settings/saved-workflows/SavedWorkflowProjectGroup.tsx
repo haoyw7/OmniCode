@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "../../../../../shared/ui/icons";
-import {
-  TID_WORKFLOWS_CREATE_VIA_CHAT,
-  TID_WORKFLOWS_LIST,
-  TID_WORKFLOW_PROJECT_GROUP,
-  resolveWorkspaceKey,
-  testId,
-  type OmniCodeSavedWorkflowEntry,
-} from "../../_shims/shared.js";
+import { TID_WORKFLOWS_CREATE_VIA_CHAT, TID_WORKFLOWS_LIST, TID_WORKFLOW_PROJECT_GROUP, resolveWorkspaceKey, testId, type OmniCodeSavedWorkflowEntry } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { toast } from "../../../../../shared/ui/primitives/Toast.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
@@ -19,25 +12,13 @@ import { useSavedWorkflowsDirectoryWatch } from "./useSavedWorkflowsDirectoryWat
 import { SavedWorkflowCard } from "./SavedWorkflowCard.js";
 import { SavedWorkflowDetailView } from "./SavedWorkflowDetailView.js";
 import { SavedWorkflowLaunchDialog } from "./SavedWorkflowLaunchDialog.js";
-import {
-  buildSavedWorkflowCreatePrompt,
-  buildSavedWorkflowRevisePrompt,
-} from "./savedWorkflowLaunchPrompt.js";
-import {
-  useSavedWorkflowLauncher,
-  type SavedWorkflowLaunchTarget,
-} from "./useSavedWorkflowLauncher.js";
+import { buildSavedWorkflowCreatePrompt, buildSavedWorkflowRevisePrompt } from "./savedWorkflowLaunchPrompt.js";
+import { useSavedWorkflowLauncher, type SavedWorkflowLaunchTarget } from "./useSavedWorkflowLauncher.js";
 import { useSavedWorkflowProjectTargets } from "./useSavedWorkflowProjectTargets.js";
 import { lastRunByWorkflowName } from "./savedWorkflowRunHistory.js";
 import { useSavedWorkflowPromote } from "./useSavedWorkflowPromote.js";
 import { useSavedWorkflowRunOpeners } from "./useSavedWorkflowRunOpeners.js";
-import type {
-  SavedWorkflowGroupMode,
-  SavedWorkflowGroupState,
-  SavedWorkflowProjectTarget,
-  SavedWorkflowsOpenArtifactParams,
-  SavedWorkflowsOpenRunParams,
-} from "./savedWorkflowContract.js";
+import type { SavedWorkflowGroupMode, SavedWorkflowGroupState, SavedWorkflowProjectTarget, SavedWorkflowsOpenArtifactParams, SavedWorkflowsOpenRunParams } from "./savedWorkflowContract.js";
 import { selectSavedWorkflowState, useSavedWorkflowStore } from "../../store/savedWorkflowStore.js";
 
 // 组把加载态回报给页的类型定义在 savedWorkflowContract；这里再导出，历史 import 路径不变。

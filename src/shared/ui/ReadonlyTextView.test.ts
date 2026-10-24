@@ -4,11 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { EditorView } from "@codemirror/view";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ReadonlyTextEditor from "./ReadonlyTextEditor";
-import {
-  isLongText,
-  ReadonlyTextStateContext,
-  type ReadonlyTextProps,
-} from "./ReadonlyTextView";
+import { isLongText, ReadonlyTextStateContext, type ReadonlyTextProps } from "./ReadonlyTextView";
 import { SurfaceVisibilityContext } from "./SurfaceVisibility";
 
 describe("long read-only text", () => {

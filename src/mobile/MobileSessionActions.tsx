@@ -1,20 +1,8 @@
 import { Button } from "../shared/ui/forms/Button";
 import { useEffect, useRef, useState, type RefObject } from "react";
-import {
-  Archive,
-  Copy,
-  ChevronRight,
-  CircleDot,
-  Bot,
-  GitBranch,
-  Pencil,
-  Pin,
-} from "../shared/ui/icons";
+import { Archive, Copy, ChevronRight, CircleDot, Bot, GitBranch, Pencil, Pin } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import type {
-  HostSession,
-  HostSessionSummary,
-} from "../features/connections/model/protocol";
+import type { HostSession, HostSessionSummary } from "../contracts/protocol";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
 import { MobileSheet, SHEET_WIDTH, type MobileSheetPoint } from "./MobileSheet";
 import { mobileTranscriptPlatform } from "./transcriptPlatform";

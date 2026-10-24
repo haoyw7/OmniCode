@@ -11,13 +11,13 @@ import { randomUUID } from "node:crypto";
 import {
   DEFAULT_TITLE_MODEL,
   type TitleModelStatus,
-} from "../src/features/sessions/model/titleModel";
+} from "../src/contracts/titleModel";
 import {
   buildThreadTitlePrompt,
   parseGeneratedSessionTitle,
   type GeneratedSessionTitle,
-} from "../src/features/sessions/model/sessionTitle";
-import { buildBranchNamePrompt, parseBranchName } from "../src/features/source-control/model/gitText";
+} from "../src/domain/sessionTitle";
+import { buildBranchNamePrompt, parseBranchName } from "../src/domain/gitText";
 
 type Config = Omit<TitleModelStatus, "hasApiKey"> & { apiKey: string };
 const MAX_RESPONSE_BYTES = 256 * 1024;

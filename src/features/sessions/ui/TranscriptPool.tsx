@@ -1,11 +1,4 @@
-import {
-  cloneElement,
-  memo,
-  useLayoutEffect,
-  useRef,
-  useSyncExternalStore,
-  type ReactElement,
-} from "react";
+import { cloneElement, memo, useLayoutEffect, useRef, useSyncExternalStore, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 
 /** Transcripts kept mounted after their pane closes, so a revisit skips the rebuild. */

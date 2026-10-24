@@ -1,5 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
-import { hasHeadlessChildBackend, readProviderRecords } from "../../core/child";
+import { readProviderRecords } from "../../core/child";
 
 export type StoredCursorToolCall = {
   toolCallId: string;
@@ -45,8 +44,7 @@ export async function readStoredCursorSubagentRuns(
     const revisions = Object.fromEntries(Object.values(knownRevisions).length
       ? [...cache!].filter(([id]) => knownRevisions[id] !== undefined).map(([id, run]) => [id, run.revision]) : []);
     for (let offset = 0; offset < ids.length; offset += 256) {
-      const read = hasHeadlessChildBackend() ? readProviderRecords : invoke;
-      const runs = await read<StoredCursorSubagentRun[]>("cursor_subagent_runs", {
+      const runs = await readProviderRecords<StoredCursorSubagentRun[]>("cursor_subagent_runs", {
         sessionId: parent, toolCallIds: ids.slice(offset, offset + 256), knownRevisions: revisions,
       });
       for (const run of runs) {
@@ -70,8 +68,7 @@ export function readStoredCursorToolCalls(
   sessionId: string,
   toolCallIds: string[],
 ): Promise<StoredCursorToolCall[]> {
-  if (hasHeadlessChildBackend()) return Promise.resolve([]);
-  return invoke<StoredCursorToolCall[]>("cursor_tool_calls", {
+  return readProviderRecords<StoredCursorToolCall[]>("cursor_tool_calls", {
     sessionId,
     toolCallIds,
   });

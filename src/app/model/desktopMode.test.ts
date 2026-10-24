@@ -2,11 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { newEditorWorkspaceTab, newFileTab, newTab, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { activatePreferenceStore, SharedPreferenceStore, type PreferenceRequest } from "../../features/settings/model/sharedPreferences";
-import { DEVICE_LOCAL_PREFERENCE_KINDS, SHARED_PREFERENCE_KINDS } from "../../features/settings/model/sharedPreferenceSchema";
-import {
-  DESKTOP_LOCATIONS_KEY, DESKTOP_MODE_KEY, desktopModeForCwd, desktopModeTarget,
-  loadDesktopLocations, loadDesktopMode, saveDesktopMode, type DesktopLocations,
-} from "./desktopMode";
+import { DEVICE_LOCAL_PREFERENCE_KINDS, SHARED_PREFERENCE_KINDS } from "../../domain/sharedPreferenceSchema";
+import { DESKTOP_LOCATIONS_KEY, DESKTOP_MODE_KEY, desktopModeForCwd, desktopModeTarget, loadDesktopLocations, loadDesktopMode, saveDesktopMode, type DesktopLocations } from "./desktopMode";
 
 const chatCwd = "/home/me/Documents/omnicode/2026-10-13/chat-120000-abcdef";
 beforeEach(() => { activatePreferenceStore(undefined); localStorage.clear(); });

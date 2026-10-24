@@ -2,20 +2,12 @@ import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useEffect, useRef, useState } from "react";
 import { useCommandShortcut } from "../../../app/commands/useCommandShortcut";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  Archive,
-  Bot,
-  IconArtworkContext,
-  MoreHorizontal,
-  PanelRight,
-  Pencil,
-  type IconComponent,
-} from "../../../shared/ui/icons";
+import { Archive, Bot, IconArtworkContext, MoreHorizontal, PanelRight, Pencil, type IconComponent } from "../../../shared/ui/icons";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
-import type { Session } from "../../sessions/model/session";
-import { useSessionHeaderActions } from "./SessionHeaderActions";
+import { ExplorerMenu } from "../../../shared/ui/primitives/ExplorerMenu";
+import type { Session } from "../../../contracts/session";
+import { useSessionHeaderActions } from "../model/SessionHeaderActions";
 import { delegateDesktopSession } from "../../bots/model/delegateDesktopSession";
 import { remoteProjectFor } from "../../connections/model/remoteProjects";
 import { remoteSessionFor } from "../../connections/model/connections";

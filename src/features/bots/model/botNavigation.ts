@@ -1,7 +1,4 @@
-import type {
-  HostProject,
-  HostSession,
-} from "../../connections/model/protocol";
+import type { HostProject, HostSession } from "../../../contracts/protocol";
 import type { SessionReference } from "./botView";
 import type { BotRpc } from "./botRpc";
 export type BotTarget = { project: HostProject; session: HostSession };

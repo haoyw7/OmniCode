@@ -1,13 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  loadNotificationsEnabled,
-  NOTIFICATIONS_DEFAULT,
-  notificationText,
-  pendingInputNotifications,
-  saveNotificationsEnabled,
-  shouldNotify,
-} from "./notifications";
-import { newSession, type Session } from "../../sessions/model/session";
+import { loadNotificationsEnabled, NOTIFICATIONS_DEFAULT, notificationText, pendingInputNotifications, saveNotificationsEnabled, shouldNotify } from "./notifications";
+import { newSession } from "../../sessions/model/session";
+import { type Session } from "../../../contracts/session";
 
 const KEY = "omnicode.notifications";
 

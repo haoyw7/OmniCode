@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  inWorktreeFocus,
-  setWorktreeFocus,
-  worktreeFocus,
-} from "./worktreeFocus";
+import { inWorktreeFocus, setWorktreeFocus, worktreeFocus } from "./worktreeFocus";
 
 describe("worktree focus", () => {
   it("keeps every session when nothing is focused", () => {

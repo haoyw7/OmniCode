@@ -1,13 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  clearProjectProviders,
-  loadProjectProviderSettings,
-  projectProvidersRevision,
-  rebaseProjectProviders,
-  setProjectDefaultModel,
-  setProjectDefaultProvider,
-  setProjectProviderHidden,
-} from "./projectProviders";
+import { clearProjectProviders, loadProjectProviderSettings, projectProvidersRevision, rebaseProjectProviders, setProjectDefaultModel, setProjectDefaultProvider, setProjectProviderHidden } from "./projectProviders";
 
 describe("project provider settings", () => {
   let storage: Map<string, string>;

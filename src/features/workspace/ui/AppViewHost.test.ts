@@ -4,11 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setUiLanguage } from "../../../shared/i18n/language";
 import { lazySurface } from "../../../shared/ui/lazySurface";
-import {
-  AppViewHost,
-  AppViewRendererContext,
-  type AppViewRenderer,
-} from "./AppViewHost";
+import { AppViewHost, AppViewRendererContext, type AppViewRenderer } from "./AppViewHost";
 
 let container: HTMLDivElement;
 let root: Root;

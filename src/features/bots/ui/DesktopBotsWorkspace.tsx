@@ -12,7 +12,7 @@ import { BOT_SELECTION_EVENT, readBotSelection, selectBotThread } from "../model
 import { useBotUnread } from "../model/useBotUnread";
 import { readBotPins, writeBotPins } from "../model/botPins";
 import { BotRecipientPicker } from "./BotRecipientPicker";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ExplorerMenu } from "../../../shared/ui/primitives/ExplorerMenu";
 import { BotAvatar } from "./BotAvatar";
 import { BotNavigationProvider, BotNavigationToggle, useBotNavigationExpanded, useBotNavigationLayout } from "./BotNavigationLayout";
 import { BotMemoryDrafts } from "../model/botMemoryDrafts";
@@ -28,7 +28,8 @@ import { DesktopBotRoomChat } from "./DesktopBotRoomChat";
 import type { BotTeam, BotTeams } from "../model/botTeams";
 import type { BotRoom, BotRooms } from "../model/botRooms";
 import { botErrorMessage } from "../model/botErrors";
-import { REMOTE_PROVIDERS, type HostDescriptor, type HostModelCatalog, type HostProject } from "../../connections/model/protocol";
+import { REMOTE_PROVIDERS } from "../../../contracts/provider";
+import { type HostDescriptor, type HostModelCatalog, type HostProject } from "../../../contracts/protocol";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
@@ -39,7 +40,7 @@ import { Modal } from "../../../shared/ui/Modal";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { SurfaceAppearance } from "../../../shared/ui/SurfaceAppearance";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../../../shared/ui/forms/InputGroup";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { sessionDisplayTitle } from "../../sessions/model/session";
 import { Archive, Bot, ChevronRight, Loader2, Pin, Plus, Search, MessageSquare, X } from "../../../shared/ui/icons";
 

@@ -1,14 +1,7 @@
 import { animate, motion, useMotionTemplate, useMotionValue } from "motion/react";
 import { duration, ease, panelTransition } from "../../shared/motion/tokens";
 import { useMotionPreference } from "../../shared/motion/useMotionPreference";
-import {
-  memo,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { memo, useCallback, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { useCollapseMotion } from "../../shared/ui/AnimatedCollapse";
 import { SurfaceVisibilityContext } from "../../shared/ui/SurfaceVisibility";
 

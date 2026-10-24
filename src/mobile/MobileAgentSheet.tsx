@@ -1,16 +1,8 @@
 import { useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { Block } from "../features/sessions/model/session";
-import {
-  agentTranscript,
-  resolveAgentBlock,
-} from "../features/sessions/model/agentTranscript";
-import {
-  subagentModelName,
-  subagentName,
-  subagentReport,
-  toolCallState,
-} from "../features/sessions/model/transcriptActivity";
-import { TranscriptPlatformContext } from "../features/sessions/ui/TranscriptPlatform";
+import type { Block } from "../contracts/session";
+import { agentTranscript, resolveAgentBlock } from "../domain/agentTranscript";
+import { subagentModelName, subagentName, subagentReport, toolCallState } from "../features/sessions/model/transcriptActivity";
+import { TranscriptPlatformContext } from "../shared/ui/markdown/TranscriptPlatform";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { MobileSheet, MobileSheetHeader } from "./MobileSheet";

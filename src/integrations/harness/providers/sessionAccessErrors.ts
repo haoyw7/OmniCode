@@ -1,4 +1,4 @@
-import type { HarnessId } from "../../../features/sessions/model/session";
+import type { HarnessId } from "../../../contracts/session";
 
 export type SessionAccessIssue = "occupied" | "unavailable";
 

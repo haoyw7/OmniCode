@@ -4,10 +4,7 @@
  * 抽成纯函数是因为详情页里唯一有"规则"的部分就是这些，而它们全都能被穷举单测，
  * 不必渲染一张 React Flow 画布。组件只负责把这里的结果贴到 DOM 上。
  */
-import {
-  readWorkflowRunStopReason,
-  type WorkflowRunStopReason,
-} from "../components/workflow-graph/run-status-presentation.js";
+import { readWorkflowRunStopReason, type WorkflowRunStopReason } from "../components/workflow-graph/run-status-presentation.js";
 import type { WorkflowRunActor, WorkflowRunState } from "../_shims/protocol.js";
 import type { WorkflowAgentAvatar } from "../../model/workflowAgentAvatar";
 

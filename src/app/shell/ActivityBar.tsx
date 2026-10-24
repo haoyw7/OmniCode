@@ -1,30 +1,14 @@
 import { windowDragRegion } from "./startWindowDrag";
 import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowDownCircle,
-  Inbox,
-  Loader,
-  Search,
-  Settings,
-  StickyNote,
-  Workflow,
-  Zap,
-  type IconComponent,
-} from "../../shared/ui/icons";
+import { ArrowDownCircle, Inbox, Loader, Search, Settings, StickyNote, Workflow, Zap, type IconComponent } from "../../shared/ui/icons";
 import { useTranslation } from "../../shared/i18n/useTranslation";
-import {
-  useCommandShortcut,
-  useShortcutLabel,
-} from "../commands/useCommandShortcut";
+import { useCommandShortcut, useShortcutLabel } from "../commands/useCommandShortcut";
 import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
 import { Popover } from "../../shared/ui/Popover";
 import { IconButton } from "../../shared/ui/forms/IconButton";
 import { useHoverSummary } from "../../shared/ui/HoverSummary";
-import {
-  collectRailProjects,
-  type RecentProject,
-} from "../../features/projects/model/recents";
+import { collectRailProjects, type RecentProject } from "../../features/projects/model/recents";
 import { InboxNotificationMenu } from "../../features/inbox/ui/InboxNotificationMenu";
 import type { InstalledUpdate } from "../model/updateNotice";
 import { UpdateAvailableDialog } from "./UpdateAvailableDialog";

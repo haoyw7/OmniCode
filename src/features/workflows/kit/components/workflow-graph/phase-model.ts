@@ -1,8 +1,5 @@
 import { hasPhaseVocabulary } from "./participant-model.js";
-import type {
-  WorkflowCausalityGraphData,
-  WorkflowStepData,
-} from "./types.js";
+import type { WorkflowCausalityGraphData, WorkflowStepData } from "./types.js";
 
 /**
  * 阶段层的纯选择器。阶段是图**上面的一层商**：

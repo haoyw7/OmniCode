@@ -2,22 +2,10 @@ import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import {
-  FileText,
-  LoaderCircle,
-  MessageSquare,
-  RefreshCw,
-  Wrench,
-} from "../../../shared/ui/icons";
-import type { McpConnection } from "../model/mcp";
-import {
-  inspectMcpServer,
-  schemaParameters,
-  type McpInspection,
-  type McpPrompt,
-  type McpResource,
-  type McpTool,
-} from "../model/mcpInspect";
+import { FileText, LoaderCircle, MessageSquare, RefreshCw, Wrench } from "../../../shared/ui/icons";
+import type { McpConnection } from "../../../contracts/mcp";
+import { inspectMcpServer, schemaParameters } from "../model/mcpInspect";
+import type { McpInspection, McpPrompt, McpResource, McpTool } from "../../../contracts/mcp";
 
 type Tab = "tools" | "resources" | "prompts";
 

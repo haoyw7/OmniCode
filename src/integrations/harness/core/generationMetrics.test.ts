@@ -1,25 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { HarnessEvent } from "./types";
-import {
-  formatGenerationRate,
-  sanitizeGenerationSample,
-} from "../../../features/sessions/model/generationSample";
-import {
-  finishGenerationMetrics,
-  generationRequestStarted,
-  generationStreamDelta,
-  reportGenerationStreamUsage,
-  reportGenerationUsage,
-  reportGenerationTotals,
-  resetGenerationMetrics,
-  withGenerationMetrics,
-  measureGenerationTurn,
-  observeGenerationDelta,
-  reportObservedGenerationUsage,
-  invalidateObservedGeneration,
-  emitAcpGenerationEvent,
-  estimateOutputTokens,
-} from "./generationMetrics";
+import type { HarnessEvent } from "../../../contracts/harness";
+import { formatGenerationRate, sanitizeGenerationSample } from "../../../features/sessions/model/generationSample";
+import { finishGenerationMetrics, generationRequestStarted, generationStreamDelta, reportGenerationStreamUsage, reportGenerationUsage, reportGenerationTotals, resetGenerationMetrics, withGenerationMetrics, measureGenerationTurn, observeGenerationDelta, reportObservedGenerationUsage, invalidateObservedGeneration, emitAcpGenerationEvent, estimateOutputTokens } from "./generationMetrics";
 
 function setup() {
   const events: HarnessEvent[] = [];

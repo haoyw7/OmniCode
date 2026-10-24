@@ -1,15 +1,13 @@
-import { invoke } from "@tauri-apps/api/core";
-import { asRecord } from "../../../integrations/harness/providers/codex/codexProtocol";
+import { remoteRequest } from "../../connections/model/connections";
+import { loadRemoteHostDescriptor } from "../../connections/model/remoteHostMetadata";
+import { providerUsageHost, providerUsageSourceKey } from "./providerUsageSource";
+import { HOST_PI_USAGE_CAPABILITY, type PiUsageProvider } from "../../../contracts/providerUsage";
+import { asRecord } from "../../../domain/records";
 import { parsePiModelRef } from "../../../integrations/harness/providers/pi/piProtocol";
-import {
-  errorRateLimits,
-  idleRateLimits,
-  unavailableRateLimits,
-  type ProviderRateLimits,
-  type RateLimitWindow,
-} from "./rateLimits";
+import { errorRateLimits, idleRateLimits, unavailableRateLimits } from "../../../domain/rateLimits";
+import { type ProviderRateLimits, type RateLimitWindow } from "../../../contracts/session";
 
-export type PiUsageProvider = "anthropic" | "openai-codex";
+export type { PiUsageProvider };
 
 export function piUsageProvider(
   model: string | undefined,
@@ -31,10 +29,20 @@ export async function fetchPiUsage(
   provider: PiUsageProvider,
 ): Promise<ProviderRateLimits> {
   const billingProvider = piBillingProvider(provider);
+  const host = providerUsageHost();
+  if (!host)
+    return unavailableRateLimits(billingProvider, "Connect to the shared Host to read provider usage.");
   try {
+    // Pi's credentials live with the Host that runs Pi; never read them here.
+    const source = providerUsageSourceKey();
+    const descriptor = await loadRemoteHostDescriptor(host.machineId, host.environmentId);
+    if (source !== providerUsageSourceKey()) throw new Error("Host connection changed.");
+    if (!descriptor.capabilities.includes(HOST_PI_USAGE_CAPABILITY))
+      return unavailableRateLimits(billingProvider, "This Host does not support account usage yet. Update and restart it, then refresh.");
     const result = asRecord(
-      await invoke<unknown>("fetch_pi_usage", { provider }),
+      await remoteRequest<unknown>(host.machineId, "providerAccounts.piUsage", { provider }),
     );
+    if (source !== providerUsageSourceKey()) throw new Error("Host connection changed.");
     if (
       result?.status === "unavailable" &&
       typeof result.message === "string"

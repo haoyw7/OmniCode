@@ -1,10 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import {
-  atScrollEdge,
-  hasScrollRoom,
-  lockOverscroll,
-} from "./useLockOverscroll";
+import { atScrollEdge, hasScrollRoom, lockOverscroll } from "./useLockOverscroll";
 
 const box = (over: Partial<Record<string, number>> = {}) => ({
   scrollTop: 0,

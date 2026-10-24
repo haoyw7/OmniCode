@@ -1,10 +1,10 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openExternalUrl } from "../../../platform/tauri/browser";
 import { useEffect, useMemo, useState } from "react";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
 import { AlertCircle, CircleX, ExternalLink } from "../../../shared/ui/icons";
 import { gitCommitFileDiff } from "../../../platform/tauri/fs";
-import type { GithubCheckDetails } from "../model/githubPrChecks";
+import type { GithubCheckDetails } from "../../../contracts/github";
 
 type Annotation = GithubCheckDetails["annotations"][number];
 type SourceCache = Map<string, Promise<string | null>>;
@@ -136,7 +136,7 @@ function CheckAnnotation({
               aria-label={uiT("View {value0} on GitHub", {
                 value0: String(location),
               })}
-              onClick={() => void openUrl(fileUrl)}
+              onClick={() => void openExternalUrl(fileUrl)}
               className="-my-1 -mr-1 grid size-6 shrink-0 place-items-center rounded text-content/40 hover:bg-content/3 hover:text-content"
             >
               <ExternalLink className="size-3" />

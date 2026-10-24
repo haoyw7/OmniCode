@@ -1,83 +1,21 @@
-import {
-  measureGenerationTurn,
-  generationRequestStarted,
-  generationStreamDelta,
-  reportGenerationStreamUsage,
-  resetGenerationMetrics,
-} from "../../core/generationMetrics";
+import type { CommandContext, NativeCommand, NativeCommandProvider } from "../../../../contracts/nativeCommands";
+import { measureGenerationTurn, generationRequestStarted, generationStreamDelta, reportGenerationStreamUsage, resetGenerationMetrics } from "../../core/generationMetrics";
 import { botContextKey } from "../../core/botContext";
 import { translate } from "../../../../shared/i18n/language";
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { taskListFromToolInput } from "../../../../features/sessions/model/taskList";
-import { normalizeProjectPath } from "../../../../features/projects/model/recents";
-import type { UserQuestionReply } from "../../../../features/sessions/model/userQuestion";
-import type {
-  CommandContext,
-  NativeCommand,
-  NativeCommandProvider,
-} from "../../core/nativeCommands";
+import { nativeModelId } from "../../core/modelCatalog";
+import { taskListFromToolInput } from "../../../../domain/taskList";
+import { normalizeProjectPath } from "../../../../domain/pathDisplay";
+import type { UserQuestionReply } from "../../../../contracts/session";
+
 import { discoverOmpCommands, ompCommandsFromRpcData } from "./piSkills";
-import { OMP_FLAVOR } from "./piFlavor";
-import {
-  killChild,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-  writeChild,
-} from "../../core/child";
-import type { PiFlavor } from "./piFlavor";
+import { OMP_FLAVOR, type PiFlavor } from "./piFlavor";
+import { killChild, spawnChild, unwatchChild, watchChild, writeChild } from "../../core/child";
+
 import { PiRpc } from "./piClient";
 import { piSubagentEvents } from "./piSubagents";
-import {
-  agentEndWillRetry,
-  asRecord,
-  assistantDeltaFromEvent,
-  buildPiPrompt,
-  buildPiSpawnArgs,
-  buildPiSteer,
-  contextFromSessionStats,
-  contextFromUsage,
-  turnMetricsFromUsage,
-  extensionUiResponse,
-  extensionUiTitle,
-  forkMessagesFromRpcData,
-  isAgentSettled,
-  isPiThinkingLevel,
-  mergeToolInput,
-  needsExtensionUiReply,
-  parseExtensionUiRequest,
-  parsePiModelRef,
-  piNativeId,
-  previewFromTool,
-  providerSessionIdFromState,
-  sessionFromState,
-  statusFromPiEvent,
-  stringField,
-  summarizeToolRequest,
-  toolCallDeltaFromEvent,
-  toolCallEndFromEvent,
-  toolCallStartFromEvent,
-  toolExecutionEndFromEvent,
-  toolImagesFromEvent,
-  toolExecutionStartFromEvent,
-  toolExecutionUpdateFromEvent,
-  toolKindFromName,
-  toolTitle,
-  tryParseJsonRecord,
-  turnErrorFromEvent,
-  type PiExtensionUiRequest,
-  thinkingSetting,
-  type PiThinkingLevel,
-} from "./piProtocol";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  HarnessEvent,
-  HarnessSessionInput,
-  RewindLastTurnInput,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+import { agentEndWillRetry, asRecord, assistantDeltaFromEvent, buildPiPrompt, buildPiSpawnArgs, buildPiSteer, contextFromSessionStats, contextFromUsage, turnMetricsFromUsage, extensionUiResponse, extensionUiTitle, forkMessagesFromRpcData, isAgentSettled, isPiThinkingLevel, mergeToolInput, needsExtensionUiReply, parseExtensionUiRequest, parsePiModelRef, piNativeId, previewFromTool, providerSessionIdFromState, sessionFromState, statusFromPiEvent, stringField, summarizeToolRequest, toolCallDeltaFromEvent, toolCallEndFromEvent, toolCallStartFromEvent, toolExecutionEndFromEvent, toolImagesFromEvent, toolExecutionStartFromEvent, toolExecutionUpdateFromEvent, toolKindFromName, toolTitle, tryParseJsonRecord, turnErrorFromEvent, type PiExtensionUiRequest, thinkingSetting, type PiThinkingLevel } from "./piProtocol";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import type { CompactContextInput, HarnessSessionInput, RewindLastTurnInput, SendTurnInput, SteerTurnInput } from "../../core/types";
 
 type PendingApproval = {
   request: PiExtensionUiRequest;
@@ -95,16 +33,10 @@ type InFlightTool = {
 };
 
 type RawImage = Extract<HarnessEvent, { type: "image.generated"; data: string }>;
-export type PiImageMaterializer = (image: RawImage) => Promise<{
-  event: Extract<HarnessEvent, { type: "image.generated"; path: string }>;
-  discard: () => Promise<void>;
-}>;
 
 type Live = {
   rpc: PiRpc;
-  pendingImages: Promise<void>;
   imageIds: Set<string>;
-  imageMaterializer?: PiImageMaterializer;
   cwd: string;
   providerSessionId: string;
   contextWindow?: number;
@@ -246,12 +178,11 @@ export function setPiBinaryResolver(
 export async function sendTurn(
   flavor: PiFlavor,
   input: SendTurnInput,
-  imageMaterializer?: PiImageMaterializer,
 ): Promise<void> {
-  return measureGenerationTurn(input, (measured) => sendMeasuredTurn(flavor, measured, imageMaterializer));
+  return measureGenerationTurn(input, (measured) => sendMeasuredTurn(flavor, measured));
 }
 
-async function sendMeasuredTurn(flavor: PiFlavor, input: SendTurnInput, imageMaterializer?: PiImageMaterializer): Promise<void> {
+async function sendMeasuredTurn(flavor: PiFlavor, input: SendTurnInput): Promise<void> {
   const { cancelledThreads } = stateFor(flavor);
   let live: Live;
   try {
@@ -263,7 +194,6 @@ async function sendMeasuredTurn(flavor: PiFlavor, input: SendTurnInput, imageMat
   if (cancelledThreads.delete(input.sessionId)) return;
 
   live.onEvent = input.onEvent;
-  live.imageMaterializer = imageMaterializer;
   live.turns = live.turns
     .catch(() => undefined)
     .then(async () => {
@@ -552,7 +482,6 @@ async function startLive(
 
   const live: Live = {
     rpc,
-    pendingImages: Promise.resolve(),
     imageIds: new Set(),
     cwd: input.cwd,
     providerSessionId: expectedSessionId ?? resume ?? "",
@@ -664,7 +593,6 @@ async function runTurn(
   live.toolsByIndex.clear();
   live.toolsById.clear();
   live.imageIds.clear();
-  live.pendingImages = Promise.resolve();
   live.compacting = false;
   live.retrying = false;
   live.settleToken += 1;
@@ -782,29 +710,12 @@ function emitPiAgentEvent(live: Live, event: HarnessEvent): void {
   else live.onEvent(event);
 }
 
+/** Raw bytes go to the Host, which persists images for every adapter. */
 function publishPiImage(live: Live, image: RawImage): void {
   const key = `${image.agentCallId ?? "root"}:${image.itemId}`;
   if (live.imageIds.has(key)) return;
   live.imageIds.add(key);
-  const materialize = live.imageMaterializer;
-  if (!materialize) { live.onEvent(image); return; }
-  const token = live.settleToken;
-  live.pendingImages = live.pendingImages.then(async () => {
-    if (live.cancelled || live.muteUpdates || live.settleToken !== token) return;
-    try {
-      const saved = await materialize(image);
-      if (live.cancelled || live.muteUpdates || live.settleToken !== token) {
-        await saved.discard().catch(() => undefined); return;
-      }
-      live.onEvent({ ...saved.event, ...(image.agentCallId ? { agentCallId: image.agentCallId } : {}) });
-    } catch (error) {
-      if (live.cancelled || live.muteUpdates || live.settleToken !== token) return;
-      const message = `Could not save Pi image: ${error instanceof Error ? error.message : String(error)}`;
-      live.onEvent(image.agentCallId
-        ? { type: "agent.step", callId: image.agentCallId, stepId: `${image.itemId}:error`, kind: "message", text: message }
-        : { type: "session.error", message });
-    }
-  });
+  live.onEvent(image);
 }
 
 function handleFrame(
@@ -1140,7 +1051,6 @@ async function settleTurn(live: Live, flavor: PiFlavor, sessionId: string, force
   } catch {
     // meter stays on the last streamed usage
   }
-  await live.pendingImages;
   if (live.settleToken === token && !live.cancelled) {
     finishActiveTurn(live, [
       { type: "message.completed" },

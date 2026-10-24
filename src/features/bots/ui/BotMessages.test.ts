@@ -6,15 +6,15 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { BotMessage } from "../model/botView";
 import { BotMessages } from "./BotMessages";
 import { BotSessionCard } from "./BotSessionCard";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
 import { quoteBotReply, splitBotReply } from "../model/botReply";
 
-vi.mock("../../sessions/ui/AgentMarkdown", () => ({
+vi.mock("../../../shared/ui/markdown/AgentMarkdown", () => ({
   AgentMarkdown: vi.fn(({ text }: { text: string }) =>
     createElement("p", null, text),
   ),
 }));
-vi.mock("../../sessions/ui/useTranscriptRenderingPlatform", () => ({
+vi.mock("../../../shared/ui/markdown/useTranscriptRenderingPlatform", () => ({
   AfterTextReveal: ({ children }: { children: React.ReactNode }) => children,
 }));
 let root: Root, node: HTMLDivElement;

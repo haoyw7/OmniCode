@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { createElement, act, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { startMotionClock, motionFrame, stopMotionClock } from "./motionTestClock";
 import { MobileComposer, type MobileComposerPanel } from "./MobileComposer";

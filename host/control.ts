@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { botErrorCode } from "./bots/thread/errors";
 import { currentMachineIO } from "./machine-io";
 import { wslControlLauncher } from "./wsl-control";
+import { APP_ACTIONS } from "../src/contracts/app";
 
 const ACTIONS = ["list", "delegate", "get", "message", "retry", "cancel", "wait", "review", "finish", "steer", "respond", "answer"];
 export const CONTROL_HELP = `OmniCode Host control — supervise this orchestration run.
@@ -55,10 +56,32 @@ $OMNICODE_WORKFLOW_SKILL_DIR/SKILL.md before writing a script.
 Output is one JSON line; exit status 0 means ok:true. Retry an uncertain call with the same
 --request-id. Never print OMNICODE_WORKFLOW_TOKEN.`;
 
+export const APP_HELP = `OmniCode app access — use in a thread enabled by /operator.
+Usage: <app-cli> app ACTION [--json JSON | --input FILE|-] [--request-id ID]
+Actions:
+  models.list {} — providers, models, settings and permission modes
+  sessions.list {} — project sessions with IDs, busy status and hasDraft
+  sessions.read {sessionId,before?,limit?,maxChars?} — up to 3 recent user/assistant exchanges;
+    pass nextBefore from a result for older exchanges; maxChars caps each message (200-6000)
+  sessions.send {sessionId,prompt} — follow up in an idle project session (busy sessions are rejected)
+  sessions.draft {sessionId,prompt} — save an unsent draft in an idle project session
+  sessions.start {prompt,harness?,model?,effort?,modelSettings?,runtimeMode?,reveal?,draft?,
+    workspaceMode?:"current"|"worktree",worktreeBase?,executionCwd?,placement?:"tab"|"right"|"down",besideSessionId?}
+    — create a session tab, or split a visible pane right or down; draft:true saves the prompt unsent.
+    Returns after acceptance, not agent completion.
+  worktrees.list {} — working copies in this project
+  worktrees.create {branch,base?,existing?} — create a worktree on a new or existing branch
+  notes.list {limit?,offset?} — saved notes with short previews
+  notes.read {id} — one saved note
+  notes.write {id?,title?,body?,tags?} — create a note (body required) or update one
+Unknown fields are rejected. Output is one JSON line; exit status 0 means ok:true.
+Retry an uncertain call with the same --request-id. Never print OMNICODE_APP_TOKEN.`;
+
 const NAMESPACE_ENV = {
   control: { endpoint: "OMNICODE_CONTROL_ENDPOINT", token: "OMNICODE_CONTROL_TOKEN" },
   assistant: { endpoint: "OMNICODE_CONTROL_ENDPOINT", token: "OMNICODE_CONTROL_TOKEN" },
   workflow: { endpoint: "OMNICODE_WORKFLOW_ENDPOINT", token: "OMNICODE_WORKFLOW_TOKEN" },
+  app: { endpoint: "OMNICODE_APP_ENDPOINT", token: "OMNICODE_APP_TOKEN" },
 } as const;
 type ControlNamespace = keyof typeof NAMESPACE_ENV;
 
@@ -161,7 +184,7 @@ export class HostControl {
 }
 
 export async function runControlCli(args: string[], namespace: ControlNamespace = "control"): Promise<number> {
-  if (args[0] === "--help" || !args[0]) { process.stdout.write(namespace === "control" ? `${CONTROL_HELP}\n` : namespace === "workflow" ? `${WORKFLOW_HELP}\n` : "OmniCode assistant control: assistant ACTION --input FILE|- --request-id ID. Discover agents/projects/sessions, create and manage conversations, or call workspace.run. Retry uncertain calls with the same request ID.\n"); return 0; }
+  if (args[0] === "--help" || !args[0]) { process.stdout.write(namespace === "control" ? `${CONTROL_HELP}\n` : namespace === "workflow" ? `${WORKFLOW_HELP}\n` : namespace === "app" ? `${APP_HELP}\n` : "OmniCode assistant control: assistant ACTION --input FILE|- --request-id ID. Discover agents/projects/sessions, create and manage conversations, or call workspace.run. Retry uncertain calls with the same request ID.\n"); return 0; }
   let requestId: string = randomUUID();
   try {
     const known = new Set(["--json", "--input", "--request-id"]);
@@ -173,7 +196,7 @@ export async function runControlCli(args: string[], namespace: ControlNamespace 
     const option = (key: string) => { const i = args.indexOf(key); if (i < 0) return undefined; if (!args[i + 1]) throw new Error(`Missing ${key} value`); return args[i + 1]; };
     requestId = option("--request-id") ?? requestId;
     if (!requestId || requestId.length > 128 || requestId.includes("\0")) throw new Error("Invalid request ID");
-    if (namespace === "control" ? !ACTIONS.includes(args[0]) : namespace === "workflow" ? !WORKFLOW_ACTIONS.includes(args[0]) : !/^[a-z]+\.[a-zA-Z_]+$/.test(args[0])) throw new Error(`Unknown ${namespace} action; run ${namespace} --help`);
+    if (namespace === "control" ? !ACTIONS.includes(args[0]) : namespace === "workflow" ? !WORKFLOW_ACTIONS.includes(args[0]) : namespace === "app" ? !(APP_ACTIONS as readonly string[]).includes(args[0]) : !/^[a-z]+\.[a-zA-Z_]+$/.test(args[0])) throw new Error(`Unknown ${namespace} action; run ${namespace} --help`);
     const json = option("--json"), file = option("--input");
     if (json && file) throw new Error("Use either --json or --input");
     const input = JSON.parse(json ?? (file ? readFileSync(file === "-" ? 0 : file, "utf8") : "{}"));

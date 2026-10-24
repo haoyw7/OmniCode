@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { foldUnifiedLines, type UnifiedLine } from "./unifiedDiff";
-import {
-  flattenVisibleRows,
-  layoutRows,
-  rowsHeight,
-  UNIFIED_FOLD_PX,
-  UNIFIED_LINE_PX,
-  windowRows,
-} from "./unifiedDiffWindow";
+import { flattenVisibleRows, layoutRows, rowsHeight, UNIFIED_FOLD_PX, UNIFIED_LINE_PX, windowRows } from "./unifiedDiffWindow";
 
 describe("flattenVisibleRows", () => {
   it("keeps fold bars and revealed context as separate rows", () => {

@@ -9,11 +9,7 @@ import { Repeat2 as Repeat2Icon } from "../../../../shared/ui/icons";
 import { cn } from "../../../../shared/lib/cn";
 import { STATUS_DOT } from "../components/workflow-graph/run-status-presentation.js";
 import type { StepRunStatus } from "../components/workflow-graph/types.js";
-import type {
-  TimelineInk,
-  TimelinePill,
-  TimelineStation,
-} from "../components/workflow-timeline/timeline-model.js";
+import type { TimelineInk, TimelinePill, TimelineStation } from "../components/workflow-timeline/timeline-model.js";
 import { LaneGlyph, agentColor } from "../components/workflow-timeline/WorkflowAgentPill.js";
 import { MarchLight } from "../components/workflow-timeline/WorkflowMarchLight.js";
 import type { SpineSection } from "./workflowRunSpine.js";

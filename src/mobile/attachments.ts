@@ -1,5 +1,5 @@
-import { createAttachmentThumbnail } from "../features/sessions/model/attachmentThumbnails";
-import type { Attachment } from "../features/sessions/model/session";
+import { createAttachmentThumbnail } from "../shared/ui/attachments/attachmentThumbnails";
+import type { Attachment } from "../contracts/session";
 
 export const MOBILE_ATTACHMENT_LIMIT = 20;
 export const MOBILE_ATTACHMENT_BYTES = 20 * 1024 * 1024;

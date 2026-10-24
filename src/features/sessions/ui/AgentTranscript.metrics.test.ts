@@ -4,9 +4,9 @@ import { createRoot } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
 import { TurnMetricsBadge } from "./transcript/TurnMetrics";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import type { GenerationSample } from "../model/generationSample";
-import type { TurnMetrics } from "../model/session";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
+import type { GenerationSample, TurnMetrics } from "../../../contracts/session";
+
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
 const sample: GenerationSample = {
   outputTokens: 76,
   durationMs: 227_000,

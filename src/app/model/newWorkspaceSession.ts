@@ -1,7 +1,5 @@
-import {
-  newDefaultSession,
-  type RuntimeMode,
-} from "../../features/sessions/model/session";
+import { newDefaultSession } from "../../features/sessions/model/session";
+import { type RuntimeMode } from "../../contracts/session";
 import { worktreeFocus } from "../../features/source-control/model/worktreeFocus";
 
 /** Session defaults can supply permissions, but the visible project owns cwd. */

@@ -4,9 +4,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileApp } from "./MobileApp";
 import { setUiLanguage } from "../shared/i18n/language";
-import type { Block, QueuedMessage, QueueReturnPosition } from "../features/sessions/model/session";
-import { insertQueuedMessage } from "../features/sessions/model/messageQueue";
-import type { HostCommand } from "../features/connections/model/protocol";
+import type { Block, QueuedMessage, QueueReturnPosition } from "../contracts/session";
+import { insertQueuedMessage } from "../domain/messageQueue";
+import type { HostCommand } from "../contracts/protocol";
 import { saveFollowUpBehavior } from "../features/settings/model/settings";
 import type { PendingCommand } from "./client";
 

@@ -1,31 +1,7 @@
-/** Optional provider snapshot. Aggregate-only providers and old histories omit it. */
-export type ContextBreakdown = {
-  updatedAt: number;
-  used: number;
-  window: number;
-  /** Summary queries use provider usage plus local category estimates. */
-  estimated: boolean;
-  categories: ContextCategory[];
-  tools?: ContextToolUsage[];
-  toolResultTokens?: number;
-  autoCompactThreshold?: number;
-  autoCompactEnabled?: boolean;
-};
+import type { ContextBreakdown, ContextCategory, ContextToolUsage } from "../../../contracts/session";
 
-export type ContextCategory = {
-  /** Provider-owned display name; unknown names must remain intact. */
-  name: string;
-  tokens: number;
-  kind: "used" | "free" | "buffer" | "deferred";
-};
 
-export type ContextToolUsage = {
-  name: string;
-  tokens: number;
-  group: "mcp" | "system";
-  server?: string;
-  deferred?: boolean;
-};
+
 
 /** Validate optional JSON from older local stores before exposing it to renderers. */
 export function restoreContextBreakdown(value: unknown): ContextBreakdown | undefined {

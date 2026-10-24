@@ -1,22 +1,13 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import type {
-  FilePaneTab,
-  SubagentTabSource,
-} from "../../workspace/model/layout";
-import {
-  parseRemotePath,
-  remotePath,
-} from "../../connections/model/remoteProjects";
-import { agentTranscript, resolveAgentBlock } from "../model/agentTranscript";
-import { sessionExecutionCwd, type Session } from "../model/session";
-import {
-  subagentModelName,
-  subagentReport,
-  toolCallState,
-} from "../model/transcriptActivity";
+import type { FilePaneTab, SubagentTabSource } from "../../workspace/model/layout";
+import { parseRemotePath, remotePath } from "../../connections/model/remoteProjects";
+import { agentTranscript, resolveAgentBlock } from "../../../domain/agentTranscript";
+import { sessionExecutionCwd } from "../../../domain/session";
+import { type Session } from "../../../contracts/session";
+import { subagentModelName, subagentReport, toolCallState } from "../model/transcriptActivity";
 import { AgentTranscript } from "./AgentTranscript";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { useOpenSubagent } from "./SubagentTabsContext";
 
 export function SubagentTabView({

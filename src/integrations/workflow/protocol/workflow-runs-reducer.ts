@@ -24,47 +24,16 @@
 //      `nodesUsed` 由 `node-dispatched` 的首次相位跃迁计数（同一实例重放不重复计数），
 //      没有任何上限可供反算，也不需要。
 
-import {
-  WORKFLOW_RUNS_LIMITS,
-  type WorkflowRunNode,
-  type WorkflowRunPendingQuestion,
-  type WorkflowRunReport,
-  type WorkflowRunActorRuntime,
-  type WorkflowRunState,
-  type WorkflowRunsState,
-} from "./workflow-runs.js";
+import { WORKFLOW_RUNS_LIMITS, type WorkflowRunNode, type WorkflowRunPendingQuestion, type WorkflowRunReport, type WorkflowRunActorRuntime, type WorkflowRunState } from "./workflow-runs.js";
+import { type WorkflowRunsState } from "../../../contracts/workflow";
 
 import { serializeWorkflowArtifact } from "./workflow-artifact.js";
 import { withDerivedWorkflowActorStatuses } from "./workflow-runs-actor-status.js";
-import {
-  countTaggedReport,
-  upsertBoundedByArtifactId,
-  workflowArtifactSummary,
-} from "./workflow-runs-artifacts.js";
-import {
-  countUnlistedInstance,
-  discountUnlistedInstance,
-  evictForEntryBudget,
-} from "./workflow-runs-caps.js";
-import {
-  absorbRefusedActor,
-  absorbRefusedSettledNode,
-  admitsNewEntry,
-  seatWorkflowNode,
-  withRoomForActor,
-  type WorkflowRunEntryLimits,
-} from "./workflow-runs-eviction.js";
-import {
-  reduceConcurrencyChanged,
-  reduceRunCapsChanged,
-  withoutCooldown,
-} from "./workflow-runs-concurrency.js";
-import {
-  boundedActorName,
-  boundedPhaseName,
-  nonEmptyString,
-  workflowActorEntry,
-} from "./workflow-runs-entries.js";
+import { countTaggedReport, upsertBoundedByArtifactId, workflowArtifactSummary } from "./workflow-runs-artifacts.js";
+import { countUnlistedInstance, discountUnlistedInstance, evictForEntryBudget } from "./workflow-runs-caps.js";
+import { absorbRefusedActor, absorbRefusedSettledNode, admitsNewEntry, seatWorkflowNode, withRoomForActor, type WorkflowRunEntryLimits } from "./workflow-runs-eviction.js";
+import { reduceConcurrencyChanged, reduceRunCapsChanged, withoutCooldown } from "./workflow-runs-concurrency.js";
+import { boundedActorName, boundedPhaseName, nonEmptyString, workflowActorEntry } from "./workflow-runs-entries.js";
 import { canonicalWorkflowRun, workflowRunUnchanged } from "./workflow-runs-delta.js";
 import { readRunIdField, readWorkflowRunStopReason } from "./workflow-runs-lineage.js";
 import { carryNodeProgress, reduceNodeProgress } from "./workflow-runs-node-progress.js";

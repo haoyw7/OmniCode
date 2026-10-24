@@ -1,20 +1,8 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
 import zhCN from "../../shared/i18n/zh-CN.json";
-import {
-  KEYBINDINGS,
-  saveKeybindingOverride,
-} from "../../features/settings/model/settings";
-import {
-  APP_COMMANDS,
-  commandShortcutLabel,
-  createCommandDebounce,
-  HELP_URLS,
-  MENUS,
-  menuItems,
-  paletteCommands,
-  type CommandHandlers,
-} from "./registry";
+import { KEYBINDINGS, saveKeybindingOverride } from "../../features/settings/model/settings";
+import { APP_COMMANDS, commandShortcutLabel, createCommandDebounce, HELP_URLS, MENUS, menuItems, paletteCommands, type CommandHandlers } from "./registry";
 
 const noop = () => {};
 const translate = (text: string) => text;

@@ -1,18 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  Orchestrator,
-  orchestrationPathKey,
-  scopesOverlap,
-  visibleUserPrompt,
-  workerTurnPrompt,
-  type ControlOutcome,
-  type OrchestrationHost,
-  type OrchestrationRun,
-  shellPath,
-} from "./orchestration";
+import { Orchestrator, orchestrationPathKey, scopesOverlap, visibleUserPrompt, workerTurnPrompt, type ControlOutcome, type OrchestrationHost, shellPath } from "../../../domain/orchestrationRuntime";
+import { type OrchestrationRun } from "../../../contracts/session";
 import { newSession } from "../../sessions/model/session";
-import type { OrchestrationProposal } from "./orchestrationPlan";
-import { normalizeOrchestrationRun } from "./orchestrationState";
+import type { OrchestrationProposal } from "../../../contracts/session";
+import { normalizeOrchestrationRun } from "../../../domain/orchestrationState";
 import { previewFromToolPart } from "../../../integrations/harness/providers/opencode/opencodeProtocol";
 
 function setup() {

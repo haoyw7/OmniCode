@@ -4,23 +4,12 @@ import { rememberProject } from "../../features/projects/model/recents";
 import { ProjectNotFoundError } from "../../features/projects/model/projectLocationError";
 import { launchReceiver } from "../../features/quick-composer/model/launchDelivery";
 import type { QuickLaunch } from "../../features/quick-composer/model/quickComposer";
-import {
-  newSession,
-  type Attachment,
-  type Session,
-} from "../../features/sessions/model/session";
-import {
-  leafIds,
-  newTab,
-  splitPane,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { newSession } from "../../features/sessions/model/session";
+import { type Attachment, type Session } from "../../contracts/session";
+import { leafIds, newTab, splitPane, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { filterTabsForProject } from "../../features/workspace/model/workspaceTabGroups";
 import { acceptQuickLaunch } from "./quickLaunchSession";
-import {
-  submitAfterProjectSync,
-  type SubmissionAcceptance,
-} from "./submissionAcceptance";
+import { submitAfterProjectSync, type SubmissionAcceptance } from "./submissionAcceptance";
 
 const storedValues = new Map<string, string>();
 vi.stubGlobal("localStorage", {

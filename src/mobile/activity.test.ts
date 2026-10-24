@@ -1,11 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { HostSessionSummary } from "../features/connections/model/protocol";
-import {
-  MobileActivity,
-  loadMobileActivity,
-  saveMobileActivity,
-} from "./activity";
+import type { HostSessionSummary } from "../contracts/protocol";
+import { MobileActivity, loadMobileActivity, saveMobileActivity } from "./activity";
 
 function session(
   overrides: Partial<HostSessionSummary> = {},

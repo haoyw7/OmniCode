@@ -1,6 +1,6 @@
-import type { HostSession } from "../../src/features/connections/model/protocol";
-import { titleFromPrompt } from "../../src/features/sessions/model/session";
-import { sanitizeTitleState } from "../../src/features/sessions/model/titlePolicy";
+import type { HostSession } from "../../src/contracts/protocol";
+import { titleFromPrompt } from "../../src/domain/session";
+import { sanitizeTitleState } from "../../src/domain/titlePolicy";
 import { NATIVE_PENDING_TITLE } from "../../src/integrations/harness/core/nativeReconcile";
 import { nativeRecord } from "../../src/integrations/harness/core/nativeSessions";
 

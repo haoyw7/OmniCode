@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { newSession, type Block } from "../../sessions/model/session";
-import { sessionConversationPage } from "./sessionConversation";
+import { newSession } from "../../sessions/model/session";
+import { type Block } from "../../../contracts/session";
+import { sessionConversationPage } from "../../../domain/sessionConversation";
 
 function conversation(blocks: Block[]) {
   return { ...newSession("codex", "/repo"), id: "target", blocks };

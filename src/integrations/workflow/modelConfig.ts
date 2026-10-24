@@ -1,10 +1,10 @@
 // Resolves a workflow agent's runtime (provider, model, thinking, speed) into the
 // harness, model id and model settings a OmniCode session runs with.
 
-import type { AgentModel, ModelSetting } from "../../features/sessions/model/models";
-import { modelEffortSetting } from "../../features/sessions/model/models";
-import type { HarnessId } from "../../features/sessions/model/session";
-import type { WorkflowAgentRuntime } from "./createWorkflow";
+import type { AgentModel, ModelSetting, HarnessId } from "../../contracts/session";
+import { modelEffortSetting } from "../../domain/modelSettings";
+
+import type { WorkflowAgentRuntime } from "../../contracts/workflow";
 
 export const WORKFLOW_HARNESSES: readonly HarnessId[] = [
   "claude", "codex", "cursor", "grok", "opencode", "pi", "omp", "fx", "hermes", "antigravity",

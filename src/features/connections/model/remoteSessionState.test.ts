@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { newSession } from "../../sessions/model/session";
 import { shouldPersistSession } from "../../sessions/data/sessionStore";
-import type { HostSession } from "./protocol";
+import type { HostSession } from "../../../contracts/protocol";
 import { remoteSessionState } from "./remoteSessionState";
 
 it("keeps a host transcript in normal session state under its local tab ID", () => {

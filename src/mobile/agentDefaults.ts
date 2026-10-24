@@ -1,20 +1,10 @@
-import {
-  REMOTE_PROVIDERS,
-  type HostModelCatalog,
-  type HostProviderAccounts,
-  type RemoteProvider,
-} from "../features/connections/model/protocol";
+import { REMOTE_PROVIDERS, type RemoteProvider } from "../contracts/provider";
+import { type HostModelCatalog, type HostProviderAccounts } from "../contracts/protocol";
 import { findRemoteModel } from "../features/connections/model/remoteModels";
-import { LAST_SELECTED_MODEL, lastSelectedModelId, loadLastSelectedModelChoice, loadUseLastSelection } from "../features/sessions/model/models";
-import {
-  DEFAULT_RUNTIME_MODE,
-  RUNTIME_MODES,
-  type RuntimeMode,
-} from "../features/sessions/model/session";
-import {
-  configurationForModel,
-  type MobileConfiguration,
-} from "./MobileModelControls";
+import { lastSelectedModelId, loadLastSelectedModelChoice, loadUseLastSelection } from "../features/sessions/model/models";
+import { LAST_SELECTED_MODEL } from "../integrations/harness/core/modelCatalog";
+import { DEFAULT_RUNTIME_MODE, RUNTIME_MODES, type RuntimeMode } from "../contracts/session";
+import { configurationForModel, type MobileConfiguration } from "./MobileModelControls";
 import { activePreferenceStore, preferenceStorage } from "../features/settings/model/sharedPreferences";
 
 const KEY = "omnicode.mobileAgentDefaults";

@@ -1,19 +1,11 @@
 import { fuzzyMatch } from "../../../shared/lib/fuzzy";
 import { projectName } from "../../../shared/lib/paths";
 import { sameProjectPath, type RecentProject } from "../../projects/model/recents";
-import {
-  HARNESSES,
-  sessionDisplayTitle,
-  type Block,
-  type HarnessId,
-  type Session,
-} from "../../sessions/model/session";
-import type {
-  SessionSearchHit,
-  SessionSummary,
-} from "../../sessions/data/sessionStore";
+import { HARNESSES, type Block, type HarnessId, type Session } from "../../../contracts/session";
+import { sessionDisplayTitle } from "../../sessions/model/session";
+import type { SessionSearchHit, SessionSummary } from "../../sessions/data/sessionStore";
 import type { RankedFile } from "../../connections/files/model/fileIndex";
-import type { ProjectSearchMatch } from "./search";
+import type { ProjectSearchMatch } from "../../../contracts/search";
 import { transcriptBlockText } from "../../sessions/model/transcriptFind";
 
 export type SearchScope = "all" | "conversations" | "files" | "projects";

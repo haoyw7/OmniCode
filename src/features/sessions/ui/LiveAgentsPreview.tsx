@@ -1,26 +1,15 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../projects/model/projectMascots";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useState } from "react";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { formatLiveElapsed, type LiveAgent } from "../model/liveAgents";
 import { projectKey, projectName } from "../../../shared/lib/paths";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupLabels,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLabel,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import {
-  Check,
-  ChevronDown,
-  ChevronUp,
-  CircleAlert,
-} from "../../../shared/ui/icons";
-import { HarnessIcon } from "./HarnessIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { TerminalSpinner } from "./TerminalSpinner";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupLabels, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLabel, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
+import { Check, ChevronDown, ChevronUp, CircleAlert } from "../../../shared/ui/icons";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+
+import { TerminalSpinner } from "../../../shared/ui/TerminalSpinner";
 import { useNow } from "../../../shared/hooks/useNow";
 
 const LIVE_AGENT_MIN = 2;
@@ -191,12 +180,12 @@ function LiveAgentCard({
       }`}
     >
       <span className="flex min-w-0 items-center gap-2">
-        <ProjectMascot
-          project={seed}
-          color={color}
-          name={resolveTabGroupMascot(key, groupMascots)}
+        <Omi compact
+          expression={projectMascot(seed, resolveTabGroupMascot(key, groupMascots)).name}
+          style={{ color: color || undefined }}
+          
           className="size-2 shrink-0"
-          active={live}
+          animated={live}
         />
         {live ? (
           <p className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-snug">

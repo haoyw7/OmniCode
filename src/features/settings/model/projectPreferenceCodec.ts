@@ -1,9 +1,6 @@
-import { DEVICE_LOCAL_PROJECT_LIST_PREFERENCES, DEVICE_LOCAL_PROJECT_MAP_PREFERENCES, PROJECT_LIST_PREFERENCES, PROJECT_MAP_PREFERENCES } from "./sharedPreferenceSchema";
+import { DEVICE_LOCAL_PROJECT_LIST_PREFERENCES, DEVICE_LOCAL_PROJECT_MAP_PREFERENCES, PROJECT_LIST_PREFERENCES, PROJECT_MAP_PREFERENCES } from "../../../domain/sharedPreferenceSchema";
 import type { PreferenceCodec } from "./sharedPreferences";
-import {
-  parseRemotePath, remoteProjectFor, remoteProjectKey, remoteProjectsOn,
-  sharedHostEnvironment, sharedProjects,
-} from "../../connections/model/remoteProjects";
+import { parseRemotePath, remoteProjectFor, remoteProjectKey, remoteProjectsOn, sharedHostEnvironment, sharedProjects } from "../../connections/model/remoteProjects";
 import { remoteSessionFor } from "../../connections/model/connections";
 import { pathKey } from "../../../shared/lib/paths";
 

@@ -1,13 +1,9 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { newSession } from "../../sessions/model/session";
-import type { Worktree } from "../../source-control/model/worktrees";
+import type { Worktree } from "../../../contracts/worktree";
 import { parseQuickLaunch } from "./quickComposer";
-import {
-  applyQuickWorkspace,
-  quickWorkspaceLaunch,
-  workspaceForProject,
-} from "./quickWorkspace";
+import { applyQuickWorkspace, quickWorkspaceLaunch, workspaceForProject } from "./quickWorkspace";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 const tree: Worktree = {

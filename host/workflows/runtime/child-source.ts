@@ -56,7 +56,7 @@ export interface ChildMainDeps {
   /** 出站 NDJSON 的去处；{@link childMain} 自己补换行。 */
   stdout: { write(chunk: string): unknown };
   /**
-   * 本次 run 的 payload（{@link import("./protocol.js").ChildPayload}）。入口文件把它当 JSON
+   * 本次 run 的 payload（{@link import("./protocol").ChildPayload}）。入口文件把它当 JSON
    * 字面量内嵌并原样递进来——不再经 argv、不再 base64。
    */
   payload: ChildPayload;

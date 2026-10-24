@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
-import {
-  REMOTE_PROJECTS_CHANGED,
-  sharedProjects,
-} from "../../connections/model/remoteProjects";
+import { REMOTE_PROJECTS_CHANGED, sharedProjects } from "../../connections/model/remoteProjects";
 import { pathKey } from "../../../shared/lib/paths";
-import { isChatFolder } from "./chatFolderPath";
+import { isChatFolder } from "../../../domain/chatFolderPath";
 
-export { CHAT_ROOT, chatFolderRelativePath, isChatFolder } from "./chatFolderPath";
+export { CHAT_ROOT, chatFolderRelativePath, isChatFolder } from "../../../domain/chatFolderPath";
 
 const KEY = "omnicode.chatFolders.v1";
 const CHANGED = "omnicode:chat-folders-changed";

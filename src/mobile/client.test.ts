@@ -1,24 +1,12 @@
+import { HostRequestError, nativeTransport, type RpcTransport } from "./hostTransport";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { readMobileDeviceInfo } from "./deviceInfo";
 import { setUiLanguage } from "../shared/i18n/language";
-import {
-  MobileClient,
-  normalizeHostUrl,
-  HostRequestError,
-  nativeTransport,
-  type RpcTransport,
-} from "./client";
+import { MobileClient, normalizeHostUrl } from "./client";
 import type { MobileStorage, StorageKey } from "./storage";
-import type {
-  HostSession,
-  HostCommand,
-  HostSessionSummary,
-} from "../features/connections/model/protocol";
-import { REMOTE_PROVIDERS } from "../features/connections/model/protocol";
-import {
-  readSessionCache, saveSessionCache, SESSION_CACHE_KEY,
-  SESSION_CACHE_PROJECT_LIMIT, SESSION_CACHE_SESSION_LIMIT, SESSION_CACHE_SIZE_LIMIT,
-} from "./sessionCache";
+import type { HostSession, HostCommand, HostSessionSummary } from "../contracts/protocol";
+import { REMOTE_PROVIDERS } from "../contracts/provider";
+import { readSessionCache, saveSessionCache, SESSION_CACHE_KEY, SESSION_CACHE_PROJECT_LIMIT, SESSION_CACHE_SESSION_LIMIT, SESSION_CACHE_SIZE_LIMIT } from "./sessionCache";
 
 vi.mock("./deviceInfo", () => ({ readMobileDeviceInfo: vi.fn(async () => undefined) }));
 const http = vi.hoisted(() => ({ post: vi.fn() }));
@@ -80,6 +68,23 @@ function snapshot(revision = 1): HostSession {
     },
   };
 }
+
+it.each([false, true])("only uses sync wait when the Host advertises it (%s)", async (supported) => {
+  const requests: object[] = [];
+  const client = new MobileClient(memory(), async (_endpoint, _token, request) => {
+    const { method, params } = request as { method: string; params: object };
+    if (method === "environment.describe") return { ...descriptor, capabilities: supported ? ["sessions.sync.wait.v1"] : [] };
+    requests.push(params);
+    return { kind: "snapshot", value: snapshot() };
+  });
+  await client.connect(endpoint, token);
+  await client.session("session", undefined, 1_000);
+  await client.session("session", undefined, 1_000);
+  expect(requests).toEqual([
+    { sessionId: "session", revision: undefined },
+    { sessionId: "session", revision: 1, ...(supported ? { waitMs: 1_000 } : {}) },
+  ]);
+});
 function transport(
   handler: (
     method: string,

@@ -1,28 +1,16 @@
 import { usePreferenceState } from "../../model/usePreferenceState";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openExternalUrl } from "../../../../platform/tauri/browser";
 import { Check } from "../../../../shared/ui/icons";
 import { withStatusToast } from "../../../../shared/ui/StatusToast";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../../../../shared/ui/forms/Button";
-import { clearInboxCache, githubStatus, type GithubStatus } from "../../../inbox/model/githubTasks";
+import { clearInboxCache, githubStatus } from "../../../inbox/model/githubTasks";
+import { type GithubStatus } from "../../../../contracts/session";
 import { disconnectGitlab, gitlabConnected, saveGitlabConfig } from "../../../inbox/model/gitlab";
-import {
-  azureDevOpsConnected,
-  disconnectAzureDevOps,
-  saveAzureDevOpsConfig,
-} from "../../../inbox/model/azureDevOps";
-import {
-  disconnectLinear,
-  LINEAR_CHANGE_EVENT,
-  linearConnected,
-  listLinearTeams,
-  loadHiddenLinearTeamIds,
-  notifyLinearChange,
-  saveHiddenLinearTeamIds,
-  saveLinearToken,
-  type LinearTeam,
-} from "../../../inbox/model/linear";
+import { azureDevOpsConnected, disconnectAzureDevOps, saveAzureDevOpsConfig } from "../../../inbox/model/azureDevOps";
+import { disconnectLinear, LINEAR_CHANGE_EVENT, linearConnected, listLinearTeams, loadHiddenLinearTeamIds, notifyLinearChange, saveHiddenLinearTeamIds, saveLinearToken } from "../../../inbox/model/linear";
+import type { LinearTeam } from "../../../../contracts/linear";
 import { Row } from "../settingsLayout";
 
 
@@ -77,7 +65,7 @@ export function GithubSettings() {
         {!checking && !status?.installed ? (
           <Button variant="secondary"
             onClick={() => {
-              void openUrl("https://cli.github.com/").catch(() => {});
+              void openExternalUrl("https://cli.github.com/").catch(() => {});
             }}
           >
             {uiT("Installation guide")}
@@ -499,7 +487,7 @@ export function LinearSettings() {
       </Row>
       {error ? (
         <p className="border-b border-content/5 px-4 pb-3 text-[12px] text-red-400/90 last:border-b-0">
-          {error}
+          {uiT(error)}
         </p>
       ) : null}
       {connected && teams.length > 0 ? (

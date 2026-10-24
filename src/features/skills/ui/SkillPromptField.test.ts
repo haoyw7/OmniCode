@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { act, createElement, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../sessions/ui/useComposerSkills", () => ({
+vi.mock("../model/useComposerSkills", () => ({
   useComposerSkills: () => ({
     skills: [
       {

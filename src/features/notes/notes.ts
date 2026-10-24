@@ -1,16 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
-import {
-  ADD_NOTE_TO_CHAT_EVENT,
-  MAX_TITLE,
-  normalizeNoteTags,
-  noteTitle,
-  noteSlugsInText,
-  injectNotePrompt,
-  noteComposerCard,
-  type Note,
-  type NoteUpsert,
-  type NoteComposerCard,
-} from "./notesText";
+import { notesHostRequest } from "./notesHost";
+import { ADD_NOTE_TO_CHAT_EVENT, noteSlugsInText, noteComposerCard } from "./notesText";
+import { MAX_TITLE, normalizeNoteTags, noteTitle } from "../../domain/notesText";
+import { injectNotePrompt } from "../../domain/notesText";
+import { type Note, type NoteUpsert, type NoteComposerCard } from "../../contracts/session";
 export * from "./notesText";
 
 let cache: Note[] | null = null;
@@ -28,7 +20,7 @@ export async function loadNotes(refresh = false): Promise<Note[]> {
   if (!refresh && cache) return cache;
   if (!refresh && inflight) return inflight;
 
-  const promise = invoke<Note[]>("notes_list")
+  const promise = notesHostRequest<Note[]>("notes.list")
     .then((notes) => {
       cache = notes;
       return notes;
@@ -45,13 +37,13 @@ export async function loadNotes(refresh = false): Promise<Note[]> {
 }
 
 export async function upsertNote(note: NoteUpsert): Promise<Note> {
-  const saved = await invoke<Note>("notes_upsert", { note });
+  const saved = await notesHostRequest<Note>("notes.upsert", { note });
   cache = null;
   return saved;
 }
 
 export async function deleteNote(id: string): Promise<void> {
-  await invoke("notes_delete", { id });
+  await notesHostRequest("notes.delete", { id });
   cache = null;
 }
 

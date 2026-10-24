@@ -9,19 +9,16 @@ import {
   rm,
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type {
-  OrchestrationRun,
-  OrchestrationTask,
-  WorkerPreparation,
-} from "../src/features/orchestration/model/orchestration";
+import type { OrchestrationRun, OrchestrationTask } from "../src/contracts/session";
+import type { WorkerPreparation } from "../src/domain/orchestrationRuntime";
 import {
   orchestrationCheckoutCwd,
   orchestrationProjectCwd,
   workspaceIdentity,
-} from "../src/features/orchestration/model/orchestrationState";
+} from "../src/domain/orchestrationState";
 import { createHostWorktree, hostWorktrees } from "./git-worktrees";
 import type { HostStore } from "./store";
-import type { HostSession } from "../src/features/connections/model/protocol";
+import type { HostSession } from "../src/contracts/protocol";
 import {
   checkoutPath,
   checkoutPathsOverlap,

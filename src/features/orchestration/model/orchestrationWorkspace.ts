@@ -1,6 +1,6 @@
 import { closeLeaf, leafIds, type WorkspaceTab } from "../../workspace/model/layout";
 import type { OrchestrationReadRun } from "./orchestrationClient";
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "../../../contracts/session";
 
 export function releaseOrchestrationWorker(
   session: Session,

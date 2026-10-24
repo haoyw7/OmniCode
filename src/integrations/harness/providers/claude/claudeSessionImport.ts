@@ -1,14 +1,8 @@
 import { translate } from "../../../../shared/i18n/language";
-import {
-  nativeJsonLines,
-  nativeRecord,
-  nativeString,
-  nativeText,
-  type NativeSessionFile,
-  type NativeTranscript,
-} from "../../core/nativeSessions";
+import { nativeJsonLines, nativeRecord, nativeString, nativeText } from "../../core/nativeSessions";
+import type { NativeSessionFile, NativeTranscript, Block } from "../../../../contracts/session";
 import { claudeNativeTitleFromRows } from "../../core/nativeTitleParsing";
-import type { Block } from "../../../../features/sessions/model/session";
+
 
 type Row = Record<string, unknown>;
 

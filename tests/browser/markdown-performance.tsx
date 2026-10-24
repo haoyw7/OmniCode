@@ -1,8 +1,9 @@
+import { TranscriptServices } from "../../src/app/ui/TranscriptServices";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AgentTranscript } from "../../src/features/sessions/ui/AgentTranscript";
-import { AgentMarkdown } from "../../src/features/sessions/ui/AgentMarkdown";
-import type { Block } from "../../src/features/sessions/model/session";
+import { AgentMarkdown } from "../../src/shared/ui/markdown/AgentMarkdown";
+import type { Block } from "../../src/contracts/session";
 import {
   saveTranscriptAnchor,
   saveTranscriptLayout,
@@ -82,4 +83,4 @@ function Fixture() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<Fixture />);
+createRoot(document.getElementById("root")!).render(<TranscriptServices>{<Fixture />}</TranscriptServices>);

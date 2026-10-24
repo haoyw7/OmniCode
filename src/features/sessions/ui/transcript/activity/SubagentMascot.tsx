@@ -1,11 +1,10 @@
-import { agentStepCount } from "../../../model/agentTranscript";
-import { ProjectMascot } from "../../../../projects/ui/ProjectMascot";
-import { type AgentStep, type Block } from "../../../model/session";
-import {
-  isFailedStatus,
-  toolCallState,
-  type ToolCallState,
-} from "../../../model/transcriptActivity";
+import { Omi } from "../../../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../../../projects/model/projectMascots";
+import { agentStepCount } from "../../../../../domain/agentTranscript";
+
+import { type AgentStep, type Block } from "../../../../../contracts/session";
+import { toolCallState, type ToolCallState } from "../../../model/transcriptActivity";
+import { isFailedStatus } from "../../../../../domain/toolStatus";
 
 
 
@@ -24,9 +23,9 @@ export function SubagentMascot({
   active?: boolean;
 }) {
   return (
-    <ProjectMascot
-      project={name}
-      active={active}
+    <Omi compact
+      expression={projectMascot(name).name}
+      animated={active}
       className={`size-3.5 shrink-0 ${
         state === "rejected"
           ? "text-red-400"

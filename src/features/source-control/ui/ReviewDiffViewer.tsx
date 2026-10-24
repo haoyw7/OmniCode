@@ -13,18 +13,13 @@ import { useCodeThemePalette, useCodeThemes } from "../../settings/model/codeApp
 import { createReviewSeparatorLayout } from "./reviewSeparatorLayout";
 import { ReviewViewOptionsContext } from "./ReviewViewOptionsContext";
 import { Plus } from "../../../shared/ui/icons";
-import {
-  reviewCommentLine,
-  reviewFileMetadata,
-  reviewStageAnnotations,
-  virtualizeReviewDiff,
-  REVIEW_VIRTUAL_HEIGHT,
-  type ReviewLoadedDiff,
-} from "../model/reviewDiff";
-import {
-  DiffCommentComposer,
-  type DiffCommentComposerTarget,
-} from "./DiffCommentComposer";
+import { reviewCommentLine, reviewFileMetadata, reviewStageAnnotations, virtualizeReviewDiff, REVIEW_VIRTUAL_HEIGHT, type ReviewLoadedDiff } from "../model/reviewDiff";
+import { DiffCommentComposer } from "../../../shared/ui/DiffCommentComposer";
+import type { PopoverAnchor } from "../../../shared/ui/Popover";
+import type { UnifiedLine } from "../model/unifiedDiff";
+import { diffCommentLocation, formatDiffComment } from "../model/diffComment";
+import { requestAddToChat } from "../../sessions/model/quoteDraft";
+import { MOD } from "../../../platform/tauri/platform";
 
 const viewerStyle = {
   // Pass the active palette into Pierre's shadow root, including its error UI.
@@ -103,7 +98,7 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
     for (const cleanup of scrollbarRoots.current.values()) cleanup();
     scrollbarRoots.current.clear();
   }, []);
-  const [comment, setComment] = useState<DiffCommentComposerTarget | null>(
+  const [comment, setComment] = useState<{ line: UnifiedLine; anchor: PopoverAnchor } | null>(
     null,
   );
   const fileDiff = useMemo(
@@ -293,8 +288,10 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
       </ScrollContainer>
       <PresenceBoundary propagate>{visible && comment ? (
         <DiffCommentComposer
-          path={path}
-          target={comment}
+          location={diffCommentLocation({ path, line: comment.line })}
+          anchor={comment.anchor}
+          modifierLabel={MOD}
+          onSubmit={(text) => requestAddToChat(formatDiffComment({ path, line: comment.line }, text), "plain")}
           onDismiss={() => setComment(null)}
         />
       ) : null}</PresenceBoundary>

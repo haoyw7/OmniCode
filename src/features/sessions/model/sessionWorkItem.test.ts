@@ -1,24 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  clearInboxCache,
-  githubPrAction,
-  githubWorkItem,
-  inboxItemKey,
-  type GithubWorkItem,
-  type InboxItem,
-} from "../../inbox/model/githubTasks";
-import {
-  inboxItemMatchesLinkedWorkItem,
-  linkedWorkItemInboxKey,
-  linkedWorkItemFromAutomationEvent,
-  linkedWorkItemFromInboxItem,
-  parseGithubWorkItemUrl,
-  relatedSessionsForInboxItem,
-  resolveLinkedWorkItem,
-} from "./sessionWorkItem";
+import { clearInboxCache, githubPrAction, githubWorkItem, inboxItemKey } from "../../inbox/model/githubTasks";
+import { type GithubWorkItem, type InboxItem } from "../../../contracts/session";
+import { inboxItemMatchesLinkedWorkItem, linkedWorkItemInboxKey, linkedWorkItemFromInboxItem, relatedSessionsForInboxItem, resolveLinkedWorkItem } from "./sessionWorkItem";
+import { linkedWorkItemFromAutomationEvent } from "../../../domain/automationInbox";
+import { parseGithubWorkItemUrl } from "../../../domain/workItemIdentity";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../connections/model/inboxHost", async () => ({ inboxHostCommand: (await import("@tauri-apps/api/core")).invoke }));
 
 beforeEach(() => {
   clearInboxCache();

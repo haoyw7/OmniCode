@@ -1,18 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  loadProjectFiles,
-  peekProjectFiles,
-  recentOpenedFiles,
-  subscribeProjectFiles,
-} from "../../connections/files/model/fileIndex";
-import {
-  buildMentionIndex,
-  rankMentionFiles,
-  type MentionIndex,
-} from "../../connections/files/model/fileMentions";
-import type { ProjectFile } from "../../../platform/tauri/fs";
+import { loadProjectFiles, peekProjectFiles, recentOpenedFiles, subscribeProjectFiles } from "../../connections/files/model/fileIndex";
+import { buildMentionIndex, rankMentionFiles, type MentionIndex } from "../../connections/files/model/fileMentions";
+import type { ProjectFile } from "../../../contracts/workspace";
 import { looksLikeProject } from "../../projects/model/recents";
-import { loadNotes, peekNotes, rankNoteFiles, notesAsProjectFiles, type Note } from "../../notes";
+import { loadNotes, peekNotes, rankNoteFiles, notesAsProjectFiles } from "../../notes";
+import { type Note } from "../../../contracts/session";
 
 /** Project files and notes offered by an open `@` mention, ranked for its query. */
 export function useComposerMentionCatalog({

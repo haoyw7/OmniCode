@@ -1,9 +1,4 @@
-import {
-  JsonRpcClient,
-  type JsonRpcHandlers,
-  type JsonRpcId,
-  type JsonRpcMessage,
-} from "./jsonRpc";
+import { JsonRpcClient, type JsonRpcHandlers, type JsonRpcId, type JsonRpcMessage } from "./jsonRpc";
 import { translate } from "../../../shared/i18n/language";
 
 export type { JsonRpcMessage };

@@ -1,36 +1,15 @@
 import { botAgentsMcpName } from "../../core/botContext";
 import { translate } from "../../../../shared/i18n/language";
-import type { ContextBreakdown, ContextCategory, ContextToolUsage } from "../../core/contextUsage";
-import type {
-  Attachment,
-  RuntimeMode,
-  TaskListItem,
-  ToolPreview,
-  TurnMetrics,
-} from "../../../../features/sessions/model/session";
-import {
-  attachmentPathText,
-  promptText,
-} from "../../../../features/sessions/model/attachments";
-import { parseResetTimestamp } from "../../../../features/providers/model/rateLimits";
-import {
-  isTaskListToolName,
-  normalizeTaskListStatus,
-  taskListFromToolInput,
-} from "../../../../features/sessions/model/taskList";
-import {
-  questionPromptTitle,
-  questionsFromUnknown,
-  selectedAnswerLabels,
-  type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
-import {
-  extractToolPreview,
-  isAgentToolName,
-  titleFromToolInput,
-} from "../../core/preview";
-import { streamTextDelta } from "../../core/streamText";
-import type { ApprovalDecision } from "../../core/types";
+import type { ContextBreakdown, ContextCategory, ContextToolUsage, Attachment, RuntimeMode, TaskListItem, ToolPreview, TurnMetrics, UserQuestionReply } from "../../../../contracts/session";
+
+import { attachmentPathText, promptText } from "../../../../domain/attachmentPrompt";
+import { parseResetTimestamp } from "../../../../domain/rateLimits";
+import { isTaskListToolName, normalizeTaskListStatus, taskListFromToolInput } from "../../../../domain/taskList";
+import { questionPromptTitle, questionsFromUnknown, selectedAnswerLabels } from "../../../../domain/userQuestion";
+
+import { extractToolPreview, isAgentToolName, titleFromToolInput } from "../../../../domain/preview";
+import { streamTextDelta } from "../../../../domain/streamText";
+import type { ApprovalDecision } from "../../../../contracts/harness";
 
 /** Claude Code versions that first ship Opus 5.5 / Opus 5 / Sonnet 5 / Fable 5 / Opus 4.8 / 4.7. */
 export const MINIMUM_CLAUDE_OPUS_5_5_VERSION = "2.1.280";

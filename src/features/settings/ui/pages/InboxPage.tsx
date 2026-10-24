@@ -1,30 +1,13 @@
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
-import { useContext } from "react";
+import { useContext, type ReactNode } from "react";
 import { JiraSettings } from "../JiraSettings";
-import { InboxProviderMark } from "../../../inbox/ui/InboxProviderMark";
-import { type RecentProject } from "../../../projects/model/recents";
-import { ProjectNotificationSettings } from "../../../notifications/ui/ProjectNotificationSettings";
+import { InboxProviderMark } from "../../../../shared/ui/branding/InboxProviderMark";
 import { Group, RevealedSetting, settingDomId } from "../settingsLayout";
-import {
-  AzureDevOpsSettings,
-  GithubSettings,
-  GitlabSettings,
-  LinearSettings,
-} from "./InboxIntegrationSettings";
+import { AzureDevOpsSettings, GithubSettings, GitlabSettings, LinearSettings } from "./InboxIntegrationSettings";
 
 
 
-export function InboxPage({
-  cwd,
-  recents,
-  notificationProjectPath,
-  notificationSettingsRequest,
-}: {
-  cwd: string;
-  recents?: RecentProject[];
-  notificationProjectPath?: string | null;
-  notificationSettingsRequest?: number;
-}) {
+export function InboxPage({ renderNotifications }: { renderNotifications: (highlighted: boolean) => ReactNode }) {
   const { t: uiT } = useTranslation();
   const revealed = useContext(RevealedSetting);
   return (
@@ -33,13 +16,7 @@ export function InboxPage({
         id={settingDomId("project-notifications")}
         data-setting-id="project-notifications"
       >
-        <ProjectNotificationSettings
-          cwd={cwd}
-          recents={recents}
-          notificationProjectPath={notificationProjectPath}
-          notificationSettingsRequest={notificationSettingsRequest}
-          highlighted={revealed === "project-notifications"}
-        />
+        {renderNotifications(revealed === "project-notifications")}
       </div>
       <Group
         id="github"

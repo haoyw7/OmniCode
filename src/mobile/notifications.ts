@@ -1,14 +1,10 @@
-import {
-  Capacitor,
-  registerPlugin,
-  type PluginListenerHandle,
-} from "@capacitor/core";
-import type { HostSessionSummary } from "../features/connections/model/protocol";
+import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core";
+import type { HostSessionSummary } from "../contracts/protocol";
 import type { Connection } from "./client";
 import { translate } from "../shared/i18n/language";
-import type { BotNotificationActivity as AssistantNotificationActivity } from "../features/bots/model/botNotifications";
+import type { BotNotificationActivity as AssistantNotificationActivity } from "../contracts/botActivity";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
-import { HARNESS_ICONS } from "../features/sessions/ui/HarnessIcon";
+import { HARNESS_ICONS } from "../shared/ui/HarnessIcon";
 import { notificationText } from "./notificationText";
 import type { NativeActivityRow } from "./nativeActivitySync";
 

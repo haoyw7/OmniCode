@@ -1,5 +1,9 @@
+import { unwrapMarkdown } from "../../domain/notesText";
+import type { Note, NoteComposerCard } from "../../contracts/session";
+
+
 import { fuzzyMatch } from "../../shared/lib/fuzzy";
-import type { ProjectFile } from "../../platform/tauri/fs";
+import type { ProjectFile } from "../../contracts/workspace";
 import type { RankedFile } from "../connections/files/model/fileIndex";
 import { projectName } from "../../shared/lib/paths";
 import { looksLikeProject } from "../projects/model/recents";
@@ -7,82 +11,17 @@ import { looksLikeProject } from "../projects/model/recents";
 export const NOTE_MENTION_PREFIX = "note/";
 export const NOTE_PATH_PREFIX = "note:";
 
-export type Note = {
-  id: string;
-  slug: string;
-  title: string;
-  body: string;
-  tags: string[];
-  sourceSessionId?: string;
-  sourceCwd?: string;
-  /** Slug generated for a note created without a title; replaced once from its first real title. */
-  slugPending: boolean;
-  createdAt: number;
-  updatedAt: number;
-};
-
-export type NoteUpsert = {
-  id: string;
-  title: string;
-  body: string;
-  tags: string[];
-  sourceSessionId?: string;
-  /** Omit on update to keep the saved project directory. */
-  sourceCwd?: string;
-  /** Replace a pending slug from the title. Set once the title is done being typed; ignored unless the slug is pending. */
-  finalizeSlug?: boolean;
-};
-
-/** Note chip shown in the composer and on the user turn in the thread. */
-export type NoteCardMeta = {
-  id: string;
-  slug: string;
-  title: string;
-  sourceCwd?: string;
-};
-
-/** Composer chip: display fields plus the body injected into the harness prompt. */
-export type NoteComposerCard = NoteCardMeta & {
-  body: string;
-};
-
-export function noteCardMeta(card: NoteComposerCard): NoteCardMeta {
-  return {
-    id: card.id,
-    slug: card.slug,
-    title: card.title,
-    ...(card.sourceCwd ? { sourceCwd: card.sourceCwd } : {}),
-  };
-}
-
 export const ADD_NOTE_TO_CHAT_EVENT = "omnicode:add-note-to-chat";
 export const NOTES_CHANGED_EVENT = "omnicode:notes-changed";
 
-export const MAX_TITLE = 200;
-export const MAX_NOTE_TAGS = 20;
-export const MAX_NOTE_TAG_LENGTH = 48;
+
+
+
 const MAX_NOTE_PICKER = 8;
 const NOTE_SLUG_RE = /(^|\s)@note\/([A-Za-z0-9_-]+)/g;
 
 /** Canonical, case-insensitive tags for storage and filtering. */
-export function normalizeNoteTags(tags: readonly string[]): string[] {
-  const normalized: string[] = [];
-  const seen = new Set<string>();
-  for (const input of tags) {
-    const tag = input
-      .trim()
-      .replace(/^#+/, "")
-      .replace(/\s+/g, "-")
-      .toLowerCase()
-      .slice(0, MAX_NOTE_TAG_LENGTH)
-      .replace(/-+$/g, "");
-    if (!tag || seen.has(tag)) continue;
-    seen.add(tag);
-    normalized.push(tag);
-    if (normalized.length === MAX_NOTE_TAGS) break;
-  }
-  return normalized;
-}
+
 
 export function isNoteMentionPath(path: string): boolean {
   return path.startsWith(NOTE_PATH_PREFIX);
@@ -147,26 +86,7 @@ export function rankNoteFiles(
 }
 
 /** First markdown heading, or the first non-empty prose line. */
-export function noteTitle(text: string): string {
-  const heading = text.match(/^\s{0,3}#{1,6}\s+(.+)$/m);
-  if (heading) {
-    const title = unwrapMarkdown(heading[1]).slice(0, MAX_TITLE);
-    if (title) return title;
-  }
-  let inFence = false;
-  for (const line of text.split(/\r?\n/)) {
-    if (/^\s*```/.test(line)) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) continue;
-    const trimmed = line.trim();
-    if (!trimmed || trimmed === "---") continue;
-    const title = unwrapMarkdown(trimmed).slice(0, MAX_TITLE);
-    if (title) return title;
-  }
-  return "Untitled";
-}
+
 
 /** Folder name for a note saved from a session, or null when there is no project. */
 export function noteSourceProject(cwd?: string): string | null {
@@ -230,15 +150,6 @@ export function noteSlugsInText(text: string): string[] {
   return found;
 }
 
-export function injectNotePrompt(text: string, notes: Note[]): string {
-  if (notes.length === 0) return text;
-  const blocks = notes.map((note) => {
-    const heading = note.title.trim() || "Untitled";
-    return [`Referenced note "${heading}":`, "", note.body.trim()].join("\n");
-  });
-  return [text.trimEnd(), "", "---", ...blocks].join("\n");
-}
-
 export function noteComposerCard(note: Note): NoteComposerCard {
   return {
     id: note.id,
@@ -249,30 +160,4 @@ export function noteComposerCard(note: Note): NoteComposerCard {
   };
 }
 
-export function composeNoteMessage(
-  card: NoteComposerCard | undefined,
-  text: string,
-): string {
-  if (!card) return text.trim();
-  const lead = text.trim() || "Use this note.";
-  return injectNotePrompt(lead, [
-    {
-      id: card.id,
-      slug: card.slug,
-      title: card.title,
-      body: card.body,
-      tags: [],
-      slugPending: false,
-      createdAt: 0,
-      updatedAt: 0,
-    },
-  ]);
-}
 
-function unwrapMarkdown(value: string): string {
-  return value
-    .replace(/!\[[^\]]*]\([^)]*\)/g, "")
-    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
-    .replace(/[*_`]+/g, "")
-    .trim();
-}

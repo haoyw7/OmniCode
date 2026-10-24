@@ -2,9 +2,9 @@ import { EventEmitter } from "node:events";
 import { randomUUID } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import type { ChildBackend } from "../src/integrations/harness/core/childBackendRegistry";
-import { isRemoteProvider, type RemoteProvider } from "../src/integrations/harness/core/provider";
-import type { HostChildBackend } from "./child-backend";
-import { execArgsAllowed } from "./child-backend";
+import { isRemoteProvider, type RemoteProvider } from "../src/contracts/provider";
+import { type HostChildBackend, execArgsAllowed } from "./child-backend";
+
 import { type MachineIO, type MachineTransport, withMachineIO } from "./machine-io";
 import type { WslExecutionEvent } from "./machines/wsl";
 import { resolveProviderRuntime } from "./process";
@@ -16,7 +16,7 @@ import { readClaudeTitleFile } from "./native-title";
 import { claimCheckoutResource } from "./checkout-guards";
 import { refreshCodexAccountBeforeWsl } from "./provider-account-refresh";
 import type { HostStore } from "./store";
-import { readWslCursorSubagents } from "./cursor-subagents";
+import { readWslCursorSubagents, readWslCursorToolCalls } from "./cursor-subagents";
 import { WslLoopbackRelay } from "./machines/wsl-relay";
 import { assertWslSharedProviderSupported, wslSharedProviderEnvironment } from "./wsl-provider-environment";
 
@@ -221,6 +221,7 @@ export class WslChildBackend implements ChildBackend {
         await Promise.all([...this.sse].filter(([, state]) => state.sessionId === id).map(([stream]) => this.rpc.request("net.sseClose", { stream })));
         return undefined as T;
       case "cursor_subagent_runs": return await readWslCursorSubagents(args, this.rpc) as T;
+      case "cursor_tool_calls": return await readWslCursorToolCalls(args, this.rpc) as T;
       case "harness_read_claude_title": return await readClaudeTitleFile(args as { cwd: string; providerSessionId: string }, this.owner) as T;
       case "harness_read_text_file": {
         const path = String(args.path);

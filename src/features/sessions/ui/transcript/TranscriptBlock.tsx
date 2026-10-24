@@ -1,23 +1,21 @@
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { localizeChildExitError } from "../../../../integrations/harness/core/childErrors";
-import {
-  providerSessionAccessIssue,
-} from "../../../../integrations/harness/providers/sessionAccessErrors";
+import { providerSessionAccessIssue } from "../../../../integrations/harness/providers/sessionAccessErrors";
 import { SessionAccessNotice } from "../SessionAccessNotice";
 import { QuestionHistoryCard } from "../QuestionHistoryCard";
-import type { QuestionAnswer } from "../../model/userQuestion";
+import type { QuestionAnswer, Block, HarnessId, PlanBuildTarget } from "../../../../contracts/session";
 import { memo, useContext } from "react";
-import { CircleAlert, TriangleAlert } from "lucide-react";
+import { CircleAlert, TriangleAlert } from "../../../../shared/ui/icons";
 import { GeneratedImage } from "../GeneratedImage";
 import { PlanPreview } from "../PlanPreview";
-import { localizeOrchestrationMessage } from "../../../orchestration/ui/orchestrationMessages";
+import { localizeOrchestrationMessage } from "../../../orchestration/model/orchestrationMessages";
 import { TaskListPreview } from "../TaskListPreview";
-import type { ApprovalDecision } from "../../../../integrations/harness";
-import { TranscriptPlatformContext } from "../TranscriptPlatform";
-import { legacyTaskListFromText } from "../../model/taskList";
-import { type Block, type HarnessId, type PlanBuildTarget } from "../../model/session";
+import type { ApprovalDecision } from "../../../../contracts/harness";
+import { TranscriptPlatformContext } from "../../../../shared/ui/markdown/TranscriptPlatform";
+import { legacyTaskListFromText } from "../../../../domain/taskList";
+
 import type { TranscriptLayout } from "../../../settings/model/appearance";
-import { AgentMarkdown } from "../AgentMarkdown";
+import { AgentMarkdown } from "../../../../shared/ui/markdown/AgentMarkdown";
 import { UserMessageBlock } from "./UserMessageBlock";
 import { ToolCall } from "./ToolCall";
 import { HandoffDivider, InterjectionDivider } from "./Dividers";

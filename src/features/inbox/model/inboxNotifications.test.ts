@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { InboxNotificationTracker } from "./inboxNotifications";
-import type { InboxItem } from "./githubTasks";
+import type { InboxItem } from "../../../contracts/session";
 
 function item(repo: string, updatedAt: string): InboxItem {
   return {

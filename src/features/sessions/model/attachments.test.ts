@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { filesFromClipboard, mergeAttachments } from "./attachments";
-import type { Attachment } from "./session";
+import type { Attachment } from "../../../contracts/session";
 
 function file(name: string, type: string, body = "x") {
   return new File([body], name, { type });

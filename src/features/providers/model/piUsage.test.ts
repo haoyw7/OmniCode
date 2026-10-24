@@ -1,9 +1,18 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { invoke } from "@tauri-apps/api/core";
+import { remoteRequest as invoke } from "../../connections/model/connections";
+import { loadRemoteHostDescriptor } from "../../connections/model/remoteHostMetadata";
+import { providerUsageHost } from "./providerUsageSource";
 import { fetchPiUsage, piUsageProvider } from "./piUsage";
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../connections/model/connections", () => ({ remoteRequest: vi.fn() }));
+vi.mock("../../connections/model/remoteHostMetadata", () => ({ loadRemoteHostDescriptor: vi.fn() }));
+vi.mock("./providerUsageSource", () => ({
+  providerUsageHost: vi.fn(),
+  providerUsageSourceKey: () => "host",
+}));
 beforeEach(() => {
   vi.mocked(invoke).mockReset();
+  vi.mocked(providerUsageHost).mockReturnValue({ machineId: "m", environmentId: "e" });
+  vi.mocked(loadRemoteHostDescriptor).mockResolvedValue({ capabilities: ["providerAccounts.piUsage.v1"] } as never);
 });
 
 it("matches only concrete Pi models from supported billing providers", () => {
@@ -37,7 +46,7 @@ it("keeps weekly-only quotas and zero usage without inventing windows or reset c
     weekly: { usedPercent: 0, windowMinutes: 10080, resetsAt: 1790700198000 },
     resetCredits: null,
   });
-  expect(invoke).toHaveBeenCalledExactlyOnceWith("fetch_pi_usage", {
+  expect(invoke).toHaveBeenCalledExactlyOnceWith("m", "providerAccounts.piUsage", {
     provider: "openai-codex",
   });
 });
@@ -85,4 +94,13 @@ it("does not expose transport errors in the UI", async () => {
   const result = await fetchPiUsage("anthropic");
   expect(result.status).toBe("error");
   expect(JSON.stringify(result)).not.toContain("secret-like");
+});
+
+it("never reads Pi credentials locally when no Host can answer", async () => {
+  vi.mocked(providerUsageHost).mockReturnValue(undefined);
+  expect(await fetchPiUsage("anthropic")).toMatchObject({ status: "unavailable", provider: "claude" });
+  vi.mocked(providerUsageHost).mockReturnValue({ machineId: "m", environmentId: "e" });
+  vi.mocked(loadRemoteHostDescriptor).mockResolvedValue({ capabilities: [] } as never);
+  expect(await fetchPiUsage("anthropic")).toMatchObject({ status: "unavailable" });
+  expect(invoke).not.toHaveBeenCalled();
 });

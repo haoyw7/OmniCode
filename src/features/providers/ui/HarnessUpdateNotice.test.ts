@@ -2,7 +2,7 @@
 import { act, createElement, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { probeHarnessAvailability } from "../../../integrations/harness/core/availability";
+import { probeHarnessAvailability } from "../model/harnessAvailability";
 import { HarnessUpdateNotice } from "./HarnessUpdateNotice";
 
 let claimed = false;
@@ -17,7 +17,7 @@ vi.mock("@tauri-apps/api/core", () => ({
     throw new Error(`unexpected ${command}`);
   }),
 }));
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("../model/harnessAvailability", () => ({
   probeHarnessAvailability: vi.fn(async () => undefined),
   isHarnessAvailable: (id: string) => id === "claude",
 }));
@@ -34,10 +34,10 @@ vi.mock("../../../integrations/harness/core/child", () => ({
 vi.mock("../../sessions/model/models", () => ({
   isPickerProviderVisible: () => true,
 }));
-const refreshHarnessCatalogs = vi.fn(async () => undefined);
-vi.mock("../../../integrations/harness/core/registry", () => ({
-  refreshHarnessCatalogs: (...args: unknown[]) =>
-    refreshHarnessCatalogs(...(args as [])),
+const refreshHostModelCatalogs = vi.fn(async () => undefined);
+vi.mock("../model/hostModelCatalog", () => ({
+  refreshHostModelCatalogs: (...args: unknown[]) =>
+    refreshHostModelCatalogs(...(args as [])),
 }));
 type EventListener = {
   event: string;
@@ -61,7 +61,7 @@ vi.mock("@tauri-apps/api/event", () => ({
     },
   ),
 }));
-vi.mock("../../sessions/ui/HarnessIcon", () => ({ HarnessIcon: () => null }));
+vi.mock("../../../shared/ui/HarnessIcon", () => ({ HarnessIcon: () => null }));
 
 describe("HarnessUpdateNotice", () => {
   beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
@@ -93,10 +93,10 @@ describe("HarnessUpdateNotice", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(notice?.textContent).toContain("Updated to 2.1.285");
-    expect(refreshHarnessCatalogs).toHaveBeenCalledWith(["claude"], {
+    expect(refreshHostModelCatalogs).toHaveBeenCalledWith(["claude"], {
       force: true,
     });
-    expect(refreshHarnessCatalogs).toHaveBeenCalledTimes(1);
+    expect(refreshHostModelCatalogs).toHaveBeenCalledTimes(1);
     expect(emit).toHaveBeenCalledWith("harness-updated", {
       harness: "claude",
       source: expect.any(String),
@@ -108,8 +108,8 @@ describe("HarnessUpdateNotice", () => {
         source: "other-window",
       });
     });
-    expect(refreshHarnessCatalogs).toHaveBeenCalledTimes(2);
-    expect(refreshHarnessCatalogs).toHaveBeenLastCalledWith(["claude"], {
+    expect(refreshHostModelCatalogs).toHaveBeenCalledTimes(2);
+    expect(refreshHostModelCatalogs).toHaveBeenLastCalledWith(["claude"], {
       force: true,
     });
     // A manual refresh in another window re-detects CLIs here too, then
@@ -121,8 +121,8 @@ describe("HarnessUpdateNotice", () => {
       });
     });
     expect(probeHarnessAvailability).toHaveBeenLastCalledWith({ force: true });
-    expect(refreshHarnessCatalogs).toHaveBeenCalledTimes(3);
-    expect(refreshHarnessCatalogs).toHaveBeenLastCalledWith(["claude"], {
+    expect(refreshHostModelCatalogs).toHaveBeenCalledTimes(3);
+    expect(refreshHostModelCatalogs).toHaveBeenLastCalledWith(["claude"], {
       force: true,
     });
     act(() => root.unmount());

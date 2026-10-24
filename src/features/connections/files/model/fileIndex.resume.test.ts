@@ -1,11 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { listProjectFiles, type ProjectFile } from "../../../../platform/tauri/fs";
-import {
-  invalidateProjectFiles,
-  loadProjectFiles,
-  peekProjectFiles,
-} from "./fileIndex";
+import { listProjectFiles } from "../../../../platform/tauri/fs";
+import type { ProjectFile } from "../../../../contracts/workspace";
+import { invalidateProjectFiles, loadProjectFiles, peekProjectFiles } from "./fileIndex";
 
 vi.mock("../../../../platform/tauri/fs", () => ({ listProjectFiles: vi.fn() }));
 const list = vi.mocked(listProjectFiles);

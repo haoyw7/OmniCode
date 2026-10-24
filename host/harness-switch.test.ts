@@ -2,13 +2,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { RemoteProvider } from "../src/features/connections/model/protocol";
+import type { RemoteProvider } from "../src/contracts/provider";
 import type { SendTurnInput } from "../src/integrations/harness/core/types";
 import {
   buildDeterministicHandoff,
   pendingHandoff,
   wrapHandoffPrompt,
-} from "../src/features/sessions/model/handoff";
+} from "../src/domain/handoff";
 import { HostEngine, parseCommand } from "./engine";
 import type { HostProvider } from "./providers";
 import { HostSkills } from "./skills";

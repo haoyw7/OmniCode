@@ -1,22 +1,13 @@
+import { HOST_USAGE_RESET_CAPABILITY } from '../../../contracts/providerUsage';
+import { useSharedHostCapability } from '../../connections/model/useSharedHostCapability';
 import { useEffect, useState } from "react";
-import {
-  providerAccountExists,
-  providerAccounts,
-  selectedProviderAccountId,
-  subscribeProviderAccounts,
-  supportsProviderAccounts,
-} from "./providerAccounts";
-import {
-  unavailableRateLimits,
-  type RateLimitProvider,
-} from "./rateLimits";
-import {
-  loadRateLimits,
-  useCachedRateLimits,
-} from "./rateLimitsCache";
-import type { HarnessId } from "../../sessions/model/session";
+import { providerAccountExists, providerAccounts, selectedProviderAccountId, subscribeProviderAccounts, supportsProviderAccounts } from "./providerAccounts";
+import { unavailableRateLimits } from "../../../domain/rateLimits";
+import type { RateLimitProvider, HarnessId } from "../../../contracts/session";
+import { loadRateLimits, useCachedRateLimits } from "./rateLimitsCache";
+
 import { useNow } from "../../../shared/hooks/useNow";
-import { providerUsageHost, providerUsageSourceKey } from "./providerUsageSource";
+import { providerUsageSourceKey } from "./providerUsageSource";
 
 /** Usage surfaces resolve against the conversation's account and shared cache. */
 export function useProviderUsage(
@@ -53,7 +44,8 @@ export function useProviderUsage(
     if (enabled && available) void loadRateLimits(provider, accountId);
   }, [provider, accountId, available, enabled, source]);
 
-  return { limits, accountId, accounts, available, local: !providerUsageHost() };
+  const canReset = useSharedHostCapability(enabled && provider === "codex" ? HOST_USAGE_RESET_CAPABILITY : undefined);
+  return { limits, accountId, accounts, available, canReset };
 }
 
 export function useUsageClock() {

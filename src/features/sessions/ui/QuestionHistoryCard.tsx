@@ -2,18 +2,12 @@ import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 import { useContext, useState } from "react";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  CircleCheck,
-  MessageSquare,
-} from "../../../shared/ui/icons";
+import { Check, ChevronDown, ChevronRight, CircleCheck, MessageSquare } from "../../../shared/ui/icons";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import type { QuestionAnswer, UserQuestionRecord } from "../model/userQuestion";
-import { questionRecordAnswers } from "../model/questionHistory";
+import type { QuestionAnswer, UserQuestionRecord } from "../../../contracts/session";
+import { questionRecordAnswers } from "../../../domain/questionHistory";
 import { QuestionHistoryForm } from "./QuestionHistoryForm";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
 
 export function QuestionHistoryCard({
   blockId,

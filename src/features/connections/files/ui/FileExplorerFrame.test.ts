@@ -6,6 +6,7 @@ import { applyReducedMotion } from "../../../../shared/lib/reducedMotion";
 import { useSurfaceVisibility } from "../../../../shared/ui/SurfaceVisibility";
 import { beginPaneResize } from "../../../../shared/lib/paneResize";
 import { FileExplorerFrame } from "./FileExplorerFrame";
+import { ProjectSearch } from "../../../projects/ui/ProjectSearch";
 
 vi.mock("../../../source-control/hooks/useGitFileStatuses", () => ({
   useGitFileStatuses: () => new Map(),
@@ -29,6 +30,7 @@ function Preview() {
 function Fixture() {
   const [path, setPath] = useState<string>();
   return createElement(FileExplorerFrame, {
+    renderSearch: (props) => createElement(ProjectSearch, props),
     cwd: "/repo",
     focused: true,
     hasDocument: !!path,

@@ -20,7 +20,7 @@ import * as worktrees from "../../git-worktrees";
 import type { HostProvider } from "../../providers";
 import { executeBotAction } from "./control";
 import { assertReplyAttachmentAccess } from "./attachments";
-import type { RemoteAttachment } from "../../../src/features/connections/model/protocol";
+import type { RemoteAttachment } from "../../../src/contracts/protocol";
 
 const cleanup: (() => Promise<void>)[] = [];
 afterEach(async () => {

@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CUSTOM_OPTION_ID } from "../../../../features/sessions/model/userQuestion";
-import {
-  codexAsyncQuestions,
-  codexAsyncQuestionResponse,
-  codexQuestions,
-  codexQuestionResponse,
-} from "./codexQuestions";
+import { CUSTOM_OPTION_ID } from "../../../../domain/userQuestion";
+import { codexAsyncQuestions, codexAsyncQuestionResponse, codexQuestions, codexQuestionResponse } from "./codexQuestions";
 
 describe("Codex async question messages", () => {
   it("converts suggested choices and free-text questions with distinct IDs", () => {

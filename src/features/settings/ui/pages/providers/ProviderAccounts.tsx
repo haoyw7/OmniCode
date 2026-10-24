@@ -1,3 +1,4 @@
+import { useMaskEmails, useShowRemainingUsage } from "../../../model/displayPrefs";
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import { PresenceBoundary } from "../../../../../shared/ui/PresenceBoundary";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
@@ -6,32 +7,17 @@ import { Loader, MoreHorizontal, Pencil, Plus, Trash2 } from "../../../../../sha
 import { MenuHover } from "../../../../../shared/ui/MenuHover";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { useSurfaceVisibility } from "../../../../../shared/ui/SurfaceVisibility";
-import { HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
-import {
-  providerAccounts,
-  sharedProviderAccountId,
-  type ProviderAccountProvider,
-} from "../../../../providers/model/providerAccounts";
-import {
-  identityKey,
-  identityOrganizationTag,
-} from "../../../../providers/model/providerAccountIdentity";
-import { ProviderAccountSubtitle } from "../../../../providers/ui/ProviderAccountSubtitle";
+import { HARNESS_TITLE } from "../../../../../contracts/session";
+import { type HarnessId } from "../../../../../contracts/session";
+import { providerAccounts, sharedProviderAccountId, type ProviderAccountProvider } from "../../../../providers/model/providerAccounts";
+import { identityKey, identityOrganizationTag } from "../../../../providers/model/providerAccountIdentity";
+import { ProviderAccountSubtitle } from "../../../../../shared/ui/ProviderAccountSubtitle";
 import { accountStatus, accountUsageKey } from "../../../../providers/model/accountUsage";
-import {
-  AccountStatusLabel,
-  AccountUsageRefresh,
-  meterWindows,
-  UsageMeter,
-} from "../../../../providers/ui/ProviderAccountUsage";
-import { ExplorerMenu, type ExplorerMenuItem } from "../../../../connections/files/ui/ExplorerMenu";
+import { AccountStatusLabel, AccountUsageRefresh, meterWindows, UsageMeter } from "../../../../../shared/ui/ProviderAccountUsage";
+import { ExplorerMenu, type ExplorerMenuItem } from "../../../../../shared/ui/primitives/ExplorerMenu";
 import type { DeepseekAccountState } from "../../../../providers/model/deepseekAccount";
 import { RevealedSetting, settingDomId } from "../../settingsLayout";
-import {
-  isAccountProvider,
-  type AccountEditor,
-  type ProviderAccountsController,
-} from "./useProviderAccounts";
+import { isAccountProvider, type AccountEditor, type ProviderAccountsController } from "./useProviderAccounts";
 
 const ACCOUNTS_SETTING_ID = "provider-accounts";
 
@@ -160,6 +146,9 @@ function AccountList({
   provider: ProviderAccountProvider;
   controller: ProviderAccountsController;
 }) {
+  const masked = useMaskEmails();
+  const showRemaining = useShowRemainingUsage();
+
   const { t: uiT } = useTranslation();
   const { editor, editorExpanded, working, defaultsReady, identities, usage } = controller;
   const accounts = providerAccounts(provider);
@@ -225,7 +214,7 @@ function AccountList({
                   title={uiT("Actual account")}
                   className="mt-1 min-w-0 text-[11px]"
                 >
-                  <ProviderAccountSubtitle
+                  <ProviderAccountSubtitle masked={masked}
                     identity={identity}
                     fallback={uiT(identity === undefined
                       ? "Reading account identity…"
@@ -244,7 +233,7 @@ function AccountList({
                 {windows.length > 0 ? (
                   <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-2">
                     {windows.map((entry) => (
-                      <UsageMeter
+                      <UsageMeter showRemaining={showRemaining}
                         key={entry.title}
                         title={entry.title}
                         window={entry.window}
@@ -520,6 +509,8 @@ function ProviderAccountEditor({
 }
 
 function DeepseekAccountSettings({ account, loading, error }: DeepseekAccountState) {
+  const masked = useMaskEmails();
+
   const { t } = useTranslation();
   const stored = account?.status === "credential-stored";
   const profile = account?.profile;
@@ -530,7 +521,7 @@ function DeepseekAccountSettings({ account, loading, error }: DeepseekAccountSta
     <div data-ui="provider-account-list" aria-label={HARNESS_TITLE.deepseek} role="group">
       <div data-ui="provider-account" className="p-3" aria-busy={loading}>
         <div className="text-[12px] font-medium text-content/90">{profile?.name || t("DeepSeek account")}</div>
-        {profile?.contact ? <ProviderAccountSubtitle
+        {profile?.contact ? <ProviderAccountSubtitle masked={masked}
           identity={profile.contact.includes("@") ? { email: profile.contact } : { name: profile.contact }}
           className="mt-1 text-[11px] text-content/75"
         /> : null}

@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 import { act, createElement, useContext, type ComponentProps } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AgentTranscript } from "./AgentTranscript";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
-import type { Block } from "../model/session";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
+import type { Block } from "../../../contracts/session";
 
 vi.mock("../hooks/useTranscriptLayout", () => ({ useTranscriptLayout: () => "chat" }));
 

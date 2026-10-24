@@ -2,13 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  appendWorktreeCreationLog,
-  completeWorktreeCreation,
-  failWorktreeCreation,
-  foldWorktreeCreation,
-  startWorktreeCreation,
-} from "../../source-control/model/worktreeCreation";
+import { appendWorktreeCreationLog, completeWorktreeCreation, failWorktreeCreation, foldWorktreeCreation, startWorktreeCreation } from "../../../domain/worktreeCreation";
 import { WorktreeCreationCard } from "./WorktreeCreationCard";
 
 let container: HTMLDivElement;

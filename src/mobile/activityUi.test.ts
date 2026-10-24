@@ -4,7 +4,7 @@ import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { MobileApp } from "./MobileApp";
-import type { HostSessionSummary } from "../features/connections/model/protocol";
+import type { HostSessionSummary } from "../contracts/protocol";
 import type { MobileBots } from "./MobileBots";
 import { setUiLanguage } from "../shared/i18n/language";
 

@@ -1,71 +1,33 @@
 import { AnimatePresence, motion, useIsPresent } from "motion/react";
-import {
-  immediateTransition,
-  panelTransition,
-  popAnimate,
-  popExit,
-  popInitial,
-} from "../../../shared/motion/tokens";
+import { immediateTransition, panelTransition, popAnimate, popExit, popInitial } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-  type ButtonHTMLAttributes,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ButtonHTMLAttributes, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
 import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
 import { mergeOrderedSubset } from "../../../shared/lib/reorder";
 import { usePreferenceState } from "../../settings/model/usePreferenceState";
-import {
-  loadStatusCardOrder,
-  saveStatusCardOrder,
-  useStatusCardsVisible,
-  type StatusCardId,
-} from "../model/statusCardOrder";
+import { loadStatusCardOrder, saveStatusCardOrder, useStatusCardsVisible, type StatusCardId } from "../model/statusCardOrder";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import {
-  Check,
-  CircleAlert,
-  FileScript,
-  Folder,
-  GitBranch,
-  GitCompare,
-  GripVertical,
-  Internet,
-  Laptop,
-} from "../../../shared/ui/icons";
+import { Check, CircleAlert, FileScript, Folder, GitBranch, GitCompare, GripVertical, Internet, Laptop } from "../../../shared/ui/icons";
 import { prettyParent, projectName } from "../../../shared/lib/paths";
-import { useSessionHeaderActions } from "../../workspace/ui/SessionHeaderActions";
+import { useSessionHeaderActions } from "../../workspace/model/SessionHeaderActions";
 import { useRemoteMachines } from "../../connections/model/connections";
 import { isSharedHostMachine, parseRemotePath } from "../../connections/model/remoteProjects";
-import type { Block } from "../model/session";
-import {
-  contextPercent,
-  type ContextUsage,
-} from "../model/contextUsage";
-import {
-  buildSessionStatusPanelModel,
-  focusedTaskWindow,
-  type SessionStatusGit,
-  type SessionStatusPanelModel,
-} from "../model/sessionStatusPanel";
-import { taskListProgressLabel } from "../model/taskList";
+import type { Block, ContextUsage, ProviderRateLimits } from "../../../contracts/session";
+import { contextPercent } from "../../../domain/contextUsage";
+
+import { buildSessionStatusPanelModel, focusedTaskWindow, type SessionStatusGit, type SessionStatusPanelModel } from "../model/sessionStatusPanel";
+import { taskListProgressLabel } from "../../../domain/taskList";
 import { TaskState } from "./TaskListPreview";
-import { TerminalSpinner } from "./TerminalSpinner";
+import { TerminalSpinner } from "../../../shared/ui/TerminalSpinner";
 import { ContextUsageDetails } from "./ContextUsageDetails";
 import { ProviderUsageBar } from "./ProviderUsageBar";
 import { hasSessionUsage, type UsageSession } from "../../providers/model/sessionUsage";
 import { LOW_HEADROOM_PERCENT } from "../../providers/model/accountUsageStatus";
-import { clampUsedPercent, formatUsagePercent, formatWindowLabel, type ProviderRateLimits } from "../../providers/model/rateLimits";
+import { clampUsedPercent, formatUsagePercent, formatWindowLabel } from "../../../domain/rateLimits";
+
 import { useUsageClock } from "../../providers/model/useProviderUsage";
 import { backgroundTaskItems } from "../model/backgroundTasks";
 import { BackgroundTasksPanel, BackgroundTasksSummary } from "./BackgroundTasksPanel";

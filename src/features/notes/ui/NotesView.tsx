@@ -1,76 +1,34 @@
-import { AppPageHeader } from "../../workspace/ui/AppPageHeader";
+import { MAX_NOTE_TAGS, normalizeNoteTags, noteTitle } from "../../../domain/notesText";
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../projects/model/projectMascots";
+import { useProjectLogoSource } from "../../projects/model/useProjectLogoSource";
+import { AppPageHeader } from "../../../shared/ui/messaging/AppPageHeader";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  LoaderCircle,
-  Plus,
-  Search,
-  RefreshCw,
-  File,
-  Trash2,
-  X,
-} from "../../../shared/ui/icons";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type DragEvent as ReactDragEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
-import { useMarkdownMode } from "../../sessions/ui/MarkdownModeToggle";
+import { LoaderCircle, Plus, Search, RefreshCw, File, Trash2, X } from "../../../shared/ui/icons";
+import { subscribeNativeFileDrop } from "../../../platform/tauri/webview";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useMarkdownMode } from "../../../shared/ui/MarkdownModeToggle";
 import { useDesktopBotsHosts } from "../../bots/model/useDesktopBotsHosts";
 import { useBotTopicNotes } from "../../bots/model/useBotTopicNotes";
-import { BotTopicNote } from "../../bots/ui/BotTopicNote";
+import type { BotTopicNote as TopicNote } from "../../bots/model/useBotTopicNotes";
 import { remoteRequest } from "../../connections/model/connections";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
+
+import type { ComponentType } from "react";
+import type { ProjectPickerProps } from "../../projects/presentation";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import { formatRelativeTime } from "../../inbox/model/githubTasks";
-import {
-  createNote,
-  deleteNote,
-  loadNotes,
-  MAX_NOTE_TAGS,
-  NOTES_CHANGED_EVENT,
-  normalizeNoteTags,
-  notePreview,
-  noteSourceProject,
-  noteTitle,
-  peekNotes,
-  upsertNote,
-  requestAddNoteToChat,
-  type Note,
-} from "../notes";
-import {
-  insertNoteImagesMarkdown,
-  saveNoteImagesFromFiles,
-  saveNoteImagesFromPaths,
-  type NoteImageAsset,
-} from "../noteImages";
+import { createNote, deleteNote, loadNotes, NOTES_CHANGED_EVENT, notePreview, noteSourceProject, peekNotes, upsertNote, requestAddNoteToChat } from "../notes";
+import { type Note } from "../../../contracts/session";
+import { insertNoteImagesMarkdown, saveNoteImagesFromFiles, saveNoteImagesFromPaths } from "../noteImages";
+import type { NoteImageAsset } from "../../../contracts/notes";
 import { projectKey, projectName } from "../../../shared/lib/paths";
-import {
-  looksLikeProject,
-  type RecentProject,
-} from "../../projects/model/recents";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import {
-  AgentMarkdown,
-  MarkdownSourceHighlight,
-} from "../../sessions/ui/AgentMarkdown";
+import { looksLikeProject, type RecentProject } from "../../projects/model/recents";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLogo, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
+import { AgentMarkdown, MarkdownSourceHighlight } from "../../../shared/ui/markdown/AgentMarkdown";
 
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 420;
@@ -103,6 +61,8 @@ function enqueueNoteSave(
 }
 
 type Props = {
+  ProjectPicker: ComponentType<ProjectPickerProps>;
+  TopicNote: ComponentType<{ note: TopicNote; active?: boolean }>;
   active?: boolean;
   cwd?: string;
   recents: RecentProject[];
@@ -110,6 +70,8 @@ type Props = {
 };
 
 export function NotesView({
+  ProjectPicker,
+  TopicNote: BotTopicNote,
   active = true,
   cwd,
   recents,
@@ -405,6 +367,7 @@ export function NotesView({
           {selectedTopic ? (
             <BotTopicNote key={selectedTopic.key} note={selectedTopic} active={active} />
           ) : <NoteDetail
+            ProjectPicker={ProjectPicker}
             note={selected}
             recents={recents}
             activeCwd={cwd}
@@ -432,6 +395,7 @@ function NoteProjectMark({
   colors,
   customColors,
 }: { cwd: string } & ProjectMarks) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const project = projectName(cwd);
   const key = projectKey(cwd);
   const logoPath = resolveTabGroupLogo(key, logos);
@@ -441,15 +405,15 @@ function NoteProjectMark({
     <span className="flex min-w-0 items-center gap-1.5">
       {logoPath ? (
         <ProjectLogoIcon
-          path={logoPath}
+          src={resolveProjectLogoSrc(logoPath)}
           className="size-3.5 shrink-0 rounded-sm"
           imageClassName="size-3.5"
         />
       ) : (
-        <ProjectMascot
-          project={project}
-          color={mascotColor}
-          name={mascotName}
+        <Omi compact
+          expression={projectMascot(project, mascotName).name}
+          style={{ color: mascotColor || undefined }}
+          
           className="size-3 shrink-0"
         />
       )}
@@ -559,6 +523,7 @@ function NoteCard({
 }
 
 function NoteDetail({
+  ProjectPicker,
   note,
   recents,
   activeCwd,
@@ -566,6 +531,7 @@ function NoteDetail({
   onDelete,
   onAddToChat,
 }: {
+  ProjectPicker: ComponentType<ProjectPickerProps>;
   note: Note | null;
   recents: RecentProject[];
   activeCwd?: string;
@@ -584,6 +550,7 @@ function NoteDetail({
   }
   return (
     <NoteEditor
+      ProjectPicker={ProjectPicker}
       key={note.id}
       note={note}
       recents={recents}
@@ -596,6 +563,7 @@ function NoteDetail({
 }
 
 function NoteEditor({
+  ProjectPicker: SearchableProjectPicker,
   note,
   recents,
   activeCwd,
@@ -603,6 +571,7 @@ function NoteEditor({
   onDelete,
   onAddToChat,
 }: {
+  ProjectPicker: ComponentType<ProjectPickerProps>;
   note: Note;
   recents: RecentProject[];
   activeCwd?: string;
@@ -811,8 +780,7 @@ function NoteEditor({
       );
     };
 
-    void getCurrentWebview()
-      .onDragDropEvent((event) => {
+    void subscribeNativeFileDrop((event) => {
         if (event.payload.type === "leave") {
           setImageDrag(false);
           return;

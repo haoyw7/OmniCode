@@ -2,9 +2,12 @@ import { afterEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { newSession } from "../../sessions/model/session";
 import { loadRemoteSession } from "./connections";
-import type { HostSession } from "./protocol";
+import type { HostSession } from "../../../contracts/protocol";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../../platform/tauri/hostProjectionCache", () => ({
+  saveHostProjection: vi.fn(async () => undefined), hostProjectionIdentity: vi.fn(async () => "identity"),
+}));
 afterEach(() => vi.restoreAllMocks());
 
 it.each([false, true])("calibrates desktop sync before chunk transfer (chunked=%s)", async (chunked) => {

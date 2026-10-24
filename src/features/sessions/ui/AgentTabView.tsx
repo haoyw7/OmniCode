@@ -1,34 +1,20 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AgentTranscript } from "./AgentTranscript";
 import { TranscriptFind } from "./TranscriptFind";
-import {
-  clearTranscriptJump,
-  peekTranscriptJump,
-  subscribeTranscriptJump,
-} from "../model/transcriptJump";
-import { HarnessIcon } from "./HarnessIcon";
-import { findModel } from "../model/models";
-import {
-  HARNESS_TITLE,
-  sessionDisplayTitle,
-  sessionExecutionCwd,
-  type Session,
-} from "../model/session";
-import { createNote, noteTitle } from "../../notes";
-import {
-  loadNotesEnabled,
-  subscribeNotesEnabled,
-} from "../../settings/model/settings";
+import { clearTranscriptJump, peekTranscriptJump, subscribeTranscriptJump } from "../model/transcriptJump";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { findModel } from "../../../integrations/harness/core/modelCatalog";
+import { sessionDisplayTitle } from "../model/session";
+import { sessionExecutionCwd } from "../../../domain/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type Session } from "../../../contracts/session";
+import { createNote } from "../../notes";
+import { noteTitle } from "../../../domain/notesText";
+import { loadNotesEnabled, subscribeNotesEnabled } from "../../settings/model/settings";
 import { hostOrchestrationClient } from "../../orchestration/model/orchestrationClient";
 import { loadRemoteSession } from "../../connections/model/connections";
-import type { HostSession } from "../../connections/model/protocol";
+import type { HostSession } from "../../../contracts/protocol";
 import { parseRemotePath, remotePath } from "../../connections/model/remoteProjects";
 
 /**

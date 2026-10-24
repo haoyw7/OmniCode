@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  SELECTABLE_AGENT_RESPONSE_ATTR,
-  validateTranscriptSelection,
-  type TranscriptSelection,
-} from "../model/transcriptSelection";
+import { SELECTABLE_AGENT_RESPONSE_ATTR, validateTranscriptSelection, type TranscriptSelection } from "../model/transcriptSelection";
 
 function responseIdForNode(
   node: Node | null,

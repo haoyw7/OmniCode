@@ -1,17 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProjectFile } from "../../../../platform/tauri/fs";
+import type { ProjectFile } from "../../../../contracts/workspace";
 import { loadProjectFiles } from "./fileIndex";
-import {
-  applyFileMentionsToTurn,
-  buildMentionIndex,
-  fileMentionParts,
-  fileMentionsInText,
-  mentionLabel,
-  mentionTokenAt,
-  rankMentionFiles,
-  replaceMentionToken,
-  withMentionDirectories,
-} from "./fileMentions";
+import { applyFileMentionsToTurn, buildMentionIndex, fileMentionParts, fileMentionsInText, mentionLabel, mentionTokenAt, rankMentionFiles, replaceMentionToken, withMentionDirectories } from "./fileMentions";
 
 vi.mock("./fileIndex", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./fileIndex")>();

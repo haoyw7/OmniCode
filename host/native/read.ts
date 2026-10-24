@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
 import { closeSync, fstatSync, openSync, readSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
-import type {
-  NativeSessionFile,
-  NativeSessionProvider,
-} from "../../src/integrations/harness/core/nativeSessions";
+import type { NativeSessionFile, NativeSessionProvider } from "../../src/contracts/session";
 import {
   MAX_BYTES,
   OPENCODE_SESSIONS,

@@ -1,19 +1,9 @@
 import { fuzzyMatch } from "../../../shared/lib/fuzzy";
 import { projectName } from "../../../shared/lib/paths";
-import {
-  sameProjectPath,
-  type RecentProject,
-} from "../../projects/model/recents";
-import {
-  sessionDisplayTitle,
-  type HarnessId,
-} from "../../sessions/model/session";
-import {
-  searchConversationTitles,
-  searchRecentProjects,
-  type ConversationHit,
-  type ProjectHit,
-} from "./appSearch";
+import { sameProjectPath, type RecentProject } from "../../projects/model/recents";
+import { sessionDisplayTitle } from "../../sessions/model/session";
+import { type HarnessId } from "../../../contracts/session";
+import { searchConversationTitles, searchRecentProjects, type ConversationHit, type ProjectHit } from "./appSearch";
 
 /**
  * One palette for files, commands, sessions and projects. A leading `>`,

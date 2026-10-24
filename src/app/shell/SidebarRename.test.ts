@@ -8,7 +8,7 @@ vi.mock("motion/react", async (importOriginal) => {
 import { act, createElement, StrictMode, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatSessionTitle } from "../../features/sessions/model/session";
+import { formatSessionTitle } from "../../domain/session";
 import { formatReminderTime } from "../../features/sessions/model/sessionReminders";
 import { Sidebar } from "./Sidebar";
 import { loadSessionFolders } from "../../features/sessions/model/sessionFolders";

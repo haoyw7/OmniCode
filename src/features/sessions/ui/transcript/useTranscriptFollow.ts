@@ -2,14 +2,7 @@ import { syncLiveFooterClip } from "../liveFooterClip";
 import { useCallback, useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { followsAfterScroll } from "./useLivePhaseScroll";
 import { innerScrollerTakes } from "../../../../shared/hooks/useLockOverscroll";
-import {
-  animateToBottom,
-  FOLLOW_GLIDE,
-  isTranscriptEndVisible,
-  jumpingScrollers,
-  pinToBottom,
-  syncTranscriptViewport,
-} from "./scrollAnchor";
+import { animateToBottom, FOLLOW_GLIDE, isTranscriptEndVisible, jumpingScrollers, pinToBottom, syncTranscriptViewport } from "./scrollAnchor";
 
 const WHEEL_HOLD_MS = 150;
 

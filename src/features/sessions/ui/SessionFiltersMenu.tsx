@@ -3,14 +3,10 @@ import { Check } from "../../../shared/ui/icons";
 import { type ReactNode } from "react";
 import { Popover } from "../../../shared/ui/Popover";
 import { MenuHover } from "../../../shared/ui/MenuHover";
-import {
-  DEFAULT_SESSION_SIDEBAR_FILTERS,
-  hasActiveSessionFilters,
-  type SessionSidebarFilters,
-  type SessionTimeFilter,
-} from "../model/sessionFilters";
-import { HARNESS_TITLE, type HarnessId } from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import { DEFAULT_SESSION_SIDEBAR_FILTERS, hasActiveSessionFilters, type SessionSidebarFilters, type SessionTimeFilter } from "../model/sessionFilters";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type HarnessId } from "../../../contracts/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 
 const MENU_WIDTH = 228;
 

@@ -1,17 +1,9 @@
 import { useEffect, useId, useState, type RefObject } from "react";
 import { Check, Copy } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import type {
-  HostModelCatalog,
-  HostSession,
-} from "../features/connections/model/protocol";
-import {
-  contextPercent,
-} from "../features/sessions/model/contextUsage";
-import {
-  contextBreakdownRows,
-  formatContextTokens,
-} from "../features/sessions/model/contextBreakdown";
+import type { HostModelCatalog, HostSession } from "../contracts/protocol";
+import { contextPercent } from "../domain/contextUsage";
+import { contextBreakdownRows, formatContextTokens } from "../features/sessions/model/contextBreakdown";
 import { MobileSheet } from "./MobileSheet";
 import { MobileHostStatus } from "./MobileHostStatus";
 import { mobileTranscriptPlatform } from "./transcriptPlatform";
@@ -21,12 +13,9 @@ import { ContextUsageDetails } from "../features/sessions/ui/ContextUsageDetails
 import { ContextBreakdownBar } from "../shared/ui/messaging/ContextBreakdown";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
 import { DisclosureChevron } from "../shared/ui/DisclosureChevron";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
-import { HARNESS_TITLE } from "../features/sessions/model/session";
-import {
-  configurationForSession,
-  configurationLabels,
-} from "./MobileModelControls";
+import { HarnessIcon } from "../shared/ui/HarnessIcon";
+import { HARNESS_TITLE } from "../contracts/session";
+import { configurationForSession, configurationLabels } from "./MobileModelControls";
 
 const RUN_STATUS_LABEL: Record<HostSession["status"], string> = {
   idle: "Idle",

@@ -1,18 +1,11 @@
+import type { GitChangedFile, GitDiffIndex } from "../../../contracts/workspace";
 // @vitest-environment happy-dom
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  gitDiffFiles,
-  gitFileDiff,
-  type GitChangedFile,
-  type GitDiffIndex,
-} from "../../../platform/tauri/fs";
-import {
-  sessionCheckpointStatus,
-  sessionCheckpointFileDiff,
-  type CheckpointStatus,
-} from "../../sessions/model/checkpoint";
+import { gitDiffFiles, gitFileDiff } from "../../../platform/tauri/fs";
+import type { CheckpointStatus } from "../../../contracts/checkpoint";
+import { sessionCheckpointStatus, sessionCheckpointFileDiff } from "../../sessions/model/checkpoint";
 import { useReviewSource } from "./useReviewSource";
 import type { ReviewSource } from "./reviewDiff";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";

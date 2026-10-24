@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { act, createElement, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileComposer, type MobileComposerPanel } from "./MobileComposer";
-import type { HostSkillCatalog } from "../features/connections/model/protocol";
+import type { HostSkillCatalog } from "../contracts/protocol";
 import { setUiLanguage } from "../shared/i18n/language";
 
 const catalog: HostSkillCatalog = {

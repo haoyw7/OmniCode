@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { newUndoId, undoPlanDirectory, saveUndoPlan, readUndoPlan, writeUndoFile, type PreparedCheckpointUndo, type DurableUndoPlan } from "./checkpoint-undo-plan";
+export type { PreparedCheckpointUndo } from "./checkpoint-undo-plan";
 import { machineExec as exec, machineFs, machinePath, machineEnvironment, currentMachineIO, localMachineIO, withMachineIO, assertLocalMachinePath } from "./machine-io";
 import { lstatSync, readFileSync } from "node:fs";
 import {
@@ -11,12 +14,9 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type {
-  CheckpointFile,
-  CheckpointFileDiff,
-  CheckpointStatus,
-} from "../src/features/sessions/model/checkpoint";
-import { TurnCheckpoints } from "./turn-checkpoints";
+import type { CheckpointFile, CheckpointFileDiff, CheckpointStatus } from "../src/contracts/checkpoint";
+import { TurnCheckpoints, type GitCheckpointUndo } from "./turn-checkpoints";
+import { rebaseCheckpointMetadata } from "./checkpoint-rebase";
 import { workspacePath } from "./workspace";
 
 const MAX_SNAPSHOT_FILES = 500;
@@ -31,6 +31,9 @@ type FileState =
   | { kind: "skipped" };
 
 type StoredManifest = {
+  turnId?: string;
+  multiTurn?: boolean;
+  turnComplete?: boolean;
   machine?: string;
   cwd: string;
   files: Record<string, SnapshotKind>;
@@ -48,6 +51,9 @@ type StoredManifest = {
 };
 
 type Manifest = {
+  turnId?: string;
+  multiTurn?: boolean;
+  turnComplete?: boolean;
   machine: string;
   cwd: string;
   files: Map<string, SnapshotKind>;
@@ -58,6 +64,10 @@ type Manifest = {
   stats: Map<string, ChangeStats>;
   diverged: Set<string>;
 };
+
+type FileUndoEntry = { relative: string; before: "contents" | "missing"; after: "contents" | "missing"; beforeHash?: string; afterHash?: string; beforeMode?: number; afterMode?: number };
+type FileCheckpointUndo = { files: FileUndoEntry[] };
+const digest = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 
 /**
  * Per-session Keep/Undo checkpoints for conversations the Host runs. It follows
@@ -86,6 +96,14 @@ export class SessionCheckpoints {
     return join(this.root, sessionId);
   }
 
+  /** Called under the project's move lease, before committing its new path. */
+  rebase(fromCwd: string, toCwd: string, sessionIds: readonly string[]): Promise<() => Promise<void>> {
+    return this.exclusive(async () => {
+      const undo = await rebaseCheckpointMetadata(this.root, fromCwd, toCwd, sessionIds);
+      return () => this.exclusive(undo);
+    });
+  }
+
   /** Open the session's checkpoint before a turn; it lasts until Keep or Undo. */
   ensure(sessionId: string, cwd: string): Promise<void> {
     return this.exclusive(async () => {
@@ -106,17 +124,31 @@ export class SessionCheckpoints {
       if (await this.turns.begin(sessionId, cwd, turnId)) return;
       const root = await projectRoot(cwd);
       const dir = this.sessionDir(sessionId);
-      const manifest = await readManifest(dir);
-      if (manifest && manifest.machine === currentMachineIO().key && sameCwd(manifest.cwd, root)) return;
-      await rm(dir, { recursive: true, force: true });
-      await mkdir(join(dir, "files"), { recursive: true });
-      await writeManifest(dir, emptyManifest(root));
+      let manifest = await readManifest(dir);
+      if (!manifest || manifest.machine !== currentMachineIO().key || !sameCwd(manifest.cwd, root)) {
+        await rm(dir, { recursive: true, force: true });
+        await mkdir(join(dir, "files"), { recursive: true });
+        manifest = emptyManifest(root);
+      }
+      // Older accumulated snapshots cannot prove a one-turn provider boundary.
+      if (manifest.touched.size && manifest.turnId !== turnId) manifest.multiTurn = true;
+      manifest.turnId = turnId;
+      manifest.turnComplete = false;
+      await writeManifest(dir, manifest);
     });
   }
 
   /** Capture the settled workspace once the turn's provider has stopped. */
   finishTurn(sessionId: string, cwd: string, turnId: string): Promise<void> {
-    return this.exclusive(() => this.turns.finish(sessionId, cwd, turnId));
+    return this.exclusive(async () => {
+      await this.turns.finish(sessionId, cwd, turnId);
+      const dir = this.sessionDir(sessionId);
+      const manifest = await readManifest(dir);
+      if (manifest?.turnId === turnId && manifest.machine === currentMachineIO().key && sameCwd(manifest.cwd, await projectRoot(cwd))) {
+        manifest.turnComplete = true;
+        await writeManifest(dir, manifest);
+      }
+    });
   }
 
   /** Capture files immediately before a structured edit starts. Contents are
@@ -249,37 +281,110 @@ export class SessionCheckpoints {
     });
   }
 
-  undo(sessionId: string, cwd: string, input?: string): Promise<CheckpointStatus> {
+  async undo(sessionId: string, cwd: string, input?: string): Promise<CheckpointStatus> {
+    return this.applyUndo(await this.prepareUndo(sessionId, cwd, input));
+  }
+
+  prepareUndo(sessionId: string, cwd: string, input?: string): Promise<PreparedCheckpointUndo> {
     return this.exclusive(async () => {
-      const recorded = await this.turns.undo(sessionId, cwd, input);
-      if (recorded) return recorded;
-      const root = await projectRoot(cwd);
+      const git = await this.turns.prepareUndo(sessionId, cwd, input);
+      const root = git?.cwd ?? await projectRoot(cwd);
+      const id = newUndoId();
+      const directory = undoPlanDirectory(this.root, sessionId, id);
+      if (git) {
+        const prepared = { id, sessionId, cwd: root, turnId: git.turnId, paths: git.changes.map(change => change.relative) };
+        await saveUndoPlan(directory, { version: 1, kind: "git", machine: currentMachineIO().key, prepared, data: git });
+        return prepared;
+      }
       const dir = this.sessionDir(sessionId);
       const manifest = await readManifest(dir);
-      if (!manifest || !(manifest.machine === currentMachineIO().key && sameCwd(manifest.cwd, root))) return { files: [] };
-      const changed = await this.currentStatus(sessionId, cwd);
-      if (input !== undefined) {
-        const relativePath = relativeTo(root, input);
-        const file = changed.files.find((entry) => entry.relative === relativePath);
-        if (!relativePath || !file) return changed;
-        if (!file.undoable)
-          throw new Error(
-            `Cannot safely undo ${relativePath}: it changed outside this session`,
-          );
-        await restoreOne(dir, root, manifest, relativePath);
-        releasePath(manifest, relativePath);
-        await writeManifest(dir, manifest);
-        return this.currentStatus(sessionId, cwd);
+      if (!manifest || manifest.machine !== currentMachineIO().key || !sameCwd(manifest.cwd, root)) throw new Error("No checkpoint is available for this workspace");
+      if (!manifest.turnId || manifest.multiTurn || !manifest.turnComplete) throw new Error("This checkpoint has no verified single-turn restoration boundary");
+      const status = await this.currentStatus(sessionId, cwd);
+      const selected = input === undefined ? status.files : status.files.filter(file => file.relative === relativeTo(root, input));
+      if (selected.some(file => !file.undoable)) throw new Error("Cannot safely undo all: one or more files changed outside this session");
+      const files: FileUndoEntry[] = [];
+      for (const file of selected) {
+        if (await pathContainsSymlink(root, file.relative)) throw new Error(`Cannot write through symbolic link ${file.relative}`);
+        const beforeKind = manifest.files.get(file.relative), afterKind = manifest.after.get(file.relative);
+        if (!beforeKind || !afterKind || beforeKind === "skipped" || afterKind === "skipped") throw new Error("Checkpoint snapshot is incomplete");
+        const before = await readBlob(join(dir, "files"), file.relative, beforeKind);
+        const after = await readBlob(join(dir, "after"), file.relative, afterKind);
+        if (before.kind !== beforeKind || after.kind !== afterKind) throw new Error("Checkpoint snapshot is missing; its recording was preserved");
+        const entry: FileUndoEntry = { relative: file.relative, before: beforeKind, after: afterKind };
+        for (const [side, value] of [["before", before], ["after", after]] as const) {
+          if (value.kind !== "contents") continue;
+          if (value.bytes.length > MAX_FILE_BYTES) throw new Error("Checkpoint snapshot exceeds the non-Git file limit");
+          entry[`${side}Hash`] = digest(value.bytes); entry[`${side}Mode`] = value.mode;
+          await writeUndoFile(join(directory, side, String(files.length)), value.bytes);
+        }
+        if (!exactState(await readWorktree(root, file.relative), after)) throw new Error("Cannot safely undo: a recorded file changed after the checkpoint");
+        files.push(entry);
       }
-      if (changed.files.some((file) => !file.undoable))
-        throw new Error(
-          "Cannot safely undo all: one or more files changed outside this session",
-        );
-      for (const file of changed.files)
-        await restoreOne(dir, root, manifest, file.relative);
-      await rm(dir, { recursive: true, force: true });
-      return { files: [] };
+      const prepared = { id, sessionId, cwd: root, turnId: manifest.turnId, paths: files.map(file => file.relative) };
+      await saveUndoPlan(directory, { version: 1, kind: "files", machine: currentMachineIO().key, prepared, data: { files } });
+      return prepared;
     });
+  }
+
+  applyUndo(prepared: PreparedCheckpointUndo): Promise<CheckpointStatus> {
+    return this.exclusive(async () => {
+      const plan = await readUndoPlan(this.root, prepared);
+      if (plan.machine !== currentMachineIO().key) throw new Error("Checkpoint belongs to a different machine");
+      if (plan.completed) return plan.completed;
+      let result: CheckpointStatus;
+      if (plan.kind === "git") result = await this.turns.applyUndo(prepared.sessionId, prepared.cwd, plan.data as GitCheckpointUndo);
+      else result = await this.applyFileUndo(plan as DurableUndoPlan<FileCheckpointUndo>);
+      plan.completed = result;
+      await saveUndoPlan(undoPlanDirectory(this.root, prepared.sessionId, prepared.id), plan);
+      return result;
+    });
+  }
+
+  private async applyFileUndo(plan: DurableUndoPlan<FileCheckpointUndo>): Promise<CheckpointStatus> {
+    const { prepared, data } = plan;
+    const root = await projectRoot(prepared.cwd);
+    const directory = undoPlanDirectory(this.root, prepared.sessionId, prepared.id);
+    const dir = this.sessionDir(prepared.sessionId);
+    const manifest = await readManifest(dir);
+    if (!manifest || manifest.turnId !== prepared.turnId || manifest.multiTurn || !manifest.turnComplete || manifest.machine !== plan.machine || !sameCwd(manifest.cwd, root))
+      throw new Error("Checkpoint restoration boundary changed");
+    const foreign = await this.foreignTouched(root, prepared.sessionId);
+    const saved = async (entry: FileUndoEntry, index: number, side: "before" | "after"): Promise<FileState> => {
+      if (entry[side] === "missing") return { kind: "missing" };
+      const bytes = await readFile(join(directory, side, String(index)));
+      if (digest(bytes) !== entry[`${side}Hash`]) throw new Error("Checkpoint restoration snapshot is corrupt");
+      return { kind: "contents", bytes, mode: entry[`${side}Mode`] };
+    };
+    const state = async (entry: FileUndoEntry, index: number) => {
+      if (relativeTo(root, entry.relative) !== entry.relative || foreign.has(entry.relative) || await pathContainsSymlink(root, entry.relative)) throw new Error("Cannot safely undo a shared or symbolic-link path");
+      const current = await readWorktree(root, entry.relative);
+      const before = await saved(entry, index, "before");
+      const after = await saved(entry, index, "after");
+      if (exactState(current, before)) return { restored: true, before };
+      if (exactState(current, after)) return { restored: false, before };
+      throw new Error("Cannot safely undo: a recorded file changed after the checkpoint");
+    };
+    for (const [index, entry] of data.files.entries()) await state(entry, index);
+    for (const [index, entry] of data.files.entries()) {
+      const { restored, before } = await state(entry, index); if (restored) continue;
+      const target = machinePath.join(root, ...entry.relative.split("/"));
+      if (before.kind === "missing") await machineFs.unlink(target);
+      else if (before.kind === "contents") {
+        await machineFs.mkdir(machinePath.dirname(target), { recursive: true });
+        await machineFs.writeFile(target, before.bytes);
+        if (before.mode !== undefined && currentMachineIO().pathStyle !== "win32") await machineFs.chmod(target, before.mode);
+      }
+      if (!(await state(entry, index)).restored) throw new Error("Checkpoint restoration did not write the recorded baseline");
+    }
+    for (const entry of data.files) releasePath(manifest, entry.relative);
+    await writeManifest(dir, manifest);
+    return this.currentStatus(prepared.sessionId, prepared.cwd);
+  }
+
+  /** Remove a finished restoration plan's private snapshot copies. */
+  discardUndo(prepared: PreparedCheckpointUndo): Promise<void> {
+    return this.exclusive(() => rm(undoPlanDirectory(this.root, prepared.sessionId, prepared.id), { recursive: true, force: true }));
   }
 
   keep(sessionId: string, cwd: string, input?: string): Promise<CheckpointStatus> {
@@ -342,7 +447,13 @@ export class SessionCheckpoints {
         undoable,
       });
     }
-    return { files };
+    if (!files.length) return { files };
+    // Snapshots accumulated across turns, or an unfinished turn, cannot prove
+    // which provider turn wrote them. Review stays available; Undo does not.
+    if (manifest.turnId && !manifest.multiTurn && manifest.turnComplete) return { files, turnId: manifest.turnId };
+    return { files, undoUnavailableReason: manifest.multiTurn
+      ? "These changes span several conversation turns without a verified boundary. Workspace files were not changed."
+      : "This checkpoint has no verified conversation turn boundary. Workspace files were not changed." };
   }
 
   /** Paths already claimed by another session in the same checkout. */
@@ -394,6 +505,7 @@ async function readManifest(dir: string): Promise<Manifest | undefined> {
   const value = JSON.parse(raw) as StoredManifest;
   return {
     cwd: value.cwd,
+    turnId: value.turnId, multiTurn: value.multiTurn, turnComplete: value.turnComplete,
     machine: value.machine ?? "local",
     files: new Map(Object.entries(value.files ?? {})),
     touched: new Set(value.touched ?? []),
@@ -408,6 +520,7 @@ async function readManifest(dir: string): Promise<Manifest | undefined> {
 async function writeManifest(dir: string, manifest: Manifest) {
   const value: StoredManifest = {
     cwd: manifest.cwd,
+    turnId: manifest.turnId, multiTurn: manifest.multiTurn, turnComplete: manifest.turnComplete,
     machine: manifest.machine,
     files: Object.fromEntries(manifest.files),
     touched: [...manifest.touched],
@@ -531,6 +644,10 @@ async function readBlob(
   } catch {
     return { kind: "missing" };
   }
+}
+
+function exactState(left: FileState, right: FileState): boolean {
+  return sameState(left, right) && (left.kind !== "contents" || right.kind !== "contents" || currentMachineIO().pathStyle === "win32" || left.mode === right.mode);
 }
 
 function sameState(left: FileState, right: FileState): boolean {
@@ -691,41 +808,5 @@ async function pathContainsSymlink(root: string, relativePath: string): Promise<
   return false;
 }
 
-async function restoreOne(dir: string, root: string, manifest: Manifest, relativePath: string) {
-  if (await pathContainsSymlink(root, relativePath))
-    throw new Error(`Cannot write through symbolic link ${relativePath}`);
-  const kind = manifest.files.get(relativePath);
-  const target = machinePath.join(root, ...relativePath.split("/"));
-  const unstage = () => git(root, ["reset", "-q", "HEAD", "--", relativePath]).catch(() => undefined);
-  if (kind === "skipped") return;
-  if (!kind) {
-    // Without a snapshot only a path new to HEAD can be reverted safely.
-    if (await inHead(root, relativePath)) {
-      await git(root, ["restore", "--source=HEAD", "--staged", "--worktree", "--", relativePath]);
-      return;
-    }
-    await unstage();
-    await removeFile(target);
-    return;
-  }
-  if (kind === "missing") {
-    await unstage();
-    await removeFile(target);
-    return;
-  }
-  const snapshot = await readBlob(join(dir, "files"), relativePath, kind);
-  if (snapshot.kind !== "contents") return;
-  if ((await machineFs.stat(target).catch(() => undefined))?.isDirectory())
-    throw new Error(`${target} is a directory`);
-  await machineFs.mkdir(machinePath.dirname(target), { recursive: true });
-  await machineFs.writeFile(target, snapshot.bytes);
-  if (snapshot.mode !== undefined && currentMachineIO().pathStyle !== "win32")
-    await machineFs.chmod(target, snapshot.mode);
-  await unstage();
-}
 
-async function removeFile(path: string) {
-  const info = await machineFs.lstat(path).catch(() => undefined);
-  if (!info) return;
-  await machineFs.rm(path, { recursive: info.isDirectory(), force: true });
-}
+

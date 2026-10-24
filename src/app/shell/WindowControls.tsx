@@ -1,5 +1,5 @@
 import { useTranslation } from "../../shared/i18n/useTranslation";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { desktopWindow } from "../../platform/tauri/window";
 import { Copy, Minus, Square, X } from "../../shared/ui/icons";
 import { useEffect, useState } from "react";
 import { deferredWindowRefresh } from "./windowResizeWork";
@@ -13,7 +13,7 @@ export function WindowControls() {
     let mounted = true;
     let revision = 0;
 
-    const win = getCurrentWindow();
+    const win = desktopWindow();
     const readMaximized = async () => {
       const current = ++revision;
       try {
@@ -46,19 +46,19 @@ export function WindowControls() {
 
   const handleMinimize = () => {
     try {
-      void getCurrentWindow().minimize();
+      void desktopWindow().minimize();
     } catch {}
   };
 
   const handleToggleMaximize = () => {
     try {
-      void getCurrentWindow().toggleMaximize();
+      void desktopWindow().toggleMaximize();
     } catch {}
   };
 
   const handleClose = () => {
     try {
-      void getCurrentWindow().close();
+      void desktopWindow().close();
     } catch {}
   };
 

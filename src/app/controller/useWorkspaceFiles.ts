@@ -1,39 +1,16 @@
+import type { GitFileDiffKind } from "../../contracts/workspace";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { loadEditorPreferences } from "../../features/connections/files/model/editorPreferences";
-import {
-  invalidateProjectFiles,
-  rememberOpenedFile,
-  resolveFileOpenRequest,
-  resolveOpenablePath,
-} from "../../features/connections/files/model/fileIndex";
+import { invalidateProjectFiles, rememberOpenedFile, resolveFileOpenRequest, resolveOpenablePath } from "../../features/connections/files/model/fileIndex";
 import { sameProjectPath } from "../../features/projects/model/recents";
-import {
-  type EditorNavigationTarget,
-  type OpenFileFn,
-} from "../../features/search/model/search";
-import { planTitle } from "../../features/sessions/model/plan";
-import {
-  sessionExecutionCwd,
-  type Session,
-} from "../../features/sessions/model/session";
+import type { EditorNavigationTarget, OpenFileFn } from "../../shared/lib/fileNavigation";
+import { planTitle } from "../../domain/plan";
+import { sessionExecutionCwd } from "../../domain/session";
+import { type Session } from "../../contracts/session";
 import { loadFileTabMode } from "../../features/settings/model/settings";
-import {
-  findSurfacePane,
-  isFilesystemTab,
-  leafIds,
-  newFileTab,
-  newPlanTab,
-  openChangesTab,
-  openEditorTab,
-  openFileExplorer,
-  openSessionChangesTab,
-  pinEditorFile,
-  surfacePanes,
-  withSurfacePanes,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import { type GitFileDiffKind } from "../../platform/tauri/fs";
+import { findSurfacePane, isFilesystemTab, leafIds, newFileTab, newPlanTab, openChangesTab, openEditorTab, openFileExplorer, openSessionChangesTab, pinEditorFile, surfacePanes, withSurfacePanes, type WorkspaceTab } from "../../features/workspace/model/layout";
+
 import { isEqualOrInside, rebasePath } from "../../shared/lib/paths";
 import { orderByIds } from "../../shared/lib/reorder";
 import { dropOpenFiles } from "../model/workspaceSelectors";

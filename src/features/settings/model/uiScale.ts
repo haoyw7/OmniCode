@@ -1,5 +1,5 @@
 import { preferenceStorage } from "./sharedPreferences";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { setNativePageZoom } from "../../../platform/tauri/webview";
 
 const UI_SCALE_KEY = "omnicode.uiScale";
 
@@ -60,7 +60,7 @@ export function saveUiScale(value: number) {
 export async function applyUiScale(value: number) {
   const next = normalizeUiScale(value);
   try {
-    await getCurrentWebview().setZoom(next);
+    await setNativePageZoom(next);
     document.documentElement.style.removeProperty("zoom");
   } catch {
     // No Tauri runtime (browser dev): fall back to CSS zoom.

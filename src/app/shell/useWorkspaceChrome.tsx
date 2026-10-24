@@ -2,15 +2,12 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { DesktopBotsButton } from "../../features/bots/ui/DesktopBotsButton";
 import type { RecentProject } from "../../features/projects/model/recents";
-import { type Session } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
 import { WorkflowSidebarSection } from "../../features/workflows/ui/WorkflowSidebarSection";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
-import { TerminalSpinner } from "../../features/sessions/ui/TerminalSpinner";
-import {
-  leafIds,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import { SessionSurfaceActions } from "../../features/workspace/ui/SessionSurfaceToolbar";
+import { HarnessIcon } from "../../shared/ui/HarnessIcon";
+import { TerminalSpinner } from "../../shared/ui/TerminalSpinner";
+import { leafIds, type WorkspaceTab } from "../../features/workspace/model/layout";
+import { SessionSurfaceActions } from "../ui/SessionSurfaceToolbar";
 import { type DesktopMode } from "../model/desktopMode";
 import type { InstalledUpdate } from "../model/updateNotice";
 import { presentManualUpdatesWith } from "../model/updater";

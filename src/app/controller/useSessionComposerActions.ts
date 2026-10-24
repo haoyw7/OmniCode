@@ -2,37 +2,14 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback } from "react";
 import { sessionUsesHost } from "../../features/connections/model/remoteProjects";
 import { remoteSessionActions } from "../../features/connections/model/remoteSessionActions";
-import {
-  discardDraftSessionRecord,
-  shouldPersistSession,
-} from "../../features/sessions/data/sessionStore";
-import {
-  selectComposerConfiguration,
-  sessionComposerConfiguration,
-} from "../../features/sessions/model/composerConfiguration";
-import {
-  isPreparingHandoff,
-  planComposerSwitch,
-} from "../../features/sessions/model/handoff";
-import {
-  preferredModelSettings,
-  resolveModel,
-  saveLastModelSettings,
-  saveLastSelectedModel,
-  saveRecentModelChoice,
-} from "../../features/sessions/model/models";
-import {
-  HARNESS_LABEL,
-  canReplaceSessionTitle,
-  removeSessionDraft,
-  sessionDraftBlock,
-  titleFromPrompt,
-  type Attachment,
-  type HarnessId,
-  type RuntimeMode,
-  type Session,
-} from "../../features/sessions/model/session";
-import { forgetHarnessSession } from "../../integrations/harness";
+import { discardDraftSessionRecord, shouldPersistSession } from "../../features/sessions/data/sessionStore";
+import { selectComposerConfiguration, sessionComposerConfiguration } from "../../domain/composerConfiguration";
+import { isPreparingHandoff, planComposerSwitch } from "../../domain/handoff";
+import { preferredModelSettings, saveLastModelSettings, saveLastSelectedModel, saveRecentModelChoice } from "../../features/sessions/model/models";
+import { resolveModel } from "../../integrations/harness/core/modelCatalog";
+import { canReplaceSessionTitle, removeSessionDraft, sessionDraftBlock, titleFromPrompt } from "../../domain/session";
+import { HARNESS_LABEL } from "../../contracts/session";
+import { type Attachment, type HarnessId, type RuntimeMode, type Session } from "../../contracts/session";
 import { withHarnessChoice } from "../model/sessionTransforms";
 import type { WorkspaceSessionData } from "../model/workspaceSessionData";
 
@@ -62,9 +39,6 @@ export function useSessionComposerActions({
         configuration.modelSettings,
       );
       const plan = planComposerSwitch(current, harness);
-      if (plan.kind === "empty") {
-        void forgetHarnessSession(plan.forget, sessionId);
-      }
       setSessions((prev) =>
         prev.map((s) => {
           if (s.id !== sessionId) return s;

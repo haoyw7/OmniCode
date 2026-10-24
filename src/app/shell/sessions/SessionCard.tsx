@@ -1,53 +1,22 @@
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { SidebarEntryReorderContext, sidebarDragPreview } from "../SidebarEntryReorder";
-import { sessionRecencyAt } from "../../../features/sessions/model/sessionActivity";
-import {
-  useAnimatedReorder,
-  type ReorderExternalDrop,
-} from "../../../shared/hooks/useAnimatedReorder";
+import { sessionRecencyAt } from "../../../domain/sessionActivity";
+import { useAnimatedReorder, type ReorderExternalDrop } from "../../../shared/hooks/useAnimatedReorder";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { NO_BRANCH_LABEL } from "../../../features/source-control/model/worktrees";
-import {
-  OrchestrationSidebarAgents,
-} from "../../../features/orchestration/ui/OrchestrationSidebarAgents";
+import { OrchestrationSidebarAgents } from "../../../features/orchestration/ui/OrchestrationSidebarAgents";
 import { SessionWorkflowRunLines } from "../../../features/workflows/ui/SessionWorkflowRunLines";
 import { useWorkflowActivity } from "../../../features/workflows/model/workflowActivity";
 import { isSessionWorkflowRunLive } from "../../../integrations/workflow/protocol/sessions-index-workflow-activity";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import {
-  Archive,
-  CircleAlert,
-  CircleDashed,
-  CircleDot,
-  Clock,
-  Folder,
-  GitBranch,
-  GitPullRequest,
-  MoreHorizontal,
-  MousePointer2,
-  Pin,
-  Share,
-  Zap,
-} from "../../../shared/ui/icons";
-import {
-  memo,
-  useContext,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { openExternalUrl } from "../../../platform/tauri/browser";
+import { Archive, CircleAlert, CircleDashed, CircleDot, Clock, Folder, GitBranch, GitPullRequest, MoreHorizontal, MousePointer2, Pin, Share, Zap } from "../../../shared/ui/icons";
+import { memo, useContext, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { MOD } from "../../../platform/tauri/platform";
-import { resolveModel } from "../../../features/sessions/model/models";
-import {
-  HARNESS_TITLE,
-  sessionDisplayTitle,
-  type LinkedWorkItem,
-} from "../../../features/sessions/model/session";
+import { resolveModel } from "../../../integrations/harness/core/modelCatalog";
+import { sessionDisplayTitle } from "../../../features/sessions/model/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type LinkedWorkItem } from "../../../contracts/session";
 import { ParticleText } from "../../../shared/ui/ParticleText";
 import { orchestrationTaskLabel } from "../../../features/orchestration/model/orchestrationSummary";
 import { paneDropFromPoint, setExternalPaneDrop } from "../../../features/workspace/model/paneDrop";
@@ -55,10 +24,10 @@ import type { PaneEdge } from "../../../features/workspace/model/layout";
 import { createDragLabel } from "../../../shared/lib/drag";
 import { combineSidebarDrops, sidebarPinDrop, SidebarPinDropContext } from "../sidebarPinDrop";
 import type { SessionSummary } from "../../../features/sessions/data/sessionStore";
-import { HarnessIcon } from "../../../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { useSessionPageCount } from "./sessionPageCounts";
-import { SessionWorktreeIcon } from "../../../features/sessions/ui/SessionWorktreeIcon";
-import { TerminalSpinner } from "../../../features/sessions/ui/TerminalSpinner";
+import { SessionWorktreeIcon } from "../../../shared/ui/SessionWorktreeIcon";
+import { TerminalSpinner } from "../../../shared/ui/TerminalSpinner";
 import { Popover } from "../../../shared/ui/Popover";
 import { HoverSummary, HoverSummaryRow, useHoverSummary } from "../../../shared/ui/HoverSummary";
 
@@ -301,17 +270,17 @@ export const SessionCard = memo(function SessionCard({
         event.preventDefault();
         event.stopPropagation();
         if (event.metaKey || event.ctrlKey) {
-          void openUrl(linkedWorkItem.url).catch(() => undefined);
+          void openExternalUrl(linkedWorkItem.url).catch(() => undefined);
           return;
         }
         if (onOpenWorkItem) onOpenWorkItem(linkedWorkItem, session.id);
-        else void openUrl(linkedWorkItem.url).catch(() => undefined);
+        else void openExternalUrl(linkedWorkItem.url).catch(() => undefined);
       }}
       onAuxClick={(event) => {
         if (event.button !== 1) return;
         event.preventDefault();
         event.stopPropagation();
-        void openUrl(linkedWorkItem.url).catch(() => undefined);
+        void openExternalUrl(linkedWorkItem.url).catch(() => undefined);
       }}
       className="flex shrink-0 cursor-pointer items-center gap-0.5 rounded px-0.5 text-[11px] tabular-nums text-accent hover:underline"
     >

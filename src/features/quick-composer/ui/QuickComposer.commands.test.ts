@@ -1,6 +1,8 @@
+import { quickComposerPresentation } from "../../../app/ui/quickComposerPresentation";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { startMotionClock, stopMotionClock, finishMotion } from "../../../../tests/helpers/sharedMotionClock";
@@ -89,7 +91,7 @@ beforeEach(async () => {
   document.body.append(container);
   root = createRoot(container);
   await act(async () =>
-    root.render(createElement(QuickComposer, { onShown: () => {} })),
+    root.render(createElement(QuickComposer, { presentation: quickComposerPresentation, onShown: () => {} })),
   );
   prompt = container.querySelector("textarea")!;
 });

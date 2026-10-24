@@ -3,19 +3,9 @@ import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { saveShowExcludedFiles } from "../../../settings/model/appearance";
-import {
-  listCachedDir,
-  forgetDir,
-  notifyDirsChanged,
-  refreshDir,
-  saveExpanded,
-  saveSelected,
-} from "../model/fileTree";
-import type { FsEntry } from "../../../../platform/tauri/fs";
-import {
-  EXPLORER_FILE_POINTER_DRAG_EVENT,
-  type ExplorerFilePointerDragDetail,
-} from "../../../../shared/lib/drag";
+import { listCachedDir, forgetDir, notifyDirsChanged, refreshDir, saveExpanded, saveSelected } from "../model/fileTree";
+import type { FsEntry } from "../../../../contracts/workspace";
+import { EXPLORER_FILE_POINTER_DRAG_EVENT, type ExplorerFilePointerDragDetail } from "../../../../shared/lib/drag";
 import { FileTree } from "./FileTree";
 
 const { iconRender, directories, clipboardFiles, copied, dragDrop } =
@@ -53,7 +43,7 @@ vi.mock("@tauri-apps/api/webview", () => ({
 }));
 
 // Count row renders independently of FileTypeIcon's own memoization.
-vi.mock("./FileTypeIcon", () => ({
+vi.mock("../../../../shared/ui/FileTypeIcon", () => ({
   FileTypeIcon: ({ name }: { name: string }) => {
     iconRender(name);
     return createElement("span", { "data-icon": name });

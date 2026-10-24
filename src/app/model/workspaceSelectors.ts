@@ -1,21 +1,7 @@
-import {
-  remotePendingExecutionCwd,
-  remoteSessionFor,
-} from "../../features/connections/model/connections";
+import { remotePendingExecutionCwd, remoteSessionFor } from "../../features/connections/model/connections";
 import { isBlankSession } from "../../features/projects/model/projectReturn";
-import { type Session } from "../../features/sessions/model/session";
-import {
-  firstLeafId,
-  focusedFileTab,
-  isAppViewOnlyTab,
-  isFilesystemTab,
-  leafIds,
-  removePane,
-  siblingLeafId,
-  type EditorPane,
-  type FilePaneTab,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { type Session } from "../../contracts/session";
+import { firstLeafId, focusedFileTab, isAppViewOnlyTab, isFilesystemTab, leafIds, removePane, siblingLeafId, type EditorPane, type FilePaneTab, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { projectName } from "../../shared/lib/paths";
 
 export function sameWorktreeTabStats(

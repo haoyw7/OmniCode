@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import { SessionWorktreeIcon } from "./SessionWorktreeIcon";
+import { SessionWorktreeIcon } from "../../../shared/ui/SessionWorktreeIcon";
 
 it("requires Git confirmation even when old history contains a worktree directory", () => {
   for (const linkedWorktree of [undefined, false]) {

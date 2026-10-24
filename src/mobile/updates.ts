@@ -1,10 +1,5 @@
 import { App } from "@capacitor/app";
-import {
-  Capacitor,
-  CapacitorHttp,
-  registerPlugin,
-  type PluginListenerHandle,
-} from "@capacitor/core";
+import { Capacitor, CapacitorHttp, registerPlugin, type PluginListenerHandle } from "@capacitor/core";
 import lanConfig from "../../mobile/update-config.json";
 import releaseConfig from "../../mobile/update-config.release.json";
 

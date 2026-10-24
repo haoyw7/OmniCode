@@ -1,13 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it } from "vitest";
-import {
-  defaultModelId,
-  loadLastModelChoice,
-  resetHarnessModelOverlays,
-  saveLastModelChoice,
-  savePickerProviderVisible,
-  setHarnessModels,
-} from "../../sessions/model/models";
+import { loadLastModelChoice, saveLastModelChoice, savePickerProviderVisible } from "../../sessions/model/models";
+import { defaultModelId, resetHarnessModelOverlays, setHarnessModels } from "../../../integrations/harness/core/modelCatalog";
 import { initialQuickChoice, resolveQuickModel } from "./quickComposer";
 
 beforeEach(() => {

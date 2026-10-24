@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 import { omniCodeToolCall, omniCodeWorkSummary } from "./omnicodeToolCall";
 
 function shell(text: string): Block {

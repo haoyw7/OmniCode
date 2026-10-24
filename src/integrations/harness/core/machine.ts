@@ -1,5 +1,5 @@
-/** Execution location is separate from the Host that owns the conversation. */
-export type ProjectMachine = { kind: "wsl"; distribution: string };
+import type { ProjectMachine } from "../../../contracts/session";
+
 
 export function parseProjectMachine(value: unknown): ProjectMachine | undefined {
   if (value === undefined || value === null) return undefined;

@@ -280,3 +280,52 @@ it("does not resurrect explicitly kept changes when their turn becomes historica
   await f.store.finishTurn("session", f.repo, "second");
   expect((await f.store.status("session", f.repo, "first")).files).toEqual([]);
 });
+
+async function agentTurn(f: ReturnType<typeof fixture>) {
+  await f.store.beginTurn("session", f.repo, "first");
+  f.write("a.txt", "agent\n");
+  f.write("new.txt", "created\n");
+  await f.store.capture("session", f.repo, ["a.txt", "new.txt"]);
+  await f.store.finishTurn("session", f.repo, "first");
+}
+
+it("refuses to prepare or apply undo while another Git command holds the index", async () => {
+  const f = fixture();
+  await agentTurn(f);
+  writeFileSync(join(f.repo, ".git/index.lock"), "");
+  await expect(f.store.prepareUndo("session", f.repo)).rejects.toThrow(/Another Git command/);
+  unlinkSync(join(f.repo, ".git/index.lock"));
+  const prepared = await f.store.prepareUndo("session", f.repo);
+  writeFileSync(join(f.repo, ".git/index.lock"), "");
+  await expect(f.store.applyUndo(prepared)).rejects.toThrow(/Another Git command/);
+  expect(readFileSync(join(f.repo, "a.txt"), "utf8")).toBe("agent\n");
+  unlinkSync(join(f.repo, ".git/index.lock"));
+  await f.store.applyUndo(prepared);
+  expect(readFileSync(join(f.repo, "a.txt"), "utf8")).toBe("original\n");
+});
+
+it("refuses undo when the turn staged its own result", async () => {
+  const f = fixture();
+  await agentTurn(f);
+  f.git("add", "new.txt");
+  await expect(f.store.prepareUndo("session", f.repo)).rejects.toThrow(/Unstage new.txt/);
+  expect(readFileSync(join(f.repo, "a.txt"), "utf8")).toBe("agent\n");
+  f.git("reset", "-q", "--", "new.txt");
+  await f.store.undo("session", f.repo);
+  expect(existsSync(join(f.repo, "new.txt"))).toBe(false);
+});
+
+it("retries a Git plan after restart, accepting restored files and refusing a third state", async () => {
+  const f = fixture();
+  await agentTurn(f);
+  const prepared = await f.store.prepareUndo("session", f.repo);
+  f.write("a.txt", "original\n");
+  f.write("new.txt", "someone else\n");
+  const restarted = new SessionCheckpoints(f.data);
+  await expect(restarted.applyUndo(prepared)).rejects.toThrow(/changed after the checkpoint/);
+  expect(readFileSync(join(f.repo, "new.txt"), "utf8")).toBe("someone else\n");
+  f.write("new.txt", "created\n");
+  await restarted.applyUndo(prepared);
+  expect(readFileSync(join(f.repo, "a.txt"), "utf8")).toBe("original\n");
+  expect(existsSync(join(f.repo, "new.txt"))).toBe(false);
+});

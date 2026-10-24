@@ -1,15 +1,5 @@
 import { IconButton } from "../shared/ui/forms/IconButton";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { animate as animateMotion, frame, cancelFrame, motion, useMotionValue, useScroll, useTransform, type AnimationPlaybackControls } from "motion/react";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
 import { immediateTransition, motionGeometry, popTransition } from "../shared/motion/tokens";

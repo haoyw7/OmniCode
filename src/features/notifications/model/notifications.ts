@@ -1,11 +1,10 @@
 import { preferenceStorage } from "../../settings/model/sharedPreferences";
-import { invoke } from "@tauri-apps/api/core";
-import { HARNESS_TITLE, sessionDisplayTitle, type Session } from "../../sessions/model/session";
+import { readNativeNotificationPermission, requestNativeNotificationPermission, openNativeNotificationSettings, showNativeNotification } from "../../../platform/tauri/notifications";
+import { sessionDisplayTitle } from "../../sessions/model/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type Session } from "../../../contracts/session";
 import { loadSoundsEnabled, playCue } from "../../settings/model/sounds";
-import {
-  allowsProjectNotification,
-  type NotificationSubject,
-} from "./notificationPreferences";
+import { allowsProjectNotification, type NotificationSubject } from "./notificationPreferences";
 import { knownNotificationProject } from "./notificationProjects";
 
 const KEY = "omnicode.notifications";
@@ -52,9 +51,7 @@ export function cachedNotificationPermission(): NotificationPermission {
 
 export async function probeNotificationPermission(): Promise<NotificationPermission> {
   try {
-    permission = await invoke<NotificationPermission>(
-      "notification_permission",
-    );
+    permission = await readNativeNotificationPermission();
   } catch {
     permission = "unsupported";
   }
@@ -64,9 +61,7 @@ export async function probeNotificationPermission(): Promise<NotificationPermiss
 /** Shows the OS prompt when undecided; otherwise reports the current state. */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   try {
-    permission = await invoke<NotificationPermission>(
-      "request_notification_permission",
-    );
+    permission = await requestNativeNotificationPermission();
   } catch {
     permission = "unsupported";
   }
@@ -74,7 +69,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 }
 
 export function openNotificationSettings(): Promise<void> {
-  return invoke<void>("open_notification_settings");
+  return openNativeNotificationSettings();
 }
 
 /**
@@ -289,7 +284,7 @@ export async function notifyApp(
   if (!decision) return false;
   const { title, subtitle, body } = text;
   try {
-    await invoke("show_notification", {
+    await showNativeNotification({
       sessionId: targetId,
       title,
       subtitle,

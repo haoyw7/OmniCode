@@ -1,17 +1,10 @@
 import { Input } from "../../../shared/ui/forms/Input";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useEffect, useId, useState } from "react";
-import {
-  remoteRequest,
-  useRemoteMachines,
-} from "../../connections/model/connections";
+import { remoteRequest, useRemoteMachines } from "../../connections/model/connections";
 import { sharedHostMachineId } from "../../connections/model/remoteProjects";
-import {
-  DEFAULT_TITLE_MODEL,
-  type TitleModelStatus,
-  type TitleModelUpdate,
-} from "../../sessions/model/titleModel";
-import type { GeneratedSessionTitle } from "../../sessions/model/sessionTitle";
+import { DEFAULT_TITLE_MODEL, type TitleModelStatus, type TitleModelUpdate } from "../../../contracts/titleModel";
+import type { GeneratedSessionTitle } from "../../../domain/sessionTitle";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
 import { Button } from "../../../shared/ui/forms/Button";

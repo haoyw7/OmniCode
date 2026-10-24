@@ -1,15 +1,12 @@
 // @vitest-environment happy-dom
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { newSession } from "../../sessions/model/session";
-import {
-  resetHarnessModelOverlays,
-  setHarnessModels,
-} from "../../sessions/model/models";
-import type { Note } from "../../notes";
-import type { Worktree } from "../../source-control/model/worktrees";
-import { handleAgentApp, notePreview, type AgentAppHost } from "./agentApp";
+import { resetHarnessModelOverlays, setHarnessModels, modelsFor, resolveModel } from "../../../integrations/harness/core/modelCatalog";
+import type { Note } from "../../../contracts/session";
+import type { Worktree } from "../../../contracts/worktree";
+import { handleAgentApp, notePreview, type AgentAppHost } from "../../../domain/agentApp";
 
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("../../providers/model/harnessAvailability", () => ({
   isHarnessAvailable: (id: string) => id === "codex",
 }));
 
@@ -75,6 +72,7 @@ function fixture() {
   const source = newSession("codex", "/tmp/project", "codex:test");
   source.id = "lead";
   const host: AgentAppHost = {
+    available: id => id === "codex", modelsFor, resolveModel, preferredModelId: id => modelsFor(id)[0]?.id ?? `${id}:default`,
     start: vi.fn(async () => {}),
     sessions: vi.fn(async () => [
       {

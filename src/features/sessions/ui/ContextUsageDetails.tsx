@@ -1,7 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ContextBreakdown } from "../../../shared/ui/messaging/ContextBreakdown";
 import { contextBreakdownRows, formatContextTokens } from "../model/contextBreakdown";
-import { contextPercent, type ContextUsage } from "../model/contextUsage";
+import { contextPercent } from "../../../domain/contextUsage";
+import { type ContextUsage } from "../../../contracts/session";
 
 /** Reused by the desktop status card and the mobile session status sheet. */
 export function ContextUsageDetails({ usage }: { usage: ContextUsage }) {

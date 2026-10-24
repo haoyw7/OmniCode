@@ -1,84 +1,27 @@
 import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import { usePreferenceState } from "../../features/settings/model/usePreferenceState";
-import {
-  Fragment,
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-  type ReactNode,
-} from "react";
-import {
-  ListFilter,
-  PanelLeft,
-  Search,
-} from "../../shared/ui/icons";
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { ListFilter, PanelLeft, Search } from "../../shared/ui/icons";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { pathKey, projectKey } from "../../shared/lib/paths";
 import { basename } from "../../platform/tauri/fs";
 import { useShortcutLabel } from "../commands/useCommandShortcut";
 import { useDragResize } from "../../shared/hooks/useDragResize";
 import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
-import { sessionRecencyAt } from "../../features/sessions/model/sessionActivity";
+import { sessionRecencyAt } from "../../domain/sessionActivity";
 import { SessionCompletionOrder, type SessionCompletionRow } from "../model/sessionCompletionOrder";
 import { useProjectDiffStats } from "../../features/source-control/hooks/useProjectDiffStats";
-import {
-  loadSidebarWidth,
-  saveSidebarWidth,
-  SIDEBAR_WIDTH_DEFAULT,
-  SIDEBAR_WIDTH_MIN,
-  SIDEBAR_WIDTH_MAX,
-} from "../../features/settings/model/appearance";
-import {
-  collectRailProjects,
-  isRemoteProjectPath,
-  sameProjectPath,
-} from "../../features/projects/model/recents";
-import {
-  isChatFolder,
-  useChatFolders,
-} from "../../features/projects/model/chatFolders";
-import {
-  loadProjectTreeExpanded,
-  saveProjectTreeExpanded,
-  subscribeProjectTreeExpanded,
-} from "../../features/projects/model/projectTree";
-import {
-  loadTabGroupLabels,
-  resolveTabGroupLabel,
-  subscribeTabGroupLabels,
-} from "../../features/workspace/model/tabGroups";
-import {
-  filterSessionsByHarness,
-  filterSessionsByStatus,
-  filterSessionsByTime,
-  hasActiveSessionFilters,
-  harnessesInSessions,
-  loadSessionSidebarFilters,
-  saveSessionSidebarFilters,
-  type SessionSidebarFilters,
-} from "../../features/sessions/model/sessionFilters";
-import {
-  compareSessionSummaries,
-  filterSessionsByArchive,
-  mergeLiveSessionSummaries,
-} from "../../features/sessions/data/sessionHistory";
+import { loadSidebarWidth, saveSidebarWidth, SIDEBAR_WIDTH_DEFAULT, SIDEBAR_WIDTH_MIN, SIDEBAR_WIDTH_MAX } from "../../features/settings/model/appearance";
+import { collectRailProjects, isRemoteProjectPath, sameProjectPath } from "../../features/projects/model/recents";
+import { isChatFolder, useChatFolders } from "../../features/projects/model/chatFolders";
+import { loadProjectTreeExpanded, saveProjectTreeExpanded, subscribeProjectTreeExpanded } from "../../features/projects/model/projectTree";
+import { loadTabGroupLabels, resolveTabGroupLabel, subscribeTabGroupLabels } from "../../features/workspace/model/tabGroups";
+import { filterSessionsByHarness, filterSessionsByStatus, filterSessionsByTime, hasActiveSessionFilters, harnessesInSessions, loadSessionSidebarFilters, saveSessionSidebarFilters, type SessionSidebarFilters } from "../../features/sessions/model/sessionFilters";
+import { compareSessionSummaries, filterSessionsByArchive, mergeLiveSessionSummaries } from "../../features/sessions/data/sessionHistory";
 import { sessionDisplayTitle } from "../../features/sessions/model/session";
 import { RemoteSessionUnread } from "../../features/sessions/model/remoteSessionUnread";
-import {
-  cachedRemoteProjectSessionsState,
-  cachedRemoteSessions,
-  hasCachedRemoteProjectSessions,
-  REMOTE_HISTORY_UPDATED,
-  remoteSessionFor,
-  remoteSessionResolver,
-} from "../../features/connections/model/connections";
-import {
-  remoteProjectFor,
-} from "../../features/connections/model/remoteProjects";
+import { cachedRemoteProjectSessionsState, cachedRemoteSessions, hasCachedRemoteProjectSessions, REMOTE_HISTORY_UPDATED, remoteSessionFor, remoteSessionResolver } from "../../features/connections/model/connections";
+import { remoteProjectFor } from "../../features/connections/model/remoteProjects";
 import type { SessionSummary } from "../../features/sessions/data/sessionStore";
 import { SessionFiltersMenu } from "../../features/sessions/ui/SessionFiltersMenu";
 import { IconButton } from "../../shared/ui/forms/IconButton";
@@ -94,10 +37,7 @@ import { ProjectSessionSection } from "./ProjectSessionSection";
 import { ProjectToolsPanel, projectToolsCwd } from "./ProjectToolsPanel";
 import { ExternalSessions } from "./ExternalSessions";
 import type { SidebarProps } from "./Sidebar.types";
-import {
-  projectHoverSummary,
-  type ProjectHoverSummary,
-} from "../model/projectHoverSummary";
+import { projectHoverSummary, type ProjectHoverSummary } from "../model/projectHoverSummary";
 
 const NO_SESSIONS: readonly SessionSummary[] = [];
 

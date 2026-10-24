@@ -1,4 +1,4 @@
-import type { ExplorerMenuItem } from "../../connections/files/ui/ExplorerMenu";
+import type { ExplorerMenuItem } from "../../../shared/ui/primitives/ExplorerMenu";
 import { reminderTime } from "../model/sessionReminders";
 
 export function sessionReminderPresets(now = new Date()) {

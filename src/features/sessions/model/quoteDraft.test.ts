@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  acknowledgeQuoteRequest,
-  appendSelectionQuote,
-  composerSeedForAddToChat,
-  consumeQuoteRequest,
-  isMarkdownBlockquotePosition,
-  type QuoteRequest,
-} from "./quoteDraft";
+import { acknowledgeQuoteRequest, appendSelectionQuote, composerSeedForAddToChat, consumeQuoteRequest, type QuoteRequest } from "./quoteDraft";
+import { isMarkdownBlockquotePosition } from "../../../domain/markdownPosition";
 
 describe("appendSelectionQuote", () => {
   it("formats a multiline selection and leaves room for a reply", () => {

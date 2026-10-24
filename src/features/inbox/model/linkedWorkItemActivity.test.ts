@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { GithubWorkItemThread } from "./githubTasks";
-import {
-  completeLinkedWorkItemUpdateCard,
-  linkedWorkItemActivityPrompt,
-  linkedWorkItemTerminalState,
-  linkedWorkItemUpdateSummary,
-  pendingLinkedWorkItemUpdateCard,
-} from "./linkedWorkItemActivity";
+import type { GithubWorkItemThread } from "../../../contracts/session";
+import { completeLinkedWorkItemUpdateCard, linkedWorkItemActivityPrompt, linkedWorkItemTerminalState, linkedWorkItemUpdateSummary, pendingLinkedWorkItemUpdateCard } from "./linkedWorkItemActivity";
 import type { LinkedSessionUpdate } from "./linkedSessionUpdates";
 
 const update: LinkedSessionUpdate = {

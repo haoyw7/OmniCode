@@ -3,17 +3,7 @@ import { reducedMotionQuery } from "../../../../../shared/lib/reducedMotion";
 import { motion as motionElement } from "motion/react";
 import type { ReactNode } from "react";
 import type { TimelineArc, TimelineBand, TimelineInk, TimelineStation } from "./timeline-model.js";
-import {
-  ARC_BASE,
-  ARC_LANE,
-  arcEnds,
-  arcTerminalOffsets,
-  bandAt,
-  bandForkX,
-  bandMergeX,
-  lampX,
-  type TimelineLayout,
-} from "./timeline-geometry.js";
+import { ARC_BASE, ARC_LANE, arcEnds, arcTerminalOffsets, bandAt, bandForkX, bandMergeX, lampX, type TimelineLayout } from "./timeline-geometry.js";
 import { MarchLight } from "./WorkflowMarchLight.js";
 
 /**

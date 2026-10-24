@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type {
-  HostProject,
-  HostSessionSummary,
-} from "../features/connections/model/protocol";
+import type { HostProject, HostSessionSummary } from "../contracts/protocol";
 import type { Connection, MobileClient } from "./client";
 import { connectionDisplayName } from "./connectionAppearance";
 

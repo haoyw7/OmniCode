@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 import { latestPlanDecision, skipPlanDecision } from "./planDecision";
 
 const plan = (id: string, status: "ready" | "built" = "ready"): Block => ({

@@ -2,16 +2,9 @@
 import { act, createElement, StrictMode, useLayoutEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AgentMarkdown } from "./AgentMarkdown";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
 import { applyReducedMotion } from "../../../shared/lib/reducedMotion";
-import {
-  revealBoundary,
-  usePacedText,
-  WordFadeManager,
-  WordFadeContext,
-  MarkdownSpan,
-  type TextRevealOptions,
-} from "./wordFade";
+import { revealBoundary, usePacedText, WordFadeManager, WordFadeContext, MarkdownSpan, type TextRevealOptions } from "../../../shared/ui/markdown/wordFade";
 
 let host: HTMLDivElement;
 let root: Root;

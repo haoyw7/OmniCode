@@ -2,7 +2,8 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { configureSharedHost } from "../../connections/model/remoteProjects";
 import { fetchCodexRateLimits } from "./rateLimitsFetch";
-import { idleRateLimits, unavailableRateLimits, type ProviderRateLimits } from "./rateLimits";
+import { idleRateLimits, unavailableRateLimits } from "../../../domain/rateLimits";
+import { type ProviderRateLimits } from "../../../contracts/session";
 import { clearCachedRateLimits, getAllRateLimits, getCachedRateLimits, loadRateLimits } from "./rateLimitsCache";
 
 vi.mock("./rateLimitsFetch", () => ({

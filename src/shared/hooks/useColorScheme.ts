@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  loadThemePreference,
-  resolveColorScheme,
-  SCHEME_CHANGE_EVENT,
-  type ColorScheme,
-} from "../../features/settings/model/appearance";
+import { loadThemePreference, resolveColorScheme, SCHEME_CHANGE_EVENT, type ColorScheme } from "../../features/settings/model/appearance";
 
 function currentColorScheme(): ColorScheme {
   // Desktop and mobile skins override the stored light/dark preference. A viewer

@@ -8,6 +8,7 @@ import { loadHiddenJiraProjectIds } from "../../inbox/model/jira";
 import { saveMaskEmails } from "../model/displayPrefs";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../connections/model/inboxHost", async () => ({ inboxHostCommand: (await import("@tauri-apps/api/core")).invoke }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 
 let container: HTMLDivElement;

@@ -2,7 +2,7 @@
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalSpinner } from "../../features/sessions/ui/TerminalSpinner";
+import { TerminalSpinner } from "../ui/TerminalSpinner";
 import { applyReducedMotion } from "../lib/reducedMotion";
 import { SurfaceVisibilityContext } from "../ui/SurfaceVisibility";
 import { usePauseOffscreenAnimation } from "./usePauseOffscreenAnimation";

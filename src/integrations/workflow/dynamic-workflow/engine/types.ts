@@ -9,12 +9,7 @@
  *   内存实现与未来 SQLite 实现都能自然落位（同步方法契合 node:sqlite 的 DatabaseSync，且让核心保持确定性）。
  */
 
-import type {
-  ArtifactContentOp,
-  ArtifactOp,
-  ArtifactPresetOp,
-  WorldReadOp,
-} from "../facade/registry.js";
+import type { ArtifactContentOp, ArtifactOp, ArtifactPresetOp, WorldReadOp } from "../facade/registry.js";
 import type { AskProgress, AskStats } from "./ask-observation-types.js";
 import type { ActorSessionSeed } from "./imported-cache-types.js";
 

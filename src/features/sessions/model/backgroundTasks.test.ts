@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { backgroundTaskItems } from "./backgroundTasks";
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 
 const task = (id: string, status: string, extra: Partial<Block["tool"]> = {}): Block => ({
   id, role: "tool", text: id, startedAt: 1000,

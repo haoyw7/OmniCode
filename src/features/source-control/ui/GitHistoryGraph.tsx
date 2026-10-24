@@ -3,48 +3,19 @@ import { motion } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  GitBranch,
-  Maximize2,
-} from "../../../shared/ui/icons";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { ChevronDown, ChevronRight, GitBranch, Maximize2 } from "../../../shared/ui/icons";
 import { useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../../../shared/ui/SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { GitGraphDialog } from "./GitGraphDialog";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { beginResizeInteraction } from "../../../shared/lib/resizeInteraction";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { HoverSummary, useHoverSummary } from "../../../shared/ui/HoverSummary";
-import {
-  gitCommitFiles,
-  gitHistory,
-  subscribeGitChanged,
-  type GitHistoryCommit,
-} from "../../../platform/tauri/fs";
-import {
-  GRAPH_ROW_PX,
-  historyItemGraph,
-  layoutGitGraph,
-  type GraphRef,
-  type HistoryItemViewModel,
-} from "../model/gitGraph";
-import {
-  commitCoAuthors,
-  contributorAvatarUrl,
-} from "../model/gitContributors";
+import { gitCommitFiles, gitHistory, subscribeGitChanged, type GitHistoryCommit } from "../../../platform/tauri/fs";
+import { GRAPH_ROW_PX, historyItemGraph, layoutGitGraph, type GraphRef, type HistoryItemViewModel } from "../model/gitGraph";
+import { commitCoAuthors, contributorAvatarUrl } from "../model/gitContributors";
 
 type Props = {
   cwd: string;

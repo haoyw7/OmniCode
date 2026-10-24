@@ -2,78 +2,25 @@ import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { translate as translateUi } from "../../../../shared/i18n/language";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
-import {
-  ChevronRight,
-  FilePlus,
-  FolderPlus,
-  FoldVertical,
-  LoaderCircle,
-  Search,
-} from "../../../../shared/ui/icons";
-import {
-  createContext,
-  memo,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-} from "react";
-import {
-  leafName,
-  validateFileName,
-  wellFormedFileName,
-  type NameIssue,
-} from "../model/fileName";
+import { ChevronRight, FilePlus, FolderPlus, FoldVertical, LoaderCircle, Search } from "../../../../shared/ui/icons";
+import { createContext, memo, useContext, useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { leafName, validateFileName, wellFormedFileName, type NameIssue } from "../model/fileName";
 import { useLockOverscroll } from "../../../../shared/hooks/useLockOverscroll";
-import {
-  loadShowExcludedFiles,
-  subscribeShowExcludedFiles,
-} from "../../../settings/model/appearance";
-import {
-  createParentOf,
-  dirsTouchedByCreate,
-  dirsTouchedByMove,
-  forgetDir,
-  listCachedDir,
-  loadExpanded,
-  loadSelected,
-  notifyDirsChanged,
-  peekDir,
-  refreshDir,
-  saveExpanded,
-  saveSelected,
-  subscribeDirsChanged,
-} from "../model/fileTree";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { REMOTE_PATH_PREFIX } from "../../../../shared/lib/remotePaths";
+import { loadShowExcludedFiles, subscribeShowExcludedFiles } from "../../../settings/model/appearance";
+import { createParentOf, dirsTouchedByCreate, dirsTouchedByMove, forgetDir, listCachedDir, loadExpanded, loadSelected, notifyDirsChanged, peekDir, refreshDir, saveExpanded, saveSelected, subscribeDirsChanged } from "../model/fileTree";
+import { subscribeNativeFileDrop } from "../../../../platform/tauri/webview";
+import { REMOTE_PATH_PREFIX } from "../../../../contracts/remotePaths";
 import { dragPointToClient } from "../../../../shared/lib/dragPoint";
-import {
-  basename,
-  clipboardFilePaths,
-  copyPath,
-  createPath,
-  deletePath,
-  movePath,
-  renamePath,
-  revealPath,
-  type FsEntry,
-} from "../../../../platform/tauri/fs";
-import { displayPath, parentPath, rebasePath } from "../../../../shared/lib/paths";
+import { basename, clipboardFilePaths, copyPath, createPath, deletePath, movePath, renamePath, revealPath } from "../../../../platform/tauri/fs";
+import type { FsEntry } from "../../../../contracts/workspace";
+import { parentPath, rebasePath } from "../../../../shared/lib/paths";
+import { displayPath } from '../../../../domain/pathDisplay';
 import { IS_MAC, IS_WIN, MOD, SHIFT } from "../../../../platform/tauri/platform";
-import type { OpenFileFn } from "../../../search/model/search";
+import type { OpenFileFn } from "../../../../shared/lib/fileNavigation";
 import type { GitStatusMap } from "../../../source-control/hooks/useGitFileStatuses";
-import {
-  emitExplorerFilePointerDrag,
-  setGrabbing,
-  suppressTextSelection,
-} from "../../../../shared/lib/drag";
-import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
-import { FileTypeIcon } from "./FileTypeIcon";
+import { emitExplorerFilePointerDrag, setGrabbing, suppressTextSelection } from "../../../../shared/lib/drag";
+import { ExplorerMenu, type ExplorerMenuItem } from "../../../../shared/ui/primitives/ExplorerMenu";
+import { FileTypeIcon } from "../../../../shared/ui/FileTypeIcon";
 import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
 
 const GIT_STATUS_COLOR: Record<string, string> = {
@@ -975,8 +922,7 @@ export const FileTree = memo(function FileTree({
 
     let cancelled = false;
     let unlisten: (() => void) | undefined;
-    void getCurrentWebview()
-      .onDragDropEvent((event) => {
+    void subscribeNativeFileDrop((event) => {
         if (event.payload.type === "leave") {
           setDragOverPath(null);
           return;

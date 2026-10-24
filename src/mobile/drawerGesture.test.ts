@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  clampDrawer,
-  drawerIntent,
-  settleDrawerOpen,
-} from "./drawerGesture";
+import { clampDrawer, drawerIntent, settleDrawerOpen } from "./drawerGesture";
 
 describe("drawer gesture", () => {
   it("waits for the slop radius before deciding", () => {

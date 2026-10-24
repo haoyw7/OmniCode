@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
+import { AttachmentChip } from "../../../shared/ui/attachments/AttachmentChip";
 import type { BotDraftAttachment } from "./BotChatChrome";
 
 export function BotAttachmentPreview({ file, onRemove }: { file: BotDraftAttachment; onRemove?: () => void }) {

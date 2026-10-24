@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { reduceWorkflowRunsState } from "./workflow-runs-reducer";
-import type { WorkflowRunNode, WorkflowRunsState } from "./workflow-runs";
+import type { WorkflowRunNode } from "./workflow-runs";
+import type { WorkflowRunsState } from "../../../contracts/workflow";
 
 describe("workflow terminal projection", () => {
   it.each(["stopped", "errored", "completed"] as const)("settles unfinished nodes on %s without changing recorded outcomes", status => {

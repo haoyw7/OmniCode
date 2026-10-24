@@ -7,8 +7,8 @@
  */
 
 import type { EngineState } from "./engine-state.js";
-import type { InstanceRef } from "./types.js";
-import { refToString } from "./types.js";
+import { type InstanceRef, refToString } from "./types.js";
+
 
 /** 本 run 目前的 primary id（至多一个）；没有则 undefined。从 `state.artifacts` 派生，resume 后自然一致。 */
 export function primaryArtifactId(state: EngineState): string | undefined {

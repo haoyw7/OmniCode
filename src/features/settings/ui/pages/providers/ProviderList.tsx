@@ -3,9 +3,10 @@ import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { Loader } from "../../../../../shared/ui/icons";
 import { NavigationItem } from "../../../../../shared/ui/messaging/NavigationItem";
 import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
-import { HarnessIcon } from "../../../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../../../shared/ui/HarnessIcon";
 import { useHarnessInstall } from "../../../../providers/model/harnessInstall";
-import { HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
+import { HARNESS_TITLE } from "../../../../../contracts/session";
+import { type HarnessId } from "../../../../../contracts/session";
 import { PROVIDER_DETAIL_ID } from "./ProviderDetail";
 
 export type ProviderListEntry = {

@@ -1,19 +1,16 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../projects/model/projectMascots";
+import { useProjectLogoSource } from "../../projects/model/useProjectLogoSource";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { File, X } from "../../../shared/ui/icons";
 import { useState } from "react";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
+
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import { noteSourceProject, type NoteCardMeta } from "../notes";
+import { noteSourceProject } from "../notes";
+import { type NoteCardMeta } from "../../../contracts/session";
 import { projectKey } from "../../../shared/lib/paths";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLogo, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
 
 type Props = {
   card: NoteCardMeta;
@@ -22,6 +19,7 @@ type Props = {
 };
 
 export function NoteMiniCard({ card, onDismiss, embedded = false }: Props) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const { t: uiT } = useTranslation();
   const logos = useTabGroupLogos();
   const [mascots] = useState(loadTabGroupMascots);
@@ -59,15 +57,15 @@ export function NoteMiniCard({ card, onDismiss, embedded = false }: Props) {
           <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-content/45">
             {logoPath ? (
               <ProjectLogoIcon
-                path={logoPath}
+                src={resolveProjectLogoSrc(logoPath)}
                 className="size-3.5 shrink-0 rounded-sm"
                 imageClassName="size-3.5"
               />
             ) : (
-              <ProjectMascot
-                project={project}
-                color={mascotColor}
-                name={mascotName}
+              <Omi compact
+                expression={projectMascot(project, mascotName).name}
+                style={{ color: mascotColor || undefined }}
+                
                 className="size-3 shrink-0"
               />
             )}

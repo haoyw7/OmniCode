@@ -2,7 +2,7 @@
 import { act, createElement, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import { SettingsView, preloadSettingsSection } from "./SettingsView";
+import { SettingsView, preloadSettingsSection } from "../../../app/ui/SettingsView";
 import * as scrolling from "../../../shared/lib/scrollWithin";
 import { refreshUiLanguage, UI_LANGUAGE_KEY } from "../../../shared/i18n/language";
 

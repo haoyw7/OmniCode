@@ -1,24 +1,10 @@
-import { readFamilySessionTitle } from "../pi/piFamily";
+import { readFamilySessionTitle, ompCommandProvider, respondQuestion } from "../pi/piFamily";
 import { OMP_FLAVOR } from "../pi/piFlavor";
-import {
-  bindOmpSession,
-  cancelOmpTurn,
-  compactOmpContext,
-  forgetOmpSession,
-  respondOmpApproval,
-  rewindOmpLastTurn,
-  sendOmpTurn,
-  steerOmpTurn,
-  stopOmpSession,
-} from "./omp";
+import { bindOmpSession, cancelOmpTurn, compactOmpContext, forgetOmpSession, respondOmpApproval, rewindOmpLastTurn, sendOmpTurn, steerOmpTurn, stopOmpSession } from "./omp";
 import { refreshOmpCatalog } from "../pi/piCatalog";
-import {
-  runOmpTextPrompt,
-  stopOmpTextPrompt,
-  warmupOmpText,
-} from "../pi/piText";
+import { runOmpTextPrompt, stopOmpTextPrompt, warmupOmpText } from "../pi/piText";
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
-import { ompCommandProvider, respondQuestion } from "../pi/piFamily";
+
 
 
 export const ompAdapter: HarnessAdapter = {

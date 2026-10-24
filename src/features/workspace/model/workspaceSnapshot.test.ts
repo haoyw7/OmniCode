@@ -1,39 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { appendUser } from "../../../integrations/harness/core/apply";
-import {
-  CONTINUE_PROMPT,
-  INTERRUPT_MESSAGE,
-  canAutoContinue,
-} from "../../sessions/model/inFlight";
-import {
-  leaf,
-  leafIds,
-  APP_VIEW_KINDS,
-  APP_PAGE_KINDS,
-  isAppPageKind,
-  newAppViewWorkspaceTab,
-  newAgentTab,
-  newWorkflowArtifactTab,
-  newChangesTab,
-  newCommitTab,
-  newFileTab,
-  newEditorWorkspaceTab,
-  newReleaseNotesWorkspaceTab,
-  newSessionChangesTab,
-  newTab,
-  newTerminalFile,
-  openEditorTab,
-  openFileExplorer,
-  openSessionAppView,
-  splitPane,
-} from "./layout";
+import { INTERRUPT_MESSAGE } from "../../sessions/model/inFlight";
+import { leaf, leafIds, APP_VIEW_KINDS, APP_PAGE_KINDS, isAppPageKind, newAppViewWorkspaceTab, newAgentTab, newWorkflowArtifactTab, newChangesTab, newCommitTab, newFileTab, newEditorWorkspaceTab, newReleaseNotesWorkspaceTab, newSessionChangesTab, newTab, newTerminalFile, openEditorTab, openFileExplorer, openSessionAppView, splitPane } from "./layout";
 import { createProjectTerminal } from "../../projects/model/projectTerminal";
-import { newSession, type Session } from "../../sessions/model/session";
-import {
-  collectWorkspaceSnapshot,
-  hydrateWorkspaceSnapshot,
-  parseWorkspaceSnapshot,
-} from "./workspaceSnapshot";
+import { newSession } from "../../sessions/model/session";
+import { type Session } from "../../../contracts/session";
+import { collectWorkspaceSnapshot, hydrateWorkspaceSnapshot, parseWorkspaceSnapshot } from "./workspaceSnapshot";
 
 describe("app view snapshots", () => {
   it.each(APP_PAGE_KINDS)("removes legacy %s pages while preserving chat, file and terminal panes", (kind) => {
@@ -852,7 +823,7 @@ describe("hydrateWorkspaceSnapshot", () => {
     expect(restored.tabs[0].layout).toEqual(tab.layout);
   });
 
-  it("marks in-flight chats interrupted and adds a tab if they were parked", () => {
+  it("restores parked Host chats without interrupting their live projection", () => {
     const open = chat("s1", "/tmp/a");
     const parked = chat("s2", "/tmp/a");
     parked.busy = true;
@@ -873,13 +844,13 @@ describe("hydrateWorkspaceSnapshot", () => {
     );
     expect(workspace?.tabs).toHaveLength(2);
     const resumed = workspace?.sessions.find((session) => session.id === "s2");
-    expect(resumed?.busy).toBe(false);
+    expect(resumed?.busy).toBe(true);
     expect(
       resumed?.blocks.some((block) => block.text === INTERRUPT_MESSAGE),
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it("continues a Codex snapshot with its saved model and settings before discovery", () => {
+  it("restores saved Codex settings without starting another provider turn", () => {
     const session: Session = {
       ...chat("s1", "/tmp/a"),
       harness: "codex",
@@ -902,13 +873,7 @@ describe("hydrateWorkspaceSnapshot", () => {
     expect(restored).toBeDefined();
     expect(restored?.model).toBe("codex:gpt-5.6-sol");
     expect(restored?.modelSettings).toEqual(session.modelSettings);
-    expect(canAutoContinue(restored!)).toBe(true);
-    const continued = appendUser(restored!, CONTINUE_PROMPT);
-    expect(continued.blocks.at(-1)?.turnModel).toEqual({
-      harness: "codex",
-      id: "codex:gpt-5.6-sol",
-      name: "GPT-5.6-Sol",
-    });
+    expect(restored?.blocks).toEqual([]);
   });
 
   it("keeps terminal-only tabs", () => {

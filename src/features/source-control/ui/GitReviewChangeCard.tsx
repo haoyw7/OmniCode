@@ -1,37 +1,17 @@
 import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 // Adapted from ZCode (Apache-2.0).
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react";
+import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { basename, revealPath } from "../../../platform/tauri/fs";
 import { copyText } from "../../../platform/tauri/clipboard";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { Popover } from "../../../shared/ui/Popover";
 import { MenuHover } from "../../../shared/ui/MenuHover";
-import {
-  ChevronRight,
-  Copy,
-  FolderOpen,
-  LoaderCircle,
-  Minus,
-  Plus,
-  Undo2,
-} from "../../../shared/ui/icons";
+import { ChevronRight, Copy, FolderOpen, LoaderCircle, Minus, Plus, Undo2 } from "../../../shared/ui/icons";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
-import type {
-  ReviewDiffState,
-  ReviewFile,
-  ReviewSource,
-} from "../model/reviewDiff";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
+import type { ReviewDiffState, ReviewFile, ReviewSource } from "../model/reviewDiff";
 import { ReviewDiffViewer } from "./ReviewDiffViewer";
 
 /**

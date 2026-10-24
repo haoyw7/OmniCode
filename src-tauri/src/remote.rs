@@ -84,6 +84,38 @@ impl StoredMachine {
     }
 }
 
+/// Keep the credential lock held while accessing a cache; replacement pairing
+/// cannot accidentally bless an older projection. No token crosses the IPC.
+pub(crate) fn with_cache_identity<T>(
+    app: &AppHandle,
+    state: &RemoteConnections,
+    machine_id: &str,
+    read_cache: impl FnOnce(&str, &Machine) -> Result<T, String>,
+) -> Result<T, String> {
+    let _guard = state
+        .store
+        .lock()
+        .map_err(|_| "Connection store is locked")?;
+    let machines = read(&store_path(app)?)?;
+    let machine = machines
+        .iter()
+        .find(|machine| machine.id == machine_id && !machine.is_legacy_wsl())
+        .ok_or("Saved Host identity is unavailable")?;
+    read_cache(&cache_scope(machine)?, &machine.public())
+}
+
+fn cache_scope(machine: &StoredMachine) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
+    let identity = serde_json::to_vec(&(
+        &machine.id,
+        &machine.environment_id,
+        &machine.endpoint,
+        format!("{:x}", Sha256::digest(machine.token.as_bytes())),
+    ))
+    .map_err(|error| error.to_string())?;
+    Ok(format!("{:x}", Sha256::digest(identity)))
+}
+
 fn endpoint(value: &str) -> Result<String, String> {
     let url = url::Url::parse(value.trim()).map_err(|_| "Enter a valid host URL")?;
     let host = url.host_str().ok_or("Host URL has no hostname")?;
@@ -167,7 +199,20 @@ fn rpc_timeout(method: &str) -> std::time::Duration {
     })
 }
 
+/// Marks a Host failure that applied nothing and may be replayed with the same
+/// command id; the renderer outbox keys its retry decision on this prefix.
+const HOST_UNAVAILABLE_CODE: &str = "HOST_UNAVAILABLE";
+
 fn rpc_result(status: u16, value: Value) -> Result<Value, String> {
+    let unavailable =
+        status == 503 || value.get("code").and_then(Value::as_str) == Some(HOST_UNAVAILABLE_CODE);
+    if unavailable {
+        let error = value
+            .get("error")
+            .and_then(Value::as_str)
+            .unwrap_or("Host is temporarily unavailable");
+        return Err(format!("{HOST_UNAVAILABLE_CODE}: {error}"));
+    }
     if let Some(error) = value.get("error").and_then(Value::as_str) {
         return Err(format!("Host rejected request: {error}"));
     }
@@ -446,6 +491,22 @@ pub fn remote_request(
             forget_legacy_wsl(&app, &state, distribution)?;
         }
     }
+    if matches!(
+        method.as_str(),
+        "projects.list" | "projects.open" | "projects.rename" | "projects.rebase"
+    ) {
+        if let (Some(store), Ok(scope)) = (
+            app.try_state::<crate::session_store::SessionStore>(),
+            cache_scope(&machine),
+        ) {
+            let projects = if method == "projects.list" {
+                result.as_array().cloned().unwrap_or_default()
+            } else {
+                vec![result.clone()]
+            };
+            let _ = crate::host_projection_cache::cache_projects(&store, &scope, &projects);
+        }
+    }
     Ok(result)
 }
 
@@ -480,6 +541,18 @@ fn supported_remote_method(method: &str) -> bool {
             | "titleModel.test"
             | "titleModel.generate"
             | "titleModel.generateBranch"
+            | "notes.list"
+            | "notes.get"
+            | "notes.upsert"
+            | "notes.delete"
+            | "notes.image"
+            | "notes.saveImage"
+            | "automations.list"
+            | "automations.upsert"
+            | "automations.delete"
+            | "automations.runs"
+            | "automations.run"
+            | "automations.claimEvent"
             | "sessions.list"
             | "sessions.activity"
             | "sessions.get"
@@ -521,6 +594,46 @@ fn supported_remote_method(method: &str) -> bool {
             | "git.index"
             | "git.fileDiff"
             | "git.action"
+            | "environments.list"
+            | "environments.patch"
+            | "projects.rename"
+            | "projects.rebase"
+            | "projects.createChat"
+            | "providerAccounts.opencodeUsage"
+            | "providerAccounts.consumeReset"
+            | "providers.loginStart"
+            | "providers.loginStatus"
+            | "providers.auxiliary.start"
+            | "providers.auxiliary.read"
+            | "providers.auxiliary.cancel"
+            | "providers.runtimeInspect"
+            | "providers.runtimeInfo"
+            | "providers.runtimePlan"
+            | "providers.runtimeLatest"
+            | "providers.runtimeClaimUpdateCheck"
+            | "providers.runtimeStart"
+            | "providers.runtimeStatus"
+            | "skills.list"
+            | "sessions.refreshNative"
+            | "sessions.stopBackgroundTask"
+            | "commands.outcome"
+            | "inbox.run"
+            | "media.inbox"
+            | "media.chunk"
+            | "links.preview"
+            | "git.worktreeCheckRemove"
+            | "git.worktreeRemove"
+            | "assistant.timeline"
+            | "git.worktreeProgress"
+            | "providerAccounts.piUsage"
+            | "reminders.list"
+            | "reminders.set"
+            | "reminders.clear"
+            | "reminders.claimDue"
+            | "mcp.discover"
+            | "mcp.start"
+            | "mcp.status"
+            | "mcp.cancel"
             | "assistant.get"
             | "assistant.configure"
             | "assistant.messages"
@@ -840,6 +953,34 @@ pub fn remote_ssh_cancel(
 mod tests {
     use super::*;
     #[test]
+    fn cache_identity_changes_with_each_authority_field_but_not_display_name() {
+        let original = StoredMachine {
+            id: "machine".into(),
+            name: "Display".into(),
+            endpoint: "http://127.0.0.1:3774".into(),
+            environment_id: "environment".into(),
+            token: "secret-token".into(),
+            ssh: None,
+            legacy_wsl: None,
+        };
+        let scope = cache_scope(&original).unwrap();
+        assert!(!scope.contains("secret-token"));
+        let mut renamed = original.clone();
+        renamed.name = "New name".into();
+        assert_eq!(cache_scope(&renamed).unwrap(), scope);
+        for field in ["id", "environment", "endpoint", "credential"] {
+            let mut changed = original.clone();
+            match field {
+                "id" => changed.id = "other".into(),
+                "environment" => changed.environment_id = "other".into(),
+                "endpoint" => changed.endpoint = "http://127.0.0.1:4999".into(),
+                _ => changed.token = "new-credential".into(),
+            }
+            assert_ne!(cache_scope(&changed).unwrap(), scope);
+        }
+    }
+
+    #[test]
     fn a_slow_host_does_not_look_like_a_dead_tunnel() {
         use std::{net::TcpListener, thread, time::Duration};
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -869,6 +1010,46 @@ mod tests {
     #[test]
     fn desktop_forwards_supported_host_operations() {
         for method in [
+            "environments.list",
+            "environments.patch",
+            "projects.rename",
+            "projects.rebase",
+            "projects.createChat",
+            "providerAccounts.opencodeUsage",
+            "providerAccounts.consumeReset",
+            "providers.loginStart",
+            "providers.loginStatus",
+            "providers.auxiliary.start",
+            "providers.auxiliary.read",
+            "providers.auxiliary.cancel",
+            "providers.runtimeInspect",
+            "providers.runtimeInfo",
+            "providers.runtimePlan",
+            "providers.runtimeLatest",
+            "providers.runtimeClaimUpdateCheck",
+            "providers.runtimeStart",
+            "providers.runtimeStatus",
+            "skills.list",
+            "sessions.refreshNative",
+            "sessions.stopBackgroundTask",
+            "commands.outcome",
+            "inbox.run",
+            "media.inbox",
+            "media.chunk",
+            "links.preview",
+            "git.worktreeCheckRemove",
+            "git.worktreeRemove",
+            "assistant.timeline",
+            "git.worktreeProgress",
+            "providerAccounts.piUsage",
+            "reminders.list",
+            "reminders.set",
+            "reminders.clear",
+            "reminders.claimDue",
+            "mcp.discover",
+            "mcp.start",
+            "mcp.status",
+            "mcp.cancel",
             "preferences.read",
             "preferences.patch",
             "preferences.assets.upload",
@@ -956,10 +1137,38 @@ mod tests {
             assert!(supported_remote_method(method), "{method}");
         }
         assert!(!supported_remote_method("git.arbitrary"));
+        assert!(!supported_remote_method("providers.arbitrary"));
+        assert!(!supported_remote_method("providers.auxiliary"));
+        assert!(!supported_remote_method("media.arbitrary"));
+        assert!(!supported_remote_method("events.read"));
+        assert!(!supported_remote_method("reminders.arbitrary"));
+        assert!(!supported_remote_method("mcp.arbitrary"));
         assert!(!supported_remote_method("bots.arbitrary"));
         assert!(!supported_remote_method("botThreads.arbitrary"));
         assert!(!supported_remote_method("botMemory.arbitrary"));
         assert!(!supported_remote_method("im.arbitrary"));
+    }
+    #[test]
+    fn unavailable_hosts_stay_retryable_and_rejections_stay_definitive() {
+        let stopping = serde_json::json!({"error": "Host is stopping", "code": "HOST_UNAVAILABLE"});
+        assert_eq!(
+            rpc_result(503, stopping).unwrap_err(),
+            "HOST_UNAVAILABLE: Host is stopping"
+        );
+        assert_eq!(
+            rpc_result(503, serde_json::json!({})).unwrap_err(),
+            "HOST_UNAVAILABLE: Host is temporarily unavailable"
+        );
+        let conflict =
+            serde_json::json!({"error": "Command ID was already used with a different payload"});
+        assert_eq!(
+            rpc_result(400, conflict).unwrap_err(),
+            "Host rejected request: Command ID was already used with a different payload"
+        );
+        assert_eq!(
+            rpc_result(200, serde_json::json!({"result": 1})).unwrap(),
+            serde_json::json!(1)
+        );
     }
     #[test]
     fn endpoints_require_an_encrypted_route_and_no_embedded_secrets() {

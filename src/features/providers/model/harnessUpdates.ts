@@ -1,12 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
-import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { HarnessId } from "../../sessions/model/session";
-import { inspectHarnessBinary } from "../../../integrations/harness/core/child";
-import { runtimeProviderBinaryPath } from "./providerBinaryPaths";
-import {
-  compareSemver,
-  parseOpenCodeVersion,
-} from "../../../integrations/harness/providers/opencode/opencodeProtocol";
+import { broadcastWindowEvent, subscribeWindowEvent } from "../../../platform/tauri/appShell";
+import type { HarnessId } from "../../../contracts/session";
+import type { HarnessInstall } from "../../../contracts/providerRuntime";
+import { fetchHostHarnessInstall, inspectHarnessBinary, latestHostHarnessVersion } from "./hostProviderRuntime";
+import { compareSemver, parseOpenCodeVersion } from "../../../integrations/harness/providers/opencode/opencodeProtocol";
 
 /**
  * Harnesses with an npm version feed and a self-updater OmniCode can run.
@@ -41,16 +37,16 @@ type HarnessUpdatedEvent = {
 };
 
 export function announceHarnessUpdated(harness: HarnessId): Promise<void> {
-  return emit(HARNESS_UPDATED_EVENT, { harness, source: updateEventSource });
+  return broadcastWindowEvent(HARNESS_UPDATED_EVENT, { harness, source: updateEventSource });
 }
 
 export function onHarnessUpdated(
   handler: (harness: HarnessId) => void,
-): Promise<UnlistenFn> {
-  return listen<HarnessUpdatedEvent>(HARNESS_UPDATED_EVENT, (event) => {
+): Promise<() => void> {
+  return subscribeWindowEvent<HarnessUpdatedEvent>(HARNESS_UPDATED_EVENT, (payload) => {
     // The sender awaited its local refresh before announcing the update.
-    if (event.payload.source === updateEventSource) return;
-    handler(event.payload.harness);
+    if (payload.source === updateEventSource) return;
+    handler(payload.harness);
   });
 }
 
@@ -65,7 +61,7 @@ type HarnessesRefreshedEvent = {
 export function announceHarnessesRefreshed(
   harnesses: HarnessId[],
 ): Promise<void> {
-  return emit(HARNESSES_REFRESHED_EVENT, {
+  return broadcastWindowEvent(HARNESSES_REFRESHED_EVENT, {
     harnesses,
     source: updateEventSource,
   });
@@ -73,20 +69,12 @@ export function announceHarnessesRefreshed(
 
 export function onHarnessesRefreshed(
   handler: (harnesses: HarnessId[]) => void,
-): Promise<UnlistenFn> {
-  return listen<HarnessesRefreshedEvent>(HARNESSES_REFRESHED_EVENT, (event) => {
+): Promise<() => void> {
+  return subscribeWindowEvent<HarnessesRefreshedEvent>(HARNESSES_REFRESHED_EVENT, (payload) => {
     // The sender already refreshed its own stores.
-    if (event.payload.source === updateEventSource) return;
-    handler(event.payload.harnesses);
+    if (payload.source === updateEventSource) return;
+    handler(payload.harnesses);
   });
-}
-
-export function claimLaunchHarnessUpdateCheck(): Promise<boolean> {
-  return invoke<boolean>("harness_update_check_claim");
-}
-
-export function fetchLatestHarnessVersion(harness: HarnessId): Promise<string> {
-  return invoke<string>("harness_latest_version", { provider: harness });
 }
 
 /**
@@ -121,24 +109,6 @@ export async function findHarnessUpdates({
   return results.filter((update): update is HarnessUpdate => update !== null);
 }
 
-export type HarnessInstall = {
-  path: string;
-  realPath: string;
-  source: "npm" | "homebrew" | "bundled" | "other";
-  /** The app a bundled copy ships inside, e.g. ChatGPT. */
-  bundledBy: string | null;
-  /** Other installed, non-bundled copies on the search path. */
-  alternatives: { path: string; version: string }[];
-};
-
-/** How the binary OmniCode runs for `harness` was installed. */
-export function fetchHarnessInstall(harness: HarnessId): Promise<HarnessInstall> {
-  return invoke<HarnessInstall>("harness_install_info", {
-    provider: harness,
-    binaryPath: runtimeProviderBinaryPath(harness),
-  });
-}
-
 export type HarnessVersionInfo = {
   installed?: string;
   /** Only for `UPDATABLE_HARNESSES`; the rest have no feed to compare with. */
@@ -164,7 +134,7 @@ async function cachedLatestVersion(
   if (!force && cached && Date.now() - cached.at < LATEST_TTL_MS) {
     return cached.version;
   }
-  const version = await fetchLatestHarnessVersion(harness);
+  const version = await latestHostHarnessVersion(harness);
   latestCache.set(harness, { version, at: Date.now() });
   return version;
 }
@@ -184,7 +154,7 @@ export async function readHarnessVersions(
           .then((version) => parseOpenCodeVersion(version) ?? undefined)
           .catch(() => undefined)
       : undefined,
-    updatable ? fetchHarnessInstall(harness).catch(() => undefined) : undefined,
+    updatable ? fetchHostHarnessInstall(harness).catch(() => undefined) : undefined,
   ]);
   return {
     installed,

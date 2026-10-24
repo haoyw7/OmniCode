@@ -2,12 +2,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { copyMessage, messageFilesFromClipboard, readClipboardText } from "./clipboard";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import {
-  MAX_EMBED_BYTES,
-  attachmentsFromFiles,
-  displayAttachments,
-  persistableAttachment,
-} from "../../features/sessions/model/attachments";
+import { MAX_EMBED_BYTES, attachmentsFromFiles, displayAttachments, persistableAttachment } from "../../features/sessions/model/attachments";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: vi.fn(() => false) }));
 

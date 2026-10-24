@@ -1,11 +1,6 @@
 import { expect, it, vi } from "vitest";
-import {
-  carryModelSettings,
-  findRemoteModel,
-  remoteModelControls,
-  sameModelSettings,
-} from "./remoteModels";
-import type { AgentModel } from "../../sessions/model/models";
+import { carryModelSettings, findRemoteModel, remoteModelControls, sameModelSettings } from "./remoteModels";
+import type { AgentModel } from "../../../contracts/session";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

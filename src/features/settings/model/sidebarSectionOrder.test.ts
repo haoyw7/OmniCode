@@ -1,12 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
-import {
-  DEFAULT_SIDEBAR_SECTION_ORDER,
-  loadSidebarSectionOrder,
-  reorderSidebarSections,
-  saveSidebarSectionOrder,
-  subscribeSidebarSectionOrder,
-} from "./sidebarSectionOrder";
+import { DEFAULT_SIDEBAR_SECTION_ORDER, loadSidebarSectionOrder, reorderSidebarSections, saveSidebarSectionOrder, subscribeSidebarSectionOrder } from "./sidebarSectionOrder";
 
 afterEach(() => localStorage.clear());
 

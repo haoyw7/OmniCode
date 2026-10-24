@@ -1,17 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  clearComposerDraft,
-  beginComposerAttachmentRead,
-  hasComposerDraftContent,
-  setComposerAttachmentCount,
-  getComposerDraft,
-  getComposerMcpTags,
-  setComposerDraft,
-  setComposerMcpTags,
-  stashComposerAttachments,
-  takeComposerAttachments,
-  parkedComposerDrafts,
-} from "./draftCache";
+import { clearComposerDraft, beginComposerAttachmentRead, hasComposerDraftContent, setComposerAttachmentCount, getComposerDraft, getComposerMcpTags, setComposerDraft, setComposerMcpTags, stashComposerAttachments, takeComposerAttachments, parkedComposerDrafts } from "./draftCache";
 import { newMcpTag } from "./mcpPicker";
 
 describe("draftCache", () => {

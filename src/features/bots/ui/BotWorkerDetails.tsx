@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import type { HostSession } from "../../connections/model/protocol";
+import { useContext, useEffect, useState } from "react";
+import type { HostSession } from "../../../contracts/protocol";
 import type { SessionReference } from "../model/botView";
 import type { BotRpc } from "../model/botRpc";
-import { AgentTranscript } from "../../sessions/ui/AgentTranscript";
+import { BotWorkerTranscriptContext } from "./BotWorkerPresentation";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 
 export function BotWorkerDetails({
@@ -17,6 +17,7 @@ export function BotWorkerDetails({
   active: boolean;
 }) {
   const { t } = useTranslation();
+  const Transcript = useContext(BotWorkerTranscriptContext);
   const [snapshot, setSnapshot] = useState<HostSession>();
   const [error, setError] = useState<string>();
   useEffect(() => {
@@ -63,18 +64,9 @@ export function BotWorkerDetails({
         </button>
       </header>
       {error && <p role="alert">{t(error)}</p>}
-      {snapshot && (
-        <AgentTranscript
-          blocks={snapshot.session.blocks}
-          busy={snapshot.status === "running"}
-          cwd={snapshot.session.cwd}
-          harness={snapshot.session.harness}
-          model={snapshot.session.model}
-          modelSettings={snapshot.session.modelSettings}
-          executionState={snapshot.session.executionState}
-          managed
-        />
-      )}
+      {snapshot && (Transcript
+        ? <Transcript snapshot={snapshot} visible={active} />
+        : <p role="alert">{t("Conversation is unavailable")}</p>)}
     </section>
   );
 }

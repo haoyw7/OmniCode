@@ -1,25 +1,19 @@
-import { manualSessionTitle } from "../src/features/sessions/model/titlePolicy";
+import { manualSessionTitle } from "../src/domain/titlePolicy";
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID, createHash, randomBytes } from "node:crypto";
 import { dirname, join } from "node:path";
-import { parseProjectMachine, projectMachineKey, type ProjectMachine } from "../src/integrations/harness/core/machine";
-import type {
-  CommandReceipt,
-  HostDeviceInfo,
-  HostProject,
-  HostSession,
-  HostSessionSummary,
-  RemoteProvider,
-  SessionSync,
-} from "../src/features/connections/model/protocol";
-import type { Block, LinkedWorkItem } from "../src/features/sessions/model/session";
+import { parseProjectMachine, projectMachineKey } from "../src/integrations/harness/core/machine";
+import type { ProjectMachine, Block, LinkedWorkItem } from "../src/contracts/session";
+import type { CommandReceipt, HostDeviceInfo, HostProject, HostSession, HostSessionSummary, SessionSync } from "../src/contracts/protocol";
+import type { RemoteProvider } from "../src/contracts/provider";
+
 import {
   pendingSessionInputKey as pendingInputKey,
   sessionNotificationPreview,
   sessionMessageActivityAt,
   sessionRecencyAt,
-} from "../src/features/sessions/model/sessionActivity";
-import { sessionNeedsInput } from "../src/features/sessions/model/session";
+} from "../src/domain/sessionActivity";
+import { sessionNeedsInput } from "../src/domain/session";
 
 const CACHED_SESSIONS = 32;
 
@@ -446,7 +440,7 @@ export class HostStore {
     };
     this.db
       .prepare(
-        "INSERT INTO sessions (id, project_id, snapshot, summary) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot, summary=excluded.summary",
+        "INSERT INTO sessions (id, project_id, snapshot, summary) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET project_id=excluded.project_id, snapshot=excluded.snapshot, summary=excluded.summary",
       )
       .run(
         value.session.id,
@@ -519,7 +513,7 @@ export class HostStore {
     this.queuedSessions?.delete(id);
   }
 
-  orchestration(leadId: string): { id: string; run: import("../src/features/orchestration/model/orchestrationState").OrchestrationRun } | undefined {
+  orchestration(leadId: string): { id: string; run: import("../src/contracts/session").OrchestrationRun } | undefined {
     const row = this.db.prepare("SELECT id, state FROM orchestration_runs WHERE lead_id=?").get(leadId);
     return row ? { id: String(row.id), run: JSON.parse(String(row.state)) } : undefined;
   }
@@ -528,7 +522,7 @@ export class HostStore {
     return this.db.prepare("SELECT lead_id FROM orchestration_runs").all().map((row) => String(row.lead_id));
   }
 
-  saveOrchestration(id: string, run: import("../src/features/orchestration/model/orchestrationState").OrchestrationRun): void {
+  saveOrchestration(id: string, run: import("../src/contracts/session").OrchestrationRun): void {
     if (this.isRetired(run.leadId)) throw new Error("This legacy orchestration conversation was deleted");
     this.db.prepare("INSERT INTO orchestration_runs VALUES (?, ?, ?) ON CONFLICT(lead_id) DO UPDATE SET id=excluded.id, state=excluded.state")
       .run(run.leadId, id, JSON.stringify(run));
@@ -812,6 +806,12 @@ export function summary(value: HostSession): HostSessionSummary {
     archived: value.archived,
     pinned: value.pinned,
     linkedWorkItem: value.session.linkedWorkItem,
+    ...(value.session.inboxAsk ? { inboxAsk: {
+      key: value.session.inboxAsk.key,
+      title: value.session.inboxAsk.title,
+      url: value.session.inboxAsk.url,
+      provider: value.session.inboxAsk.provider,
+    } } : {}),
     needsInput: sessionNeedsInput(value.session),
     draft: value.session.blocks.some((block) => block.role === "user" && block.draft),
     nativeSession: listedNativeLink(value.session.nativeSession),

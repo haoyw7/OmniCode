@@ -1,4 +1,4 @@
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 
 export type OmniCodeToolCall = {
   action: string;

@@ -1,6 +1,7 @@
+import { type RpcTransport } from "./hostTransport";
 import { afterEach, expect, it, vi } from "vitest";
-import { MobileClient, type RpcTransport } from "./client";
-import type { HostSession } from "../features/connections/model/protocol";
+import { MobileClient } from "./client";
+import type { HostSession } from "../contracts/protocol";
 import type { MobileStorage } from "./storage";
 import type { MobileOfflineCache, OfflineCacheEntry } from "./offlineCache";
 

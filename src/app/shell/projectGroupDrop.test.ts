@@ -1,16 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { projectGroupDrop } from "./projectGroupDrop";
-import {
-  loadProjectGroupAssignments,
-  loadProjectGroups,
-  saveProjectGroups,
-  setProjectGroupAssignment,
-} from "../../features/projects/model/projectGroups";
-import {
-  loadPinnedProjects,
-  savePinnedProjects,
-} from "../../features/projects/model/recents";
+import { loadProjectGroupAssignments, loadProjectGroups, saveProjectGroups, setProjectGroupAssignment } from "../../features/projects/model/projectGroups";
+import { loadPinnedProjects, savePinnedProjects } from "../../features/projects/model/recents";
 
 let root: HTMLElement;
 let source: HTMLElement;

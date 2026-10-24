@@ -4,7 +4,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { newSession } from "../features/sessions/model/session";
-import type { HostSession } from "../features/connections/model/protocol";
+import type { HostSession } from "../contracts/protocol";
 import { MobileFileSheet } from "./MobileFileSheet";
 import { MobileTranscript } from "./MobileTranscript";
 import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motionTestClock";

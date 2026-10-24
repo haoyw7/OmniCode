@@ -1,4 +1,4 @@
-import { displayPath } from "../../../shared/lib/paths";
+import { displayPath } from '../../../domain/pathDisplay';
 
 /** Requires reconnecting the project before the user retries submission. */
 export class ProjectNotFoundError extends Error {

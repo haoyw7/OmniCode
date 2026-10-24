@@ -1,18 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  leafIds,
-  newFileTab,
-  newTab,
-  openEditorTab,
-  newTerminalFile,
-  openTerminalTab,
-} from "../../workspace/model/layout";
-import { newSession, type Session } from "./session";
+import { leafIds, newFileTab, newTab, openEditorTab, newTerminalFile, openTerminalTab } from "../../workspace/model/layout";
+import { newSession } from "./session";
+import { type Session } from "../../../contracts/session";
 import type { SessionWorkspaceRemoval } from "./sessionWorkspaceLifecycle";
 import { createSessionRemover } from "./sessionRemoval";
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
-vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
+vi.mock("../data/sessionStore", () => ({
+  deleteSession: (sessionId: string, imagePaths: string[]) => mocks.invoke("session_delete", { sessionId, imagePaths }),
+  setSessionArchived: (sessionId: string, archived: boolean) => mocks.invoke("session_set_archived", { sessionId, archived }),
+}));
 
 function deferred() {
   let resolve!: () => void;
@@ -42,7 +39,10 @@ function fixture(mode: "archive" | "delete") {
   };
   state.activeTabId = state.tabs[0].id;
   const confirmClose = vi.fn(async () => true);
-  const stop = vi.fn(async () => {});
+  const stop = vi.fn(async () => {
+    state = { ...state, sessions: state.sessions.map(session => session.id === closing.id
+      ? { ...session, busy: false, queueStatus: "paused", blocks: session.blocks.map(block => ({ ...block, streaming: false })) } : session) };
+  });
   const commit = vi.fn((removal: SessionWorkspaceRemoval) => {
     state = { ...state, ...removal };
   });
@@ -213,38 +213,21 @@ describe.each(["archive", "delete"] as const)("%s lifecycle", (mode) => {
   });
 });
 
-it("archives the flushed transcript after cancellation, with streaming stopped", async () => {
+it("archives the Host's final projection without rewriting transcript blocks", async () => {
   const f = fixture("archive");
   f.stop.mockImplementation(async () => {
-    f.write({
-      ...f.read(),
-      sessions: f.read().sessions.map((s) =>
-        s.id === f.closing.id
-          ? {
-              ...s,
-              blocks: [
-                ...s.blocks,
-                {
-                  id: "buffered",
-                  role: "assistant",
-                  text: "last buffered output",
-                  streaming: true,
-                },
-              ],
-            }
-          : s,
-      ),
-    });
+    f.write({ ...f.read(), sessions: f.read().sessions.map(session => session.id === f.closing.id
+      ? { ...session, busy: false, blocks: [...session.blocks, { id: "final", role: "assistant", text: "Host final output", streaming: false }] }
+      : session) });
   });
   await f.run();
-  const [command, args] = mocks.invoke.mock.calls[0];
-  expect(command).toBe("session_upsert");
-  expect(args.session.blocks.at(-1)).toMatchObject({
-    text: "last buffered output",
-  });
-  expect(args.session.blocks.at(-1).streaming).toBeFalsy();
-  expect(mocks.invoke.mock.calls.map(([name]) => name)).toEqual([
-    "session_upsert",
-    "session_set_archived",
-  ]);
+  expect(mocks.invoke.mock.calls.map(([name]) => name)).toEqual(["session_set_archived"]);
+});
+
+it("refuses removal when cancellation has not produced an idle Host projection", async () => {
+  const f = fixture("delete");
+  f.stop.mockImplementation(async () => {});
+  await expect(f.run()).rejects.toThrow("Wait for the Host");
+  expect(mocks.invoke).not.toHaveBeenCalled();
+  expect(f.commit).not.toHaveBeenCalled();
 });

@@ -1,23 +1,8 @@
 import ts from "typescript";
 import type { WorkflowProgram } from "../compiler/compile.js";
 import type { IterationCandidate, SiteTable } from "./sites.js";
-import {
-  addOcc,
-  addPlaceholder,
-  collapse,
-  emptyValue,
-  isActorSite,
-  isFunctionLike,
-  mergeInto,
-  phKey,
-  provisionalFanoutId,
-  type AbstractValue,
-  type Placeholder,
-  type PromotedFanout,
-  type TaintFacts,
-  type TaintOcc,
-} from "./domain.js";
-import { findWorkflowBody } from "./domain.js";
+import { addOcc, addPlaceholder, collapse, emptyValue, isActorSite, isFunctionLike, mergeInto, phKey, provisionalFanoutId, type AbstractValue, type Placeholder, type PromotedFanout, type TaintFacts, type TaintOcc, findWorkflowBody } from "./domain.js";
+
 
 /**
  * The mutable fixpoint state of the taint pass: the site lookups, the global

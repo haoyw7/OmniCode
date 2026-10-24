@@ -13,7 +13,7 @@ vi.mock("../settings/model/appearance", () => ({
 }));
 vi.mock("../settings/model/typography", () => ({ initTypography: vi.fn() }));
 vi.mock("../settings/model/sounds", () => ({ initSounds: vi.fn() }));
-vi.mock("../../shared/i18n/languageSync", () => ({ initUiLanguage: vi.fn() }));
+vi.mock("../../platform/tauri/languageSync", () => ({ initUiLanguage: vi.fn() }));
 vi.mock("../../shared/i18n/language", () => ({ refreshUiLanguage: vi.fn(), translate: (value: string) => value }));
 vi.mock("../settings/model/sharedPreferences", () => ({ subscribeSharedPreferences: vi.fn() }));
 vi.mock("../connections/model/sharedHost", () => ({ initializeSharedHost: mocks.sharedHost }));
@@ -21,6 +21,8 @@ vi.mock("../settings/model/hostPreferences", () => ({ initializeHostPreferences:
 vi.mock("../providers/model/providerAccountCredentials", () => ({ initProviderAccountPublishing: mocks.accounts }));
 vi.mock("./ui/QuickComposer", () => ({ QuickComposer: function Composer() { return null; } }));
 vi.mock("./ui/QuickGitPopup", () => ({ QuickGitPopup: function Popup() { return null; } }));
+vi.mock("../../app/ui/QuickGitPopupPicker", () => ({ QuickGitPopupPicker: () => null }));
+vi.mock("../../app/ui/quickComposerPresentation", () => ({ quickComposerPresentation: {} }));
 beforeEach(() => {
   vi.resetModules(); vi.clearAllMocks();
   mocks.sharedHost.mockResolvedValue(undefined);
@@ -31,18 +33,18 @@ beforeEach(() => {
 it("waits for verified Host preferences and accounts before enabling quick launch controls", async () => {
   let ready!: () => void;
   mocks.preferences.mockImplementation(() => new Promise<void>(resolve => { ready = resolve; }));
-  await import("./main");
+  await import("../../app/quick-composer/main");
   await vi.waitFor(() => expect(mocks.preferences).toHaveBeenCalledOnce());
   expect(mocks.render).not.toHaveBeenCalled();
   expect(mocks.accounts).not.toHaveBeenCalled();
   ready();
   await vi.waitFor(() => expect(mocks.render).toHaveBeenCalledOnce());
   expect(mocks.accounts).toHaveBeenCalledOnce();
-  expect(mocks.render.mock.calls[0][0].props.children.props.children.type.name).toBe("Composer");
+  expect(mocks.render.mock.calls[0][0].props.children.props.children.type.name).toBe("QuickWindow");
 });
 it("shows a retry when Host bootstrap fails without enabling controls using legacy defaults", async () => {
   mocks.sharedHost.mockRejectedValue(new Error("Host upgrade required"));
-  await import("./main");
+  await import("../../app/quick-composer/main");
   await vi.waitFor(() => expect(mocks.render).toHaveBeenCalledOnce());
   expect(mocks.preferences).not.toHaveBeenCalled();
   expect(mocks.accounts).not.toHaveBeenCalled();

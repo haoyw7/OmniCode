@@ -6,19 +6,9 @@ import { Plus } from "../../../shared/ui/icons";
 import { useContext, useEffect, useId, useRef, useState } from "react";
 import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
 import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
-import {
-  loadSidebarChatOrder,
-  orderSidebarChats,
-  reorderSidebarChats,
-  saveSidebarChatOrder,
-  subscribeSidebarChatOrder,
-} from "../../model/sidebarChatOrder";
+import { loadSidebarChatOrder, orderSidebarChats, reorderSidebarChats, saveSidebarChatOrder, subscribeSidebarChatOrder } from "../../model/sidebarChatOrder";
 import { sidebarDragPreview } from "../SidebarEntryReorder";
-import {
-  PROJECT_COLLAPSE_DURATION_MS,
-  type ProjectListEntry,
-  SidebarSectionReorderContext,
-} from "./projectListShared";
+import { PROJECT_COLLAPSE_DURATION_MS, type ProjectListEntry, SidebarSectionReorderContext } from "./projectListShared";
 import { ProjectSectionHeader } from "./ProjectSectionHeader";
 import { SidebarEntry } from "./SidebarEntry";
 

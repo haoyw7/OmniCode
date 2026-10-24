@@ -1,23 +1,31 @@
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition, duration } from "../../../shared/motion/tokens";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useCallback, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../../../shared/ui/SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { Maximize2, Minus, PanelRight, X } from "../../../shared/ui/icons";
-import { FilePane } from "../../connections/files/ui/FilePane";
-import {
-  newEditorPane,
-  newFileTab,
-  type EditorPane,
-} from "../../workspace/model/layout";
+import { newEditorPane, newFileTab, type EditorPane } from "../../workspace/model/layout";
 
-const NO_SESSIONS: never[] = [];
-const noop = () => {};
+/** The application supplies its editor surface; Bots owns only floating-card state. */
+export type BotFilePaneProps = {
+  pane: EditorPane;
+  focused: boolean;
+  visible: boolean;
+  showTabs: boolean;
+  tabsTrailing: ReactNode;
+  dirtyFileIds: Set<string>;
+  fileErrorCounts: Map<string, number>;
+  onSelectFile: (paneId: string, fileId: string) => void;
+  onCloseFile: (paneId: string, fileId: string) => void;
+  onCloseOtherFiles: (paneId: string, fileId: string) => void;
+  onDirtyChange: (fileId: string, dirty: boolean) => void;
+  onErrorCountChange: (fileId: string, count: number) => void;
+  onReorderFiles: (paneId: string, ids: string[]) => void;
+  onOpenFile: (path: string) => void;
+};
+export const BotFilePaneContext = createContext<ComponentType<BotFilePaneProps> | null>(null);
 
 function parentDir(path: string) {
   const index = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
@@ -58,6 +66,7 @@ export function BotFilePanel({
   onOpenFile: (path: string) => void;
 }) {
   const { t } = useTranslation();
+  const FilePane = useContext(BotFilePaneContext);
   const parentVisible = useSurfaceVisibility();
   const [maximized, setMaximized] = useState(false);
   const [dirtyFileIds, setDirtyFileIds] = useState<Set<string>>(
@@ -217,7 +226,7 @@ export function BotFilePanel({
           }}
         >
           <SurfaceVisibilityContext.Provider value={contentVisible}>
-            <FilePane
+            {FilePane ? <FilePane
               pane={shownPane}
               focused={contentVisible}
               visible={contentVisible}
@@ -225,8 +234,6 @@ export function BotFilePanel({
               tabsTrailing={trailing}
               dirtyFileIds={dirtyFileIds}
               fileErrorCounts={fileErrorCounts}
-              sessions={NO_SESSIONS}
-              onFocus={noop}
               onSelectFile={selectFile}
               onCloseFile={closeFile}
               onCloseOtherFiles={closeOtherFiles}
@@ -234,9 +241,7 @@ export function BotFilePanel({
               onErrorCountChange={errorCountChange}
               onReorderFiles={reorderFiles}
               onOpenFile={onOpenFile}
-              onUpdatePlan={noop}
-              onBuildPlan={noop}
-            />
+            /> : null}
           </SurfaceVisibilityContext.Provider>
         </motionElement.section>
       ) : null}

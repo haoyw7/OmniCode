@@ -3,6 +3,7 @@ import { act, createElement, useEffect, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ProjectTerminalDock } from "./ProjectTerminalDock";
+import { SurfaceTabs } from "../../../app/ui/SurfaceTabs";
 import { createProjectTerminal } from "../../projects/model/projectTerminal";
 import { newTerminalFile } from "../../workspace/model/layout";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
@@ -47,6 +48,7 @@ beforeEach(() => {
   root = createRoot(container);
   props = {
     dock: createProjectTerminal("/repo", newTerminalFile("/repo")),
+    Tabs: SurfaceTabs,
     focused: true,
     onFocus: vi.fn(),
     onHide: vi.fn(),

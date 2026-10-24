@@ -2,12 +2,9 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { QuestionForm } from "./QuestionForm";
+import { QuestionForm } from "../../../shared/ui/messaging/QuestionForm";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import type {
-  UserQuestionPrompt,
-  UserQuestionReply,
-} from "../model/userQuestion";
+import type { UserQuestionPrompt, UserQuestionReply } from "../../../contracts/session";
 
 let container: HTMLDivElement;
 let root: Root;

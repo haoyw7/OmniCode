@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HostChildBackend } from "./child-backend";
 import { HostStore } from "./store";
-import { applySessionSync } from "../src/features/connections/model/protocol";
+import { applySessionSync } from "../src/domain/sessionSync";
 import { HostEngine } from "./engine";
 import { hostProviders } from "./providers";
 import { attachmentPath, readAttachmentChunk } from "./attachments";

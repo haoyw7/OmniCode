@@ -1,19 +1,11 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { HarnessId } from "./session";
+import type { SessionReminder } from "../../../contracts/reminders";
+import { remoteRequest } from "../../connections/model/connections";
+import { sharedHostEnvironment, sharedHostMachineId } from "../../connections/model/remoteProjects";
+import { loadRemoteHostDescriptor } from "../../connections/model/remoteHostMetadata";
+import { translate } from "../../../shared/i18n/language";
 
+/** Same-window change signal; other windows and devices catch up by polling Host. */
 export const REMINDERS_CHANGED = "omnicode:reminders-changed";
-export const REMINDER_OPEN = "omnicode:reminder-open";
-
-export type SessionReminder = {
-  sessionId: string;
-  dueAt: number;
-  firedAt: number | null;
-  title: string;
-  harness: HarnessId;
-  cwd: string;
-};
-
-export type ReminderTarget = Pick<SessionReminder, "sessionId" | "dueAt">;
 
 export function reminderTime(preset: string, now = new Date()): number | null {
   if (preset === "reminder:1h") return now.getTime() + 60 * 60 * 1000;
@@ -43,23 +35,39 @@ export function formatReminderTime(dueAt: number): string {
   });
 }
 
-export function listReminders(): Promise<SessionReminder[]> {
-  return invoke("reminder_list");
+async function reminderHostRequest<T>(method: "reminders.list" | "reminders.set" | "reminders.clear" | "reminders.claimDue", params?: Record<string, unknown>): Promise<T> {
+  const machineId = sharedHostMachineId();
+  if (!machineId) throw new Error(translate("Shared conversation service is not connected"));
+  const descriptor = await loadRemoteHostDescriptor(machineId, sharedHostEnvironment() ?? "");
+  if (!descriptor.capabilities.includes("reminders.v1")) throw new Error(translate("Update Host to use reminders."));
+  return remoteRequest<T>(machineId, method, params);
 }
 
-export function setReminders(
+function changed() {
+  window.dispatchEvent(new Event(REMINDERS_CHANGED));
+}
+
+export function listReminders(): Promise<{ reminders: SessionReminder[]; nextDueAt: number | null }> {
+  return reminderHostRequest("reminders.list");
+}
+
+export async function setReminders(
   sessionIds: readonly string[],
   dueAt: number,
 ): Promise<void> {
-  return invoke("reminder_set", { sessionIds, dueAt });
+  await reminderHostRequest("reminders.set", { sessionIds, dueAt });
+  changed();
 }
 
-export function clearReminders(
+export async function clearReminders(
   sessionIds: readonly string[],
   expectedDueAt?: number,
 ): Promise<void> {
-  return invoke("reminder_clear", {
-    sessionIds,
-    expectedDueAt: expectedDueAt ?? null,
-  });
+  await reminderHostRequest("reminders.clear", { sessionIds, expectedDueAt: expectedDueAt ?? null });
+  changed();
+}
+
+/** Durable Host claim: only one window or device announces each due reminder. */
+export function claimDueReminders(sessionIds: readonly string[]): Promise<SessionReminder[]> {
+  return reminderHostRequest("reminders.claimDue", { sessionIds });
 }

@@ -1,17 +1,8 @@
 import { translate } from "../../../../shared/i18n/language";
-import {
-  nativeRecord,
-  nativeString,
-  type NativeSessionFile,
-  type NativeTranscript,
-} from "../../core/nativeSessions";
-import type { Block } from "../../../../features/sessions/model/session";
-import {
-  detailFromToolPart,
-  previewFromToolPart,
-  toolKindFromName,
-  type OpenCodePart,
-} from "./opencodeProtocol";
+import { nativeRecord, nativeString } from "../../core/nativeSessions";
+import type { NativeSessionFile, NativeTranscript, Block } from "../../../../contracts/session";
+
+import { detailFromToolPart, previewFromToolPart, toolKindFromName, type OpenCodePart } from "./opencodeProtocol";
 
 /** opencode names untitled sessions with a timestamp; that is not a title. */
 const DEFAULT_TITLE = /^(New session|Child session) - \d{4}-\d{2}-\d{2}T/;

@@ -1,12 +1,8 @@
 // 侧栏工作流运行行的纯模型。
 // 输入是 sessions-index 下发的 workflowActivity 与渲染端的已确认集合，输出是「画哪几行、每行几盏灯」。
 // 无时钟、无 DOM：已结束的行何时折叠只看确认集合，不看时间。
-import type {
-  SessionWorkflowActivity,
-  SessionWorkflowPhaseSummary,
-  SessionWorkflowRunSummary,
-} from "../_shims/protocol.js";
-import { isSessionWorkflowRunLive } from "../_shims/protocol.js";
+import { type SessionWorkflowActivity, type SessionWorkflowPhaseSummary, type SessionWorkflowRunSummary, isSessionWorkflowRunLive } from "../_shims/protocol.js";
+
 import { bandOf, foldPhaseBands, trackOf } from "../components/workflow-timeline/timeline-bands.js";
 
 /** 一个会话最多画的运行行数；其余折成「+n」。 */

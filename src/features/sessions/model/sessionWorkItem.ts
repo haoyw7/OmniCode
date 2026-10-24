@@ -1,33 +1,9 @@
+import { GITHUB_URL_RE, validNumber, githubUrl, parseGithubWorkItemUrl } from "../../../domain/workItemIdentity";
 import { gitPrStatus } from "../../../platform/tauri/fs";
-import {
-  githubRepo,
-  inboxIdentityKey,
-  type InboxItem,
-  type GithubTaskKind,
-} from "../../inbox/model/githubTasks";
-import type { LinkedWorkItem } from "./session";
-import type { GeneratedWorkItemHint } from "./sessionTitle";
+import { githubRepo, inboxIdentityKey } from "../../inbox/model/githubTasks";
+import type { InboxItem, GithubTaskKind, LinkedWorkItem } from "../../../contracts/session";
 
-const GITHUB_URL_RE =
-  /https?:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/(pull|issues)\/(\d+)\b/i;
-
-function validNumber(value: number): boolean {
-  return Number.isSafeInteger(value) && value > 0;
-}
-
-function githubUrl(repo: string, kind: GithubTaskKind, number: number): string {
-  return `https://github.com/${repo}/${kind === "pr" ? "pull" : "issues"}/${number}`;
-}
-
-export function parseGithubWorkItemUrl(message: string): LinkedWorkItem | null {
-  const match = GITHUB_URL_RE.exec(message);
-  if (!match) return null;
-  const number = Number(match[4]);
-  if (!validNumber(number)) return null;
-  const repo = `${match[1]}/${match[2]}`;
-  const kind = match[3].toLowerCase() === "pull" ? "pr" : "issue";
-  return { kind, repo, number, url: githubUrl(repo, kind, number) };
-}
+import type { GeneratedWorkItemHint } from "../../../domain/sessionTitle";
 
 function explicitHint(message: string): GeneratedWorkItemHint | null {
   const patterns: Array<[GithubTaskKind, RegExp]> = [
@@ -113,25 +89,6 @@ export function linkedWorkItemFromInboxItem(
     number: item.number,
     url: item.url || githubUrl(item.repo, item.kind, item.number),
   };
-}
-
-/** Restore the GitHub identity persisted on an event-triggered automation run. */
-export function linkedWorkItemFromAutomationEvent(run: {
-  trigger: string;
-  eventKind?: string;
-  eventKey?: string;
-}): LinkedWorkItem | null {
-  if (run.trigger !== "event" || run.eventKind !== "github") return null;
-  const match = /^github:(pr|issue):([^/:]+\/[^/:]+):([1-9]\d*)$/i.exec(
-    run.eventKey?.trim() ?? "",
-  );
-  if (!match) return null;
-  const number = Number(match[3]);
-  if (!validNumber(number)) return null;
-  const kind = match[1].toLowerCase() === "pr" ? "pr" : "issue";
-  const repo = match[2];
-  if (!validRepo(repo)) return null;
-  return { kind, repo, number, url: githubUrl(repo, kind, number) };
 }
 
 export function inboxItemMatchesLinkedWorkItem(

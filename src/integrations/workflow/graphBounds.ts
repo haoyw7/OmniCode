@@ -12,25 +12,8 @@
 // （折叠与缩点归约在 create-workflow-graph-fold.ts）。边只有 `{from, to, back?}` 一种形状；
 // region / certainty / 边种类留在分析器里，GUI 从不读它们。函数名与载荷字段名沿用历史。
 
-import {
-  CREATE_WORKFLOW_GRAPH_MAX_HANDOFF_TYPES,
-  CREATE_WORKFLOW_GRAPH_MAX_HANDOFFS,
-  CREATE_WORKFLOW_GRAPH_MAX_ID_CHARS,
-  CREATE_WORKFLOW_GRAPH_MAX_LANES,
-  CREATE_WORKFLOW_GRAPH_MAX_NAME_CHARS,
-  CREATE_WORKFLOW_GRAPH_MAX_PARTICIPANTS,
-  CREATE_WORKFLOW_GRAPH_MAX_PHASE_EDGES,
-  CREATE_WORKFLOW_GRAPH_MAX_PHASES,
-  CREATE_WORKFLOW_GRAPH_MAX_STEPS,
-  type CreateWorkflowCausalityGraph,
-  type CreateWorkflowEdge,
-  type CreateWorkflowHandoff,
-  type CreateWorkflowLane,
-  type CreateWorkflowNamePattern,
-  type CreateWorkflowParticipant,
-  type CreateWorkflowPhase,
-  type CreateWorkflowStep,
-} from "./createWorkflow.js";
+import { CREATE_WORKFLOW_GRAPH_MAX_HANDOFF_TYPES, CREATE_WORKFLOW_GRAPH_MAX_HANDOFFS, CREATE_WORKFLOW_GRAPH_MAX_ID_CHARS, CREATE_WORKFLOW_GRAPH_MAX_LANES, CREATE_WORKFLOW_GRAPH_MAX_NAME_CHARS, CREATE_WORKFLOW_GRAPH_MAX_PARTICIPANTS, CREATE_WORKFLOW_GRAPH_MAX_PHASE_EDGES, CREATE_WORKFLOW_GRAPH_MAX_PHASES, CREATE_WORKFLOW_GRAPH_MAX_STEPS, type CreateWorkflowEdge, type CreateWorkflowHandoff, type CreateWorkflowLane, type CreateWorkflowNamePattern, type CreateWorkflowParticipant, type CreateWorkflowPhase, type CreateWorkflowStep } from "./createWorkflow.js";
+import { type CreateWorkflowCausalityGraph } from "../../contracts/workflow";
 import {
   FLOW_ABORT,
   FLOW_ENTRY,

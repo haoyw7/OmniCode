@@ -1,25 +1,12 @@
 import { motion, useAnimationControls } from "motion/react";
 import { panelTransition, immediateTransition, duration } from "../../shared/motion/tokens";
 import { useMotionPreference } from "../../shared/motion/useMotionPreference";
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  type ComponentProps,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
-import {
-  applyDockGridStyle,
-  dockGridStyle,
-  type DockSide,
-  type ProjectTerminalDock as ProjectTerminal,
-} from "../../features/projects/model/projectTerminal";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, type ComponentProps, type CSSProperties, type ReactNode } from "react";
+import { applyDockGridStyle, dockGridStyle, type DockSide, type ProjectTerminalDock as ProjectTerminal } from "../../features/projects/model/projectTerminal";
 import { sameProjectPath } from "../../features/projects/model/recents";
 import { beginPaneResize } from "../../shared/lib/paneResize";
 import { ProjectTerminalDock } from "../../features/terminal/ui/ProjectTerminalDock";
+import { SurfaceTabs } from "../ui/SurfaceTabs";
 import { useCollapseMotion } from "../../shared/ui/AnimatedCollapse";
 import { SurfaceVisibilityContext } from "../../shared/ui/SurfaceVisibility";
 
@@ -33,7 +20,7 @@ const DOCK_FOLD_STYLE = {
 
 type Props = Omit<
   ComponentProps<typeof ProjectTerminalDock>,
-  "dock" | "onSizePaint"
+  "dock" | "onSizePaint" | "Tabs"
 > & {
   projectTerminals: ProjectTerminal[];
   currentDock?: ProjectTerminal;
@@ -137,6 +124,7 @@ export function TerminalDockLayout({
           >
             <SurfaceVisibilityContext.Provider value={show}>
               <RetainedTerminalDock
+                Tabs={SurfaceTabs}
                 {...terminalProps}
                 dock={dock}
                 focused={show && focused}

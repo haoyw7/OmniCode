@@ -1,15 +1,8 @@
 import { composerSeedForAddToChat, type AddToChatMode } from "./quoteDraft";
-import { newDefaultSession, newSessionLike, type Session } from "./session";
-import {
-  focusedFileTab,
-  leafIds,
-  newTab,
-  type WorkspaceTab,
-} from "../../workspace/model/layout";
-import {
-  focusedWorkspaceTabCwd,
-  openAddToChatSessionPane,
-} from "../../workspace/model/workspaceTabGroups";
+import { newDefaultSession, newSessionLike } from "./session";
+import { type Session } from "../../../contracts/session";
+import { focusedFileTab, leafIds, newTab, type WorkspaceTab } from "../../workspace/model/layout";
+import { focusedWorkspaceTabCwd, openAddToChatSessionPane } from "../../workspace/model/workspaceTabGroups";
 
 export type AddChatToWorkspaceResult = {
   /** Updated sessions array including the new chat. */

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "./HarnessIcon";
 import { FilePlus, FoldVertical, UnfoldVertical } from "./icons";
 
 const SRC = fileURLToPath(new URL("../..", import.meta.url));
@@ -56,7 +56,7 @@ describe("icon imports", () => {
         className: "size-4 shrink-0",
       }),
     );
-    expect(html).toContain("items-center justify-center");
+    expect(html).toContain("grid place-items-center");
     expect(html).toContain("size-[72%]");
   });
 });

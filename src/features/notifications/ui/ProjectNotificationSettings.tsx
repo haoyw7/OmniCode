@@ -1,3 +1,6 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../projects/model/projectMascots";
+import { useProjectLogoSource } from "../../projects/model/useProjectLogoSource";
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { Checkbox } from "../../../shared/ui/forms/Checkbox";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -5,27 +8,14 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronRight, Folder, Search, X } from "../../../shared/ui/icons";
 import { NotificationMuteControl } from "./NotificationMuteControl";
 import { Button } from "../../../shared/ui/forms/Button";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
+
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import { useProjectNotificationPreferences } from "../hooks/useProjectNotificationPreferences";
 import { useNotificationProjects } from "../hooks/useNotificationProjects";
-import {
-  NOTIFICATION_CATEGORIES,
-  isProjectMuted,
-  loadNotificationPreferences,
-  updateNotificationPreferences,
-  type NotificationCategory,
-} from "../model/notificationPreferences";
+import { NOTIFICATION_CATEGORIES, isProjectMuted, loadNotificationPreferences, updateNotificationPreferences, type NotificationCategory } from "../model/notificationPreferences";
 import { pathKey, projectKey, projectName } from "../../../shared/lib/paths";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLogo, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
 import type { RecentProject } from "../../projects/model/recents";
 import { scrollWithin } from "../../../shared/lib/scrollWithin";
 
@@ -47,6 +37,7 @@ export function ProjectNotificationSettings({
   notificationSettingsRequest = 0,
   highlighted = false,
 }: Props) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const { t: uiT } = useTranslation();
   const notificationProjects = useNotificationProjects([
     cwd,
@@ -337,20 +328,20 @@ export function ProjectNotificationSettings({
                           <span className="grid size-4 shrink-0 place-items-center">
                             {logoPath ? (
                               <ProjectLogoIcon
-                                path={logoPath}
+                                src={resolveProjectLogoSrc(logoPath)}
                                 className="size-4 rounded-sm"
                                 imageClassName="size-4"
                               />
                             ) : key ? (
-                              <ProjectMascot
-                                project={seed}
-                                color={resolveTabGroupColor(
+                              <Omi compact
+                                expression={projectMascot(seed, resolveTabGroupMascot(key, groupMascots)).name}
+                                style={{ color: resolveTabGroupColor(
                                   key,
                                   groupColors,
                                   groupCustomColors,
                                   seed,
-                                )}
-                                name={resolveTabGroupMascot(key, groupMascots)}
+                                ) || undefined }}
+                                
                                 className="size-3"
                               />
                             ) : (

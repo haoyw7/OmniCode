@@ -1,23 +1,13 @@
 import { expect, it } from "vitest";
-import { appendUser } from "../../../integrations/harness/core/apply";
+import { createSessionProjection } from "../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../../integrations/harness/core/modelCatalog";
+const { appendUser } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { sanitizeSessionForPersist } from "../data/sessionStore";
 import { buildCiRepairRequest } from "../../inbox/model/ciRepair";
-import {
-  appendPreparingHandoff,
-  appendReadyHandoff,
-  buildDeterministicHandoff,
-  chooseHandoffBrief,
-  completeHandoff,
-  pendingHandoff,
-  userMessagesAfterHandoff,
-  wrapHandoffPrompt,
-} from "./handoff";
-import {
-  buildSecondOpinionPrompt,
-  buildSecondOpinionRequest,
-  SECOND_OPINION_TITLE,
-} from "./secondOpinion";
-import { newSession, type Block } from "./session";
+import { appendPreparingHandoff, appendReadyHandoff, buildDeterministicHandoff, chooseHandoffBrief, completeHandoff, pendingHandoff, userMessagesAfterHandoff, wrapHandoffPrompt } from "../../../domain/handoff";
+import { buildSecondOpinionPrompt, buildSecondOpinionRequest, SECOND_OPINION_TITLE } from "../../../domain/secondOpinion";
+import { newSession } from "./session";
+import { type Block } from "../../../contracts/session";
 
 const repair: Block = {
   id: "repair",

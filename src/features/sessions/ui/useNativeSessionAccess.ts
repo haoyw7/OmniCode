@@ -1,11 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
-import {
-  nativeSessionAccessHint,
-  nativeSessionAccessSnapshot,
-  nativeSessionReadOnly,
-  subscribeNativeSessionAccess,
-} from "../data/nativeSessions";
-import type { Session } from "../model/session";
+import { nativeSessionAccessHint, nativeSessionAccessSnapshot, nativeSessionReadOnly, subscribeNativeSessionAccess } from "../data/nativeSessions";
+import type { Session } from "../../../contracts/session";
 
 /** Access checks for another pane, and lease renewals, do not redraw this pane. */
 export function useNativeSessionAccess(session: Session) {

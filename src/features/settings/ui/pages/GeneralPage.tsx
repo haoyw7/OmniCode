@@ -6,40 +6,12 @@ import { ArrowDownCircle, Loader, RefreshCw } from "../../../../shared/ui/icons"
 import { useEffect, useState } from "react";
 import { Button } from "../../../../shared/ui/forms/Button";
 import { IS_LINUX, IS_MAC, IS_WIN } from "../../../../platform/tauri/platform";
-import {
-  loadCloseToTray,
-  loadFileTabMode,
-  loadLiveAgentsEnabled,
-  loadNotesEnabled,
-  loadQuickComposerEnabled,
-  loadQuickComposerShortcut,
-  loadTabAnimationsEnabled,
-  saveCloseToTray,
-  saveFileTabMode,
-  saveLiveAgentsEnabled,
-  saveNotesEnabled,
-  saveQuickComposerEnabled,
-  saveTabAnimationsEnabled,
-  type FileTabMode,
-} from "../../model/settings";
+import { loadCloseToTray, loadFileTabMode, loadLiveAgentsEnabled, loadNotesEnabled, loadQuickComposerEnabled, loadQuickComposerShortcut, loadTabAnimationsEnabled, saveCloseToTray, saveFileTabMode, saveLiveAgentsEnabled, saveNotesEnabled, saveQuickComposerEnabled, saveTabAnimationsEnabled, type FileTabMode } from "../../model/settings";
 import { loadSoundsEnabled, saveSoundsEnabled } from "../../model/sounds";
 import { setQuickComposerShortcut } from "../../../quick-composer/model/quickComposer";
 import { quickComposerShortcutLabel } from "../../../quick-composer/model/quickComposerShortcut";
-import {
-  cachedNotificationPermission,
-  loadNotificationsEnabled,
-  openNotificationSettings,
-  probeNotificationPermission,
-  requestNotificationPermission,
-  saveNotificationsEnabled,
-  type NotificationPermission,
-} from "../../../notifications/model/notifications";
-import {
-  installPendingUpdate,
-  readAppVersion,
-  runUpdateFlow,
-  type UpdaterSnapshot,
-} from "../../../../app/model/updater";
+import { cachedNotificationPermission, loadNotificationsEnabled, openNotificationSettings, probeNotificationPermission, requestNotificationPermission, saveNotificationsEnabled, type NotificationPermission } from "../../../notifications/model/notifications";
+import { installPendingUpdate, readAppVersion, runUpdateFlow, type UpdaterSnapshot } from "../../../../app/model/updater";
 import { Group, Row, Segmented, Toggle } from "../settingsLayout";
 
 

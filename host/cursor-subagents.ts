@@ -2,7 +2,7 @@ import { readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, posix } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import type { StoredCursorSubagentRun } from "../src/integrations/harness/providers/cursor/cursorStore";
+import type { StoredCursorSubagentRun, StoredCursorToolCall } from "../src/integrations/harness/providers/cursor/cursorStore";
 import type { MachineTransport } from "./machine-io";
 
 type Row = Record<string, unknown>;
@@ -37,15 +37,13 @@ const localStores: CursorStores = {
   },
 };
 
-/** Keep provider parsing in the Host; WSL exposes only bounded, read-only SQL. */
-export async function readWslCursorSubagents(args: Record<string, unknown>, rpc: MachineTransport): Promise<StoredCursorSubagentRun[]> {
-  const { home } = await rpc.request<{ home: string }>("env.info");
+function wslStores(rpc: MachineTransport): CursorStores {
   const query = async (path: string, sql: string, params: (string | number)[]) => {
     const rows = await rpc.request<Row[]>("db.query", { path, sql, params });
     return rows.map(row => Object.fromEntries(Object.entries(row).map(([key, value]) =>
       [key, value && typeof value === "object" && "$base64" in value ? Buffer.from(String(value.$base64), "base64") : value])));
   };
-  return readCursorSubagents(args, posix.join(home, ".cursor"), {
+  return {
     join: posix.join,
     async directories(path) {
       try { return (await rpc.request<{ isDirectory: boolean; path: string }[]>("fs.readdir", { path })).filter(entry => entry.isDirectory).map(entry => entry.path); }
@@ -53,7 +51,13 @@ export async function readWslCursorSubagents(args: Record<string, unknown>, rpc:
     },
     open: path => ({ get: async (sql, ...params) => (await query(path, sql, params))[0],
       all: (sql, ...params) => query(path, sql, params), close: () => {} }),
-  });
+  };
+}
+
+/** Keep provider parsing in the Host; WSL exposes only bounded, read-only SQL. */
+export async function readWslCursorSubagents(args: Record<string, unknown>, rpc: MachineTransport): Promise<StoredCursorSubagentRun[]> {
+  const { home } = await rpc.request<{ home: string }>("env.info");
+  return readCursorSubagents(args, posix.join(home, ".cursor"), wslStores(rpc));
 }
 const object = (value: unknown): Record<string, any> | undefined =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -230,4 +234,75 @@ export async function readCursorSubagents(
       }
     }
   return runs;
+}
+
+const MAX_TOOL_BLOB_BYTES = 256 * 1024;
+/** Cursor stores `call-<uuid>-N\nfc_<uuid>_N`; ACP often sends only one half. */
+function toolIdsMatch(stored: string, wanted: string): boolean {
+  if (stored === wanted) return true;
+  const parts = (value: string) => value.split(/\s+/).map((part) => part.trim()).filter((part) => part.length >= 8);
+  const storedParts = parts(stored), wantedParts = parts(wanted);
+  return storedParts.includes(wanted) || wantedParts.includes(stored) || storedParts.some((part) => wantedParts.includes(part));
+}
+
+/**
+ * Recover tool arguments Cursor omits from ACP events. Cursor persists the
+ * complete call in the session's own store before sending its result; the
+ * store is opened read-only and scanned newest-first.
+ */
+export async function readCursorToolCalls(
+  args: Record<string, unknown>,
+  cursorDir = join(homedir(), ".cursor"),
+  stores: CursorStores = localStores,
+): Promise<StoredCursorToolCall[]> {
+  validate(args.sessionId);
+  if (!Array.isArray(args.toolCallIds) || args.toolCallIds.length > 256)
+    throw new Error("Invalid Cursor tool ids");
+  args.toolCallIds.forEach(validate);
+  const wanted = [...new Set(args.toolCallIds as string[])];
+  if (!wanted.length) return [];
+  const sessionId = args.sessionId;
+  const candidates = [stores.join(cursorDir, "acp-sessions", sessionId)];
+  for (const project of await stores.directories(stores.join(cursorDir, "chats")))
+    candidates.push(stores.join(project, sessionId));
+  const parents = new Map<string, string[]>();
+  for (const candidate of candidates) {
+    const parent = candidate.slice(0, candidate.length - sessionId.length - 1);
+    if (!parents.has(parent)) parents.set(parent, await stores.directories(parent));
+    if (!parents.get(parent)!.includes(candidate)) continue;
+    const db = stores.open(stores.join(candidate, "store.db"));
+    try {
+      const found: StoredCursorToolCall[] = [];
+      let cursor = Number.MAX_SAFE_INTEGER;
+      while (found.length < wanted.length) {
+        const batch = await db.all(
+          "SELECT rowid, CASE WHEN length(data)<=? THEN data END AS data FROM blobs WHERE rowid<? ORDER BY rowid DESC LIMIT 256",
+          MAX_TOOL_BLOB_BYTES, cursor);
+        if (!batch.length) break;
+        for (const blob of batch) {
+          cursor = Number(blob.rowid);
+          if (!blob.data) continue;
+          let payload: Record<string, any>;
+          try { payload = JSON.parse(Buffer.from(blob.data as Uint8Array).toString("utf8")); } catch { continue; }
+          if (!Array.isArray(payload?.content)) continue;
+          for (const item of payload.content) {
+            if (item?.type !== "tool-call" || typeof item.toolCallId !== "string" || typeof item.toolName !== "string" || !("args" in item)) continue;
+            const requested = wanted.find((id) => toolIdsMatch(item.toolCallId, id));
+            // Return the ACP id the client asked for so its lookup hits.
+            if (!requested || found.some((call) => call.toolCallId === requested)) continue;
+            found.push({ toolCallId: requested, toolName: item.toolName, args: item.args });
+          }
+        }
+      }
+      return found;
+    } finally {
+      db.close();
+    }
+  }
+  throw new Error(`Cursor session ${sessionId} was not found`);
+}
+
+export async function readWslCursorToolCalls(args: Record<string, unknown>, rpc: MachineTransport): Promise<StoredCursorToolCall[]> {
+  const { home } = await rpc.request<{ home: string }>("env.info");
+  return readCursorToolCalls(args, posix.join(home, ".cursor"), wslStores(rpc));
 }

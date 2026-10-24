@@ -1,30 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  isBlankSession,
-  reconcileProjectReturn,
-  type ProjectReturnMemory,
-} from "../../features/projects/model/projectReturn";
-import {
-  isRemoteProjectPath,
-  sameProjectPath,
-} from "../../features/projects/model/recents";
-import type { Session } from "../../features/sessions/model/session";
-import {
-  setWorktreeFocus,
-  worktreeFocus,
-  type WorktreeFocus,
-} from "../../features/source-control/model/worktreeFocus";
-import type { Worktree } from "../../features/source-control/model/worktrees";
-import {
-  isAppViewOnlyTab,
-  leafIds,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import {
-  filterTabsForProject,
-  workspaceTabCwd,
-  workspaceTabWorktree,
-} from "../../features/workspace/model/workspaceTabGroups";
+import { isBlankSession, reconcileProjectReturn, type ProjectReturnMemory } from "../../features/projects/model/projectReturn";
+import { isRemoteProjectPath, sameProjectPath } from "../../features/projects/model/recents";
+import type { Session } from "../../contracts/session";
+import { setWorktreeFocus, worktreeFocus, type WorktreeFocus } from "../../features/source-control/model/worktreeFocus";
+import type { Worktree } from "../../contracts/worktree";
+import { isAppViewOnlyTab, leafIds, type WorkspaceTab } from "../../features/workspace/model/layout";
+import { filterTabsForProject, workspaceTabCwd, workspaceTabWorktree } from "../../features/workspace/model/workspaceTabGroups";
 import { isEqualOrInside, pathKey } from "../../shared/lib/paths";
 
 type Destination = { project: string; focus?: WorktreeFocus };

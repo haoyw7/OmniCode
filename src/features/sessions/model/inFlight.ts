@@ -1,7 +1,7 @@
 import { leafIds, newTab, type WorkspaceTab } from "../../workspace/model/layout";
 import type { DockSide, ProjectTerminalDock } from "../../projects/model/projectTerminal";
-import { sessionNeedsInput, type Session } from "./session";
-import { stopStreaming } from "../../../integrations/harness/core/apply";
+import { sessionNeedsInput } from "../../../domain/session";
+import { type Session } from "../../../contracts/session";
 import type { ProjectReturnMemory } from "../../projects/model/projectReturn";
 
 export const INTERRUPT_MESSAGE =
@@ -68,29 +68,6 @@ export function quitWhileBusyMessage(count: number): string {
   return `${count} chats are still running. Quit anyway? They will resume when you reopen OmniCode.`;
 }
 
-/**
- * Seal streams/tools and record that a real quit cut the turn short.
- * Idempotent for the current turn only — a later turn after Continue still
- * gets a fresh note. Matching any interrupt in the transcript would skip
- * resume on the second quit.
- */
-export function markTurnInterrupted(session: Session): Session {
-  const sealed = { ...sealOpenWork(stopStreaming(session)), busy: false };
-  if (lastBlockIsInterrupt(sealed)) return sealed;
-  return {
-    ...sealed,
-    blocks: [
-      ...sealed.blocks,
-      {
-        id: crypto.randomUUID(),
-        role: "system",
-        text: INTERRUPT_MESSAGE,
-        notice: "interrupt",
-      },
-    ],
-  };
-}
-
 export function workspaceFromResumed(
   sessions: Session[],
 ): ResumedWorkspace | null {
@@ -105,48 +82,6 @@ export function workspaceFromResumed(
   };
 }
 
-export function wasTurnInterrupted(session: Session): boolean {
-  return lastBlockIsInterrupt(session);
-}
-
-/**
- * Provider thread exists and the quit note is still the last block.
- * A Continue (or any later user turn) appends after it, so this stays one-shot.
- */
-export function canAutoContinue(session: Session): boolean {
-  return (
-    !session.worktreeRemoved &&
-    !!session.providerSessionId &&
-    !session.busy &&
-    lastBlockIsInterrupt(session)
-  );
-}
-
-function lastBlockIsInterrupt(session: Session): boolean {
-  const last = session.blocks[session.blocks.length - 1];
-  return last?.role === "system" && last.text === INTERRUPT_MESSAGE;
-}
-
-export function inFlightSnapshotKey(refs: InFlightRef[]): string {
-  return refs.map((ref) => ref.sessionId).join("\n");
-}
-
-/**
- * Skip the first idle paint after boot so a restored snapshot is not wiped
- * before the turn is marked busy again. Once this process has seen a live
- * in-flight chat, an empty list is a real "turn finished" and should clear.
- */
-export function shouldWriteInFlightSnapshot(
-  key: string,
-  refs: InFlightRef[],
-  previousKey: string | null,
-  sawInFlight: boolean,
-): boolean {
-  if (previousKey === key) return false;
-  if (refs.length === 0 && !sawInFlight) return false;
-  return true;
-}
-
 function canResumeAfterQuit(session: Session): boolean {
   return (
     !session.worktreeRemoved &&
@@ -155,34 +90,3 @@ function canResumeAfterQuit(session: Session): boolean {
   );
 }
 
-function sealOpenWork(session: Session): Session {
-  return {
-    ...session,
-    busy: false,
-    blocks: session.blocks.flatMap((block) => {
-      if (block.role === "approval" && !block.approval?.decided) return [];
-      if (!shouldCancelTool(block)) return [block];
-      const { approval, ...rest } = block;
-      return [
-        {
-          ...rest,
-          streaming: false,
-          tool: block.tool
-            ? { ...block.tool, status: "cancelled" }
-            : block.tool,
-          ...(approval?.decided ? { approval } : {}),
-        },
-      ];
-    }),
-  };
-}
-
-function shouldCancelTool(block: Session["blocks"][number]): boolean {
-  if (block.approval && !block.approval.decided) return true;
-  if (!block.tool) return false;
-  if (block.streaming) return true;
-  const status = block.tool.status?.toLowerCase() ?? "";
-  return (
-    status === "in_progress" || status === "pending" || status === "running"
-  );
-}

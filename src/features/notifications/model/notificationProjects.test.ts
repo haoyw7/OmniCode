@@ -1,12 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it } from "vitest";
-import {
-  inboxNotificationProject,
-  knownNotificationProject,
-  knownNotificationProjectSelection,
-  loadNotificationProjects,
-  rememberNotificationProjects,
-} from "./notificationProjects";
+import { inboxNotificationProject, knownNotificationProject, knownNotificationProjectSelection, loadNotificationProjects, rememberNotificationProjects } from "./notificationProjects";
 
 beforeEach(() => localStorage.clear());
 

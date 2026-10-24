@@ -1,13 +1,7 @@
 import { translate } from "../../../../shared/i18n/language";
-import {
-  nativeJsonLines,
-  nativeRecord,
-  nativeString,
-  nativeText,
-  type NativeSessionFile,
-  type NativeTranscript,
-} from "../../core/nativeSessions";
-import type { Block } from "../../../../features/sessions/model/session";
+import { nativeJsonLines, nativeRecord, nativeString, nativeText } from "../../core/nativeSessions";
+import type { NativeSessionFile, NativeTranscript, Block } from "../../../../contracts/session";
+
 
 /**
  * Pi v3 session trees. omp (a Pi fork) writes the same tree with a padded

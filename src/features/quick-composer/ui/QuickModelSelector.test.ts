@@ -3,12 +3,9 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { QuickModelSelector } from "./QuickModelSelector";
-import {
-  resetHarnessModelOverlays,
-  setHarnessModels,
-  saveLastModelSettings,
-  type AgentModel,
-} from "../../sessions/model/models";
+import { saveLastModelSettings } from "../../sessions/model/models";
+import { resetHarnessModelOverlays, setHarnessModels } from "../../../integrations/harness/core/modelCatalog";
+import { type AgentModel } from "../../../contracts/session";
 
 vi.mock("@tauri-apps/api/event", () => ({
   emit: vi.fn().mockResolvedValue(undefined),

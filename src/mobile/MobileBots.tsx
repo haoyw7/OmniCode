@@ -7,7 +7,7 @@ import { useBotUnread } from "../features/bots/model/useBotUnread";
 import { scopedBotRpc } from "../features/bots/model/botClient";
 import type { BotConfiguration } from "../features/bots/model/botView";
 import { botErrorMessage } from "../features/bots/model/botErrors";
-import type { HostDescriptor } from "../features/connections/model/protocol";
+import type { HostDescriptor } from "../contracts/protocol";
 import { NavigationItem } from "../shared/ui/messaging/NavigationItem";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { Button } from "../shared/ui/forms/Button";
@@ -22,7 +22,7 @@ import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { MobilePageTransition } from "./MobilePageTransition";
 import { MobileBotCreate } from "./MobileBotCreate";
 import { MobileSheet } from "./MobileSheet";
-import { formatMobileRelativeTime } from "./relativeTime";
+import { formatRelativeTime } from "../shared/lib/relativeTime";
 
 export type MobileBotSelection = { id: string; name: string; avatar?: string; threadId?: string; defaultScope: boolean };
 type Props = Omit<ComponentProps<typeof MobileAssistant>, "onOpen"> & {
@@ -177,7 +177,7 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
           const latest = feed?.latest && (feed.latest.kind === "user" || feed.latest.kind === "assistant") ? feed.latest : undefined;
           return <NavigationItem key={bot.id} data-bot-id={bot.id} icon={<BotAvatar bot={bot} size={40} />} {...botActions(bot)}>
             <span className="mobile-bots-row-heading"><strong>{bot.name}</strong>
-              {latest && <time dateTime={new Date(latest.createdAt).toISOString()}>{formatMobileRelativeTime(latest.createdAt, Date.now(), language)}</time>}
+              {latest && <time dateTime={new Date(latest.createdAt).toISOString()}>{formatRelativeTime(latest.createdAt, Date.now(), language)}</time>}
             </span>
             <span className="mobile-bots-row-preview"><span>{latest ? latest.text.trim() || t("Attachments") : t("No messages yet")}</span>
               {!!feed?.count && <span className="mobile-unread-dot" role="img" aria-label={t("Unread reply")} />}

@@ -1,10 +1,11 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useContext, useEffect, useState } from "react";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
-import { formatFileSize, sniffImageMime } from "../../connections/files/model/filePreview";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
+import { formatFileSize } from "../../connections/files/model/filePreview";
+import { sniffImageMime } from "../../../domain/imageBytes";
 import { ImageLightbox } from "../../../shared/ui/ImageLightbox";
-import type { GeneratedImageMeta, Attachment } from "../model/session";
+import type { GeneratedImageMeta, Attachment } from "../../../contracts/session";
 
 type State =
   | { status: "loading" }

@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { newSession, type Session } from "./session";
-import {
-  formatUsageLimitReset,
-  USAGE_LIMIT_RESUME_GRACE_MS,
-  usageLimitResumeDue,
-} from "./usageLimit";
+import { newSession } from "./session";
+import { type Session } from "../../../contracts/session";
+import { formatUsageLimitReset, USAGE_LIMIT_RESUME_GRACE_MS, usageLimitResumeDue } from "./usageLimit";
 
 function limited(patch: Partial<Session> = {}): Session {
   return {

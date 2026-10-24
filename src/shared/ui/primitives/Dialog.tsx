@@ -1,12 +1,6 @@
 import { MotionPresenceItem } from "./MotionPresenceItem";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  immediateTransition,
-  popAnimate,
-  popExit,
-  popInitial,
-  popTransition,
-} from "../../motion/tokens";
+import { immediateTransition, popAnimate, popExit, popInitial, popTransition } from "../../motion/tokens";
 import { useMotionPreference } from "../../motion/useMotionPreference";
 import { SurfaceAppearance } from "../SurfaceAppearance";
 import * as React from "react";

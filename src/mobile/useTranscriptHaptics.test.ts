@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useTranscriptHaptics } from "./useTranscriptHaptics";
 import { outputHaptics, setHapticsForeground } from "./haptics";
 import { saveHapticPreferences } from "./hapticPreferences";
-import type { Block } from "../features/sessions/model/session";
+import type { Block } from "../contracts/session";
 
 const native = vi.hoisted(() => ({ pulse: vi.fn(async () => {}), feedback: vi.fn(async () => {}), cancel: vi.fn(async () => {}) }));
 vi.mock("@capacitor/core", () => ({

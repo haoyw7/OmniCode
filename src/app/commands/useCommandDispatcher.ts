@@ -1,10 +1,6 @@
-import { listen } from "@tauri-apps/api/event";
+import { subscribeNativeMenuCommand } from "../../platform/tauri/appShell";
 import { useCallback, useEffect, useRef } from "react";
-import {
-  APP_COMMANDS,
-  createCommandDebounce,
-  type CommandHandlers,
-} from "./registry";
+import { APP_COMMANDS, createCommandDebounce, type CommandHandlers } from "./registry";
 
 export type CommandDispatch = (id: string, arg?: unknown) => boolean;
 
@@ -30,13 +26,13 @@ export function useCommandDispatcher(handlers: CommandHandlers) {
   useEffect(() => {
     const unlisten = APP_COMMANDS.flatMap((spec) =>
       spec.nativeEvent
-        ? [listen(spec.nativeEvent, () => void dispatch(spec.id))]
+        ? [subscribeNativeMenuCommand(spec.nativeEvent, () => void dispatch(spec.id))]
         : [],
     );
     // The unchanged macOS menu still emits this legacy event. Both menu
     // entries now reach the single sidebar command and share its debounce.
     unlisten.push(
-      listen(
+      subscribeNativeMenuCommand(
         "toggle_session_sidebar",
         () => void dispatch("App: Toggle Sidebar"),
       ),

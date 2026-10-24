@@ -1,13 +1,5 @@
-import type { HarnessEvent } from "../../core/types";
-import {
-  asRecord,
-  previewFromTool,
-  stringField,
-  textFromContent,
-  toolKindFromName,
-  toolTitle,
-  toolImagesFromEvent,
-} from "./piProtocol";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import { asRecord, previewFromTool, stringField, textFromContent, toolKindFromName, toolTitle, toolImagesFromEvent } from "./piProtocol";
 
 /** Pi extension results and omp TaskToolDetails are cumulative snapshots. */
 export function piSubagentEvents(

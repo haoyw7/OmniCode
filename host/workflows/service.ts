@@ -23,10 +23,10 @@ import {
   type RunStatus,
   type WorkflowEngine,
 } from "../../src/integrations/workflow/dynamic-workflow/index.js";
-import type { HostSession } from "../../src/features/connections/model/protocol";
-import type { AgentModel } from "../../src/features/sessions/model/models";
-import type { Block, HarnessId } from "../../src/features/sessions/model/session";
-import type { WorkflowAgentRuntime } from "../../src/integrations/workflow/createWorkflow.js";
+import type { HostSession } from "../../src/contracts/protocol";
+import type { AgentModel, Block, HarnessId } from "../../src/contracts/session";
+
+import type { WorkflowAgentRuntime, WorkflowRunsState, WorkflowRunBlock, WorkflowRunSettings, WorkflowRunSource } from "../../src/contracts/workflow";
 import { WorkflowAgentRuntimeSchema } from "../../src/integrations/workflow/createWorkflow.js";
 import {
   describeWorkflowRuntime,
@@ -36,7 +36,8 @@ import {
   type WorkflowResolvedRuntime,
 } from "../../src/integrations/workflow/modelConfig.js";
 import { reduceWorkflowRunsState } from "../../src/integrations/workflow/protocol/workflow-runs-reducer.js";
-import type { WorkflowRunsState, WorkflowRunState } from "../../src/integrations/workflow/protocol/workflow-runs.js";
+
+import type { WorkflowRunState } from "../../src/integrations/workflow/protocol/workflow-runs.js";
 import {
   isValidSavedWorkflowName,
   SavedWorkflowArgsDeclarationSchema,
@@ -44,7 +45,7 @@ import {
   type SavedWorkflowEntry,
   type SavedWorkflowScope,
 } from "../../src/integrations/workflow/savedWorkflow.js";
-import type { WorkflowRunBlock, WorkflowRunSettings, WorkflowRunSource } from "../../src/integrations/workflow/sessionTypes.js";
+
 import { HostControl, WORKFLOW_ACTIONS } from "../control";
 import { analyze, clampRunConcurrency, compileOnce, evalSnippet, formatDiagnostics, scriptHash, validateFn, workflowConcurrencyCeiling } from "./compile.js";
 import { OmniCodeWorkflowDriver, effectiveActorName, mintActorSessionId, personaRuntime, type WorkflowWorkerPort } from "./driver.js";

@@ -1,42 +1,15 @@
-import {
-  useCallback,
-  useTransition,
-  type Dispatch,
-  type RefObject,
-  type SetStateAction,
-} from "react";
+import { useCallback, useTransition, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { rememberRemotePendingExecutionCwd } from "../../features/connections/model/connections";
-import {
-  planProjectOpenRun,
-  type ProjectOpenStep,
-} from "../../features/projects/model/projectOpenRun";
+import { planProjectOpenRun, type ProjectOpenStep } from "../../features/projects/model/projectOpenRun";
 import { isBlankSession } from "../../features/projects/model/projectReturn";
-import {
-  looksLikeProject,
-  normalizeProjectPath,
-  rememberProject,
-  sameProjectPath,
-  type RecentProject,
-} from "../../features/projects/model/recents";
-import {
-  keepSessionChanges,
-  notifyReviewChanged,
-} from "../../features/sessions/model/checkpoint";
-import {
-  newSession,
-  retargetSessionToProject,
-  type Session,
-} from "../../features/sessions/model/session";
+import { looksLikeProject, rememberProject, sameProjectPath, type RecentProject } from "../../features/projects/model/recents";
+import { normalizeProjectPath } from "../../domain/pathDisplay";
+import { keepSessionChanges, notifyReviewChanged } from "../../features/sessions/model/checkpoint";
+import { newSession, retargetSessionToProject } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
 import type { WorktreeFocus } from "../../features/source-control/model/worktreeFocus";
-import {
-  leafIds,
-  newTab,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import {
-  removeTabFromGroup,
-  tabGroupProject,
-} from "../../features/workspace/model/tabGroups";
+import { leafIds, newTab, type WorkspaceTab } from "../../features/workspace/model/layout";
+import { removeTabFromGroup, tabGroupProject } from "../../features/workspace/model/tabGroups";
 import { pickFolders } from "../../platform/tauri/fs";
 import { projectName } from "../../shared/lib/paths";
 import type { WorkspaceNavigation } from "../hooks/useWorkspaceNavigation";

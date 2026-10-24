@@ -1,18 +1,8 @@
-import type {
-  Attachment,
-  RuntimeMode,
-  ToolPreview,
-  TurnMetrics,
-} from "../../../../features/sessions/model/session";
-import {
-  attachmentPath,
-  attachmentPathText,
-  isVisionImage,
-  promptText,
-} from "../../../../features/sessions/model/attachments";
-import { isTaskListToolName } from "../../../../features/sessions/model/taskList";
-import { extractToolPreview } from "../../core/preview";
-import type { HarnessEvent } from "../../core/types";
+import type { Attachment, RuntimeMode, ToolPreview, TurnMetrics } from "../../../../contracts/session";
+import { attachmentPath, attachmentPathText, isVisionImage, promptText } from "../../../../domain/attachmentPrompt";
+import { isTaskListToolName } from "../../../../domain/taskList";
+import { extractToolPreview } from "../../../../domain/preview";
+import type { HarnessEvent } from "../../../../contracts/harness";
 
 export const MINIMUM_OPENCODE_VERSION = "1.14.19";
 export const OPENCODE_SERVER_READY_PREFIX = "opencode server listening";

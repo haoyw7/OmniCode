@@ -87,6 +87,9 @@ blob-report/
 /HANDOFF-*.md
 /docs/prompts/
 
+# Transient local test and typecheck artifacts
+/.tmp-*
+
 # Mobile build outputs
 dist-mobile/
 mobile/android/.gradle/

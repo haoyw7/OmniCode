@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+
 import { expect, it, vi } from "vitest";
 import { Composer } from "./Composer";
 import { copyMessage } from "../../../platform/tauri/clipboard";
@@ -137,7 +138,9 @@ it("leaves a pasted GitHub pull request URL as editable text", async () => {
         .querySelector<HTMLButtonElement>('button[aria-label="Send"]')!
         .click(),
     );
-    expect(submit).toHaveBeenCalledWith(expected, [], { intent: "default" });
+    expect(submit).toHaveBeenCalledWith(expected, [], {
+      intent: "default", onSubmissionRejected: expect.any(Function),
+    });
   } finally {
     act(() => root.unmount());
     container.remove();

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Attachment } from "../../../../features/sessions/model/session";
+import type { Attachment } from "../../../../contracts/session";
 
 const sent: Array<{ method: string; params: { input?: unknown[] } }> = [];
 let onLine: ((line: string) => void) | undefined;

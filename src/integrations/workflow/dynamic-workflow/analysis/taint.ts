@@ -1,34 +1,10 @@
 import ts from "typescript";
 import type { WorkflowProgram } from "../compiler/compile.js";
 import type { SiteTable } from "./sites.js";
-import {
-  addPlaceholder,
-  clearExact,
-  cloneValue,
-  collapse,
-  collapseInto,
-  COMPOUND_ASSIGNMENT_OPS,
-  emptyValue,
-  isNonArrowFunctionLike,
-  liveField,
-  mergeInto,
-  peelPlace,
-  readField,
-  staticIndexKey,
-  unionValues,
-  type AbstractValue,
-} from "./domain.js";
+import { addPlaceholder, clearExact, cloneValue, collapse, collapseInto, COMPOUND_ASSIGNMENT_OPS, emptyValue, isNonArrowFunctionLike, liveField, mergeInto, peelPlace, readField, staticIndexKey, unionValues, type AbstractValue } from "./domain.js";
 import { applyCall, evalCall } from "./calls.js";
 import { applyConstructor, applyMixinConstructor, evalAwait, handleNewUnknown } from "./promise-ops.js";
-import {
-  classConstructor,
-  classNodeOfSymbol,
-  enclosingBaseInstance,
-  enclosingClassInstance,
-  evalClasses,
-  hasUnresolvedHeritage,
-  resolveClassNode,
-} from "./classes.js";
+import { classConstructor, classNodeOfSymbol, enclosingBaseInstance, enclosingClassInstance, evalClasses, hasUnresolvedHeritage, resolveClassNode } from "./classes.js";
 import { handleAssignment, handleCompoundAssignment } from "./assign.js";
 import { handleForIn, handleForOf, visitForStatement } from "./control-flow.js";
 import { evalArrayLiteral, evalObjectLiteral } from "./literals.js";

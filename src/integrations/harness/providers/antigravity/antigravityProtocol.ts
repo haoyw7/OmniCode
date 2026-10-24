@@ -1,15 +1,9 @@
-import { promptBlocks, type PromptContentBlock } from "../../../../features/sessions/model/attachments";
-import type { AgentModel, ModelSetting, ModelSettingChoice } from "../../../../features/sessions/model/models";
-import type { Attachment, RuntimeMode, ToolPreview } from "../../../../features/sessions/model/session";
-import { normalizeTaskListStatus } from "../../../../features/sessions/model/taskList";
-import type { ApprovalDecision, HarnessEvent } from "../../core/types";
-import {
-  composeToolTitle,
-  extractSearchQuery,
-  extractShellCommand,
-  extractSkillName,
-  extractToolPreview,
-} from "../../core/preview";
+import { promptBlocks, type PromptContentBlock } from "../../../../domain/attachmentPrompt";
+import type { AgentModel, ModelSetting, ModelSettingChoice, Attachment, RuntimeMode, ToolPreview } from "../../../../contracts/session";
+
+import { normalizeTaskListStatus } from "../../../../domain/taskList";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import { composeToolTitle, extractSearchQuery, extractShellCommand, extractSkillName, extractToolPreview } from "../../../../domain/preview";
 import { acpAgentInfo } from "../../core/acpSubagents";
 import { translate } from "../../../../shared/i18n/language";
 

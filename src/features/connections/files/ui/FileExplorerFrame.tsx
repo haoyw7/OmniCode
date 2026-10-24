@@ -1,53 +1,25 @@
 import { isRemoteProjectPath } from "../../../projects/model/recents";
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type ReactNode,
-  type CSSProperties,
-} from "react";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "../../../../shared/ui/forms/InputGroup";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type CSSProperties } from "react";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "../../../../shared/ui/forms/InputGroup";
 import { IconButton } from "../../../../shared/ui/forms/IconButton";
-import {
-  ListBullet,
-  MoreHorizontal,
-  Search,
-  X,
-} from "../../../../shared/ui/icons";
+import { ListBullet, MoreHorizontal, Search, X } from "../../../../shared/ui/icons";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useCollapseMotion } from "../../../../shared/ui/AnimatedCollapse";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../../../../shared/ui/SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../../shared/ui/SurfaceVisibility";
 import { isPaneResizing, onPaneResizeSettled } from "../../../../shared/lib/paneResize";
 import { useDragResize } from "../../../../shared/hooks/useDragResize";
 import { ResizeHandle } from "../../../../shared/ui/ResizeHandle";
 import { MOD } from "../../../../platform/tauri/platform";
 import { useGitFileStatuses } from "../../../source-control/hooks/useGitFileStatuses";
-import { ProjectSearch } from "../../../projects/ui/ProjectSearch";
-import type { OpenFileFn } from "../../../search/model/search";
-import {
-  loadProjectFiles,
-  peekProjectFiles,
-  rankProjectFiles,
-  subscribeProjectFiles,
-} from "../model/fileIndex";
-import {
-  saveEditorPreferences,
-  useEditorPreferences,
-} from "../model/editorPreferences";
+import type { OpenFileFn } from "../../../../shared/lib/fileNavigation";
+import { loadProjectFiles, peekProjectFiles, rankProjectFiles, subscribeProjectFiles } from "../model/fileIndex";
+import { saveEditorPreferences, useEditorPreferences } from "../model/editorPreferences";
 import { FileTree } from "./FileTree";
-import { FileTypeIcon } from "./FileTypeIcon";
-import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
+import { FileTypeIcon } from "../../../../shared/ui/FileTypeIcon";
+import { ExplorerMenu, type ExplorerMenuItem } from "../../../../shared/ui/primitives/ExplorerMenu";
 
 export function FileExplorerFrame({
+  renderSearch,
   cwd,
   focused,
   hasDocument,
@@ -61,6 +33,7 @@ export function FileExplorerFrame({
   searchOpen = false,
   onSearchOpenChange,
 }: {
+  renderSearch: (props: { cwd: string; onOpenFile: OpenFileFn; onClose: () => void }) => ReactNode;
   cwd: string;
   focused: boolean;
   hasDocument: boolean;
@@ -310,11 +283,7 @@ export function FileExplorerFrame({
         >
           <SurfaceVisibilityContext.Provider value={visible && expanded}>
             {searching ? (
-              <ProjectSearch
-                cwd={cwd}
-                onOpenFile={openFile}
-                onClose={() => setSearch(false)}
-              />
+              renderSearch({ cwd, onOpenFile: openFile, onClose: () => setSearch(false) })
             ) : (
               <>
                 <InputGroup className="desktop-file-filter">

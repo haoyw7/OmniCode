@@ -1,9 +1,6 @@
 import { useMemo } from "react";
 import { useRemoteMachines } from "../../connections/model/connections";
-import {
-  sharedHostEnvironment,
-  sharedHostMachineId,
-} from "../../connections/model/remoteProjects";
+import { sharedHostEnvironment, sharedHostMachineId } from "../../connections/model/remoteProjects";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 
 export function useDesktopBotsHosts() {

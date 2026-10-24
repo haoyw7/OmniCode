@@ -1,4 +1,4 @@
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 import { isSubagentBlock, toolCallState } from "./transcriptActivity";
 
 export type BackgroundTaskItem = {

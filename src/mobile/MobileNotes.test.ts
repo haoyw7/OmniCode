@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MobileNotes, type MobileNotesHandle } from "./MobileNotes";
 import { setUiLanguage } from "../shared/i18n/language";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
-import type { Note } from "../features/notes/notesText";
+import type { Note } from "../contracts/session";
 import type { MobileClient } from "./client";
 
 let root: Root, node: HTMLDivElement, stored: Note;

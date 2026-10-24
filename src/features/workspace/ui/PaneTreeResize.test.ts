@@ -1,15 +1,10 @@
 // @vitest-environment happy-dom
-import {
-  act,
-  createElement,
-  memo,
-  type ComponentProps,
-  type ReactNode,
-} from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act, createElement, memo, type ComponentProps, type ReactNode } from "react";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Session } from "../../sessions/model/session";
-import { PaneTree } from "./PaneTree";
+import type { Session } from "../../../contracts/session";
+import { PaneTree } from "../../../app/ui/PaneTree";
 import * as paneResize from "../../../shared/lib/paneResize";
 
 const paneRenders = vi.hoisted(() => ({
@@ -28,7 +23,7 @@ vi.mock("./SessionSurfacePane", async (importOriginal) => {
     },
   };
 });
-vi.mock("../../connections/files/ui/FilePane", () => ({
+vi.mock("../../../app/ui/FilePane", () => ({
   FilePane: memo((props: { tabsTrailing?: ReactNode }) => {
     paneRenders.file(props);
     return props.tabsTrailing;

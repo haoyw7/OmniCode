@@ -1,37 +1,19 @@
 import { MobileSpinner } from "./MobileSpinner";
-import { sessionComposerConfiguration } from "../features/sessions/model/composerConfiguration";
+import { sessionComposerConfiguration } from "../domain/composerConfiguration";
 import { useLayoutEffect, useState, type RefObject } from "react";
-import {
-  Check,
-  ChevronRight,
-  Gauge,
-  SlidersHorizontal,
-  Sparkles,
-} from "../shared/ui/icons";
+import { Check, ChevronRight, Gauge, SlidersHorizontal, Sparkles } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { MobileSheet, SHEET_WIDTH } from "./MobileSheet";
-import {
-  HARNESS_TITLE,
-  type RuntimeMode,
-} from "../features/sessions/model/session";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HARNESS_TITLE } from "../contracts/session";
+import type { RuntimeMode, AgentModel, ModelSetting } from "../contracts/session";
+import { HarnessIcon } from "../shared/ui/HarnessIcon";
 import { modelGroups } from "../features/sessions/model/modelGroups";
-import {
-  isEffortSettingId,
-  fallbackModelName,
-  type AgentModel,
-  type ModelSetting,
-} from "../features/sessions/model/models";
-import {
-  remoteModelControls,
-  carryModelSettings,
-} from "../features/connections/model/remoteModels";
-import {
-  REMOTE_PROVIDERS,
-  type RemoteProvider,
-  type HostModelCatalog,
-  type HostSession,
-} from "../features/connections/model/protocol";
+import { isEffortSettingId } from "../domain/modelSettings";
+import { fallbackModelName } from "../integrations/harness/core/modelCatalog";
+
+import { remoteModelControls, carryModelSettings } from "../features/connections/model/remoteModels";
+import { REMOTE_PROVIDERS, type RemoteProvider } from "../contracts/provider";
+import { type HostModelCatalog, type HostSession } from "../contracts/protocol";
 
 export type MobileConfiguration = {
   harness: RemoteProvider;

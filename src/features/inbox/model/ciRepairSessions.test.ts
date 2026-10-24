@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { summaryFromSession } from "../../sessions/data/sessionHistory";
-import { appendPreparingHandoff } from "../../sessions/model/handoff";
+import { appendPreparingHandoff } from "../../../domain/handoff";
 import { newSession } from "../../sessions/model/session";
 import { ciRepairSessions } from "./ciRepairSessions";
 

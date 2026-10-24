@@ -1,18 +1,9 @@
 import { homeDir } from "../../../../platform/tauri/fs";
-import {
-  setHarnessModels,
-  type AgentModel,
-  type ModelSetting,
-  type ModelSettingChoice,
-} from "../../../../features/sessions/model/models";
-import {
-  killChild,
-  resolveCodexBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import { asRecord, stringField } from "./codexProtocol";
+import { setHarnessModels } from "../../core/modelCatalog";
+import { type AgentModel, type ModelSetting, type ModelSettingChoice } from "../../../../contracts/session";
+import { killChild, resolveCodexBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { asRecord } from "../../../../domain/records";
+import { stringField } from "./codexProtocol";
 import { JsonRpcClient } from "../../core/jsonRpc";
 
 const PROBE_ID = "omnicode-codex-probe";

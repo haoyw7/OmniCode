@@ -1,8 +1,4 @@
-import {
-  keybindingPressed,
-  matchCustomKeybinding,
-  type ShortcutEvent,
-} from "./settings";
+import { keybindingPressed, matchCustomKeybinding, type ShortcutEvent } from "./settings";
 
 type AppShortcutEvent = ShortcutEvent & {
   key: string;

@@ -1,57 +1,42 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  PanelBottom,
-  PanelLeft,
-  PanelRight,
-  PanelTop,
-  Plus,
-} from "../../../shared/ui/icons";
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
-import { SurfaceTabs } from "../../workspace/ui/SurfaceTabs";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, PanelBottom, PanelLeft, PanelRight, PanelTop, Plus } from "../../../shared/ui/icons";
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ComponentType, type ReactNode } from "react";
+import { ExplorerMenu } from "../../../shared/ui/primitives/ExplorerMenu";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
-import {
-  clampDockSize,
-  defaultDockSize,
-  isVerticalDock,
-  type DockSide,
-  type ProjectTerminalDock,
-} from "../../projects/model/projectTerminal";
+import { clampDockSize, defaultDockSize, isVerticalDock, type DockSide, type ProjectTerminalDock } from "../../projects/model/projectTerminal";
 import { useShortcutLabel } from "../../../app/commands/useCommandShortcut";
 import type { TerminalMetaPatch } from "../model/terminalTab";
 import { lazySurface } from "../../../shared/ui/lazySurface";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { beginPaneResize } from "../../../shared/lib/paneResize";
-import {
-  createDragLabel,
-  suppressTextSelection,
-} from "../../../shared/lib/drag";
-import {
-  paneDropFromPoint,
-  setExternalPaneDrop,
-  useTerminalDockDrop,
-} from "../../workspace/model/paneDrop";
-import type { PaneEdge } from "../../workspace/model/layout";
-import { DropTargetHint } from "../../workspace/ui/DropTargetHint";
+import { createDragLabel, suppressTextSelection } from "../../../shared/lib/drag";
+import { paneDropFromPoint, setExternalPaneDrop, useTerminalDockDrop } from "../../workspace/model/paneDrop";
+import type { PaneEdge, FilePaneTab } from "../../workspace/model/layout";
+import { DropTargetHint } from "../../../shared/ui/DropTargetHint";
 
 const TerminalView = lazySurface(async () => {
   const module = await import("./TerminalView");
   return { default: module.TerminalView };
 });
 
+export type TerminalDockTabsProps = {
+  files: FilePaneTab[];
+  activeFileId: string;
+  dirtyFileIds: Set<string>;
+  fileErrorCounts: Map<string, number>;
+  label: string;
+  onSelectFile: (id: string) => void;
+  onCloseFile: (id: string) => void;
+  onCloseOtherFiles: (id: string) => void;
+  onReorder: (ids: string[]) => void;
+  onPaneDragStart?: (event: ReactPointerEvent<HTMLElement>) => void;
+  trailing: ReactNode;
+};
+
 type Props = {
+  Tabs: ComponentType<TerminalDockTabsProps>;
   dock: ProjectTerminalDock;
   focused: boolean;
   onFocus: () => void;
@@ -93,6 +78,7 @@ function hideIcon(side: DockSide) {
 }
 
 export function ProjectTerminalDock({
+  Tabs,
   dock,
   focused,
   onFocus,
@@ -338,7 +324,7 @@ export function ProjectTerminalDock({
         data-dock-side={dock.side}
         className={`project-terminal-card pane-card ${moving ? "opacity-40" : ""}`}
       >
-        <SurfaceTabs
+        <Tabs
           files={dock.pane.files}
           activeFileId={dock.pane.activeFileId}
           dirtyFileIds={EMPTY_IDS}

@@ -1,15 +1,12 @@
-import type { Attachment, ToolPreview, TurnMetrics } from "../../../../features/sessions/model/session";
-import {
-  attachmentPathText,
-  promptText,
-} from "../../../../features/sessions/model/attachments";
-import type { AgentModel, ModelSetting } from "../../../../features/sessions/model/models";
-import { isTaskListToolName } from "../../../../features/sessions/model/taskList";
+import type { Attachment, ToolPreview, TurnMetrics, AgentModel, ModelSetting } from "../../../../contracts/session";
+import { attachmentPathText, promptText } from "../../../../domain/attachmentPrompt";
+
+import { isTaskListToolName } from "../../../../domain/taskList";
 import type { PiFlavor } from "./piFlavor";
-import { extractToolPreview, titleFromToolInput } from "../../core/preview";
-import { streamTextDelta } from "../../core/streamText";
+import { extractToolPreview, titleFromToolInput } from "../../../../domain/preview";
+import { streamTextDelta } from "../../../../domain/streamText";
 import { decodeGeneratedPng } from "../../core/generatedImage";
-import type { HarnessEvent } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
 import { translate } from "../../../../shared/i18n/language";
 
 /** Images Pi RPC accepts on `prompt` / `steer`. */

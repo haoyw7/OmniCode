@@ -5,10 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MenuPanel } from "./MenuPanel";
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../SurfaceVisibility";
 
 
 let container: HTMLDivElement;

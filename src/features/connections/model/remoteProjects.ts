@@ -1,14 +1,11 @@
-import {
-  isRemoteProjectPath,
-  REMOTE_PROJECT_PREFIX,
-} from "../../projects/model/recents";
-import type { HostProject, RemoteMachine } from "./protocol";
-import type { Session } from "../../sessions/model/session";
+import { isRemoteProjectPath, REMOTE_PROJECT_PREFIX } from "../../projects/model/recents";
+import type { HostProject, HostDescriptor, RemoteMachine } from "../../../contracts/protocol";
+import type { Session } from "../../../contracts/session";
 import { parseWslPath, wslPath, type WslProjectMachine } from "../../../shared/lib/wslPaths";
 
-/** Every conversation in a Host project runs there, including imported native ones. */
+/** Ownership is independent of connection readiness: never fall back to a local runtime. */
 export const sessionUsesHost = (session: Pick<Session, "cwd" | "inboxAsk">) =>
-  !session.inboxAsk && !!remoteProjectFor(session.cwd);
+  !!session.cwd && session.cwd !== "~";
 
 /** A rail project whose folder lives on another machine. */
 export type RemoteProject = {
@@ -79,6 +76,48 @@ export async function ensureSharedProject(cwd: string): Promise<RemoteProject> {
   })();
   openingProjects.set(key, request);
   try { return await request; } finally { openingProjects.delete(key); }
+}
+
+/** An externally moved directory keeps its Host project ID and history. */
+export async function rebaseSharedProject(from: string, to: string): Promise<void> {
+  const project = remoteProjectFor(from);
+  if (!project?.projectId) throw new Error("Shared conversation service is not connected");
+  const { remoteMachineFor, remoteRequest } = await import("./connections");
+  const machine = await remoteMachineFor(project.environmentId);
+  if (!machine) throw new Error("Shared conversation service is not connected");
+  const descriptor = await remoteRequest<HostDescriptor>(machine.id, "environment.describe");
+  if (!descriptor.capabilities?.includes("projects.move.v1")) throw new Error("Update OmniCode Host to move this project");
+  const destination = parseRemotePath(to)?.hostPath ?? to;
+  const moved = await remoteRequest<HostProject>(machine.id, "projects.rebase", { projectId: project.projectId, cwd: destination });
+  rememberProjectMove(project, moved);
+}
+
+export function rememberProjectMove(previous: RemoteProject, moved: HostProject): void {
+  const oldRoot = localKey(previous.cwd);
+  const newRoot = localKey(moved.cwd);
+  const rebase = (project: RemoteProject): string | undefined => {
+    if (project.environmentId !== previous.environmentId || project.machine?.distribution !== previous.machine?.distribution) return;
+    const cwd = localKey(project.cwd);
+    return cwd === oldRoot ? newRoot : cwd.startsWith(`${oldRoot}/`) ? newRoot + cwd.slice(oldRoot.length) : undefined;
+  };
+  if (previous.local) {
+    for (const [oldKey, project] of [...localProjects]) {
+      const cwd = rebase(project); if (!cwd) continue;
+      localProjects.delete(oldKey);
+      const key = sharedProjectKey({ cwd, machine: project.machine });
+      localProjects.set(key, { ...project, key, cwd });
+    }
+  } else {
+    const values = readAll();
+    for (const [oldKey, project] of Object.entries(values)) {
+      const cwd = rebase(project); if (!cwd) continue;
+      delete values[oldKey];
+      const key = remoteProjectKey(project.environmentId, cwd);
+      values[key] = { ...project, key, cwd };
+    }
+    localStorage.setItem(KEY, JSON.stringify(values));
+  }
+  window.dispatchEvent(new Event(REMOTE_PROJECTS_CHANGED));
 }
 
 export function remoteProjectKey(environmentId: string, cwd: string): string {

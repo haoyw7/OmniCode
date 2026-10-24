@@ -1,12 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
-import {
-  loadSidebarChatOrder,
-  orderSidebarChats,
-  reorderSidebarChats,
-  saveSidebarChatOrder,
-  subscribeSidebarChatOrder,
-} from "./sidebarChatOrder";
+import { loadSidebarChatOrder, orderSidebarChats, reorderSidebarChats, saveSidebarChatOrder, subscribeSidebarChatOrder } from "./sidebarChatOrder";
 
 afterEach(() => localStorage.clear());
 

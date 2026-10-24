@@ -1,14 +1,6 @@
-import type {
-  HarnessId,
-  Session,
-} from "../../../features/sessions/model/session";
-import type { GeneratedSessionTitle } from "../../../features/sessions/model/sessionTitle";
-import {
-  applyGeneratedTitle,
-  applyNativeTitle,
-  beginTitleCycle,
-  titleStateFor,
-} from "../../../features/sessions/model/titlePolicy";
+import type { HarnessId, Session } from "../../../contracts/session";
+import type { GeneratedSessionTitle } from "../../../domain/sessionTitle";
+import { applyGeneratedTitle, applyNativeTitle, beginTitleCycle, titleStateFor } from "../../../domain/titlePolicy";
 
 export type NativeTitleInput = {
   sessionId: string;

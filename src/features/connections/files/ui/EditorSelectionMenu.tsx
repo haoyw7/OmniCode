@@ -3,10 +3,7 @@ import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useEffect, useRef } from "react";
 import { MessageSquarePlus } from "../../../../shared/ui/icons";
 import { Popover } from "../../../../shared/ui/Popover";
-import {
-  formatEditorSelectionReference,
-  type EditorCodeSelection,
-} from "../model/editorSelection";
+import { formatEditorSelectionReference, type EditorCodeSelection } from "../model/editorSelection";
 import { requestAddToChat } from "../../../sessions/model/quoteDraft";
 
 export type EditorSelectionTarget = EditorCodeSelection & {

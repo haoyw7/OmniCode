@@ -4,7 +4,7 @@ import type { BotPatch } from "../features/bots/model/botView";
 import type { BotRpc } from "../features/bots/model/botRpc";
 import type { BotThread, BotView } from "../features/bots/model/bots";
 import { botErrorMessage } from "../features/bots/model/botErrors";
-import type { HostModelCatalog, HostProject } from "../features/connections/model/protocol";
+import type { HostModelCatalog, HostProject } from "../contracts/protocol";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { ArrowLeft } from "../shared/ui/icons";

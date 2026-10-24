@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 import { act, createElement, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ComposerEnvironmentPicker } from "./ComposerEnvironmentPicker";
 import { OPEN_NEW_ENVIRONMENT_EVENT, OPEN_REMOTE_PROJECT_EVENT } from "../../connections/model/connections";
-import type { HostEnvironmentDefinition } from "../../connections/model/hostState";
+import type { HostEnvironmentDefinition } from "../../../contracts/hostState";
 
 import { listWslDistributions } from "../../../platform/tauri/wsl";
 vi.mock("../../../platform/tauri/wsl", () => ({ listWslDistributions: vi.fn() }));

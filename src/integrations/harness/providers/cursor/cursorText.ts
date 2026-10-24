@@ -1,15 +1,8 @@
 import { AcpClient } from "../../core/acp";
-import {
-  childUsesSelectedMachine,
-  killChild,
-  resolveCursorBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
+import { childUsesSelectedMachine, killChild, resolveCursorBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
 import { abortTextPromptRace } from "../../core/abortTextPrompt";
-import { mergeStream } from "../../core/streamText";
-import type { HarnessEvent } from "../../core/types";
+import { mergeStream } from "../../../../domain/streamText";
+import type { HarnessEvent } from "../../../../contracts/harness";
 
 const TEXT_CHILD_ID = "omnicode-text";
 const INIT_TIMEOUT_MS = 60_000;

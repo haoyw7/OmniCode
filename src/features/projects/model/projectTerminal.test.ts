@@ -1,31 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  leaf,
-  leafIds,
-  newTab,
-  newTerminalFile,
-} from "../../workspace/model/layout";
-import {
-  addTerminalToDock,
-  applyDockGridStyle,
-  clampDockSize,
-  closeTerminalInDock,
-  createProjectTerminal,
-  dockGridStyle,
-  findProjectTerminal,
-  mapProjectTerminal,
-  moveDockToPane,
-  movePaneToDock,
-  nextDockTerminalTitle,
-  patchProjectTerminals,
-  projectTerminalFileIds,
-  selectDockTerminal,
-  splitProjectTerminalsForMove,
-  takeSessionTerminals,
-  withDockOpen,
-  withDockSide,
-} from "./projectTerminal";
-import type { Session } from "../../sessions/model/session";
+import { leaf, leafIds, newTab, newTerminalFile } from "../../workspace/model/layout";
+import { addTerminalToDock, applyDockGridStyle, clampDockSize, closeTerminalInDock, createProjectTerminal, dockGridStyle, findProjectTerminal, mapProjectTerminal, moveDockToPane, movePaneToDock, nextDockTerminalTitle, patchProjectTerminals, projectTerminalFileIds, selectDockTerminal, splitProjectTerminalsForMove, takeSessionTerminals, withDockOpen, withDockSide } from "./projectTerminal";
+import type { Session } from "../../../contracts/session";
 
 function chat(id: string, cwd: string): Session {
   return {

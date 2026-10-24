@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  loadTranscriptLayout,
-  TRANSCRIPT_LAYOUT_CHANGE_EVENT,
-  type TranscriptLayout,
-} from "../../settings/model/appearance";
+import { loadTranscriptLayout, TRANSCRIPT_LAYOUT_CHANGE_EVENT, type TranscriptLayout } from "../../settings/model/appearance";
 
 /** Subscribes to transcript layout changes triggered by saveTranscriptLayout(). */
 export function useTranscriptLayout(): TranscriptLayout {

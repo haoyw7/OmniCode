@@ -1,69 +1,24 @@
 import { Omi } from "../../../shared/ui/branding/Omi";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
-import {
-  clampUsedPercent,
-  formatResetDuration,
-  formatUsagePercent,
-  formatWindowLabel,
-  rateLimitWindowTooltip,
-  type ProviderRateLimits,
-  type RateLimitResetCredit,
-  type RateLimitWindow,
-} from "../../providers/model/rateLimits";
-import type { CodexRateLimitResetOutcome } from "../../providers/model/rateLimitsFetch";
-import {
-  projectMascot,
-} from "../../projects/model/projectMascots";
+import { clampUsedPercent, formatResetDuration, formatUsagePercent, formatWindowLabel, rateLimitWindowTooltip } from "../../../domain/rateLimits";
+import type { ProviderRateLimits, RateLimitResetCredit, RateLimitWindow, HarnessId } from "../../../contracts/session";
+import type { CodexRateLimitResetOutcome } from "../../../contracts/providerUsage";
+import { projectMascot } from "../../projects/model/projectMascots";
 import { projectKey, projectName } from "../../../shared/lib/paths";
-import {
-  HARNESS_TITLE,
-  type HarnessId,
-} from "../model/session";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { HarnessIcon } from "./HarnessIcon";
-import {
-  ArrowLeft,
-  Check,
-  ChevronRight,
-  Plus,
-  RefreshCw,
-} from "../../../shared/ui/icons";
+import { HARNESS_TITLE } from "../../../contracts/session";
+
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { ArrowLeft, Check, ChevronRight, Plus, RefreshCw } from "../../../shared/ui/icons";
 import { Popover, type PopoverDismissReason } from "../../../shared/ui/Popover";
-import {
-  ProviderSignInPanel,
-  type ProviderSignInState,
-} from "./ProviderSignInPanel";
-import {
-  supportsProviderAccounts,
-  type ProviderAccount,
-} from "../../providers/model/providerAccounts";
-import {
-  accountStatus,
-  accountUsageKey,
-  bestAlternativeAccount,
-  useProviderAccountUsage,
-} from "../../providers/model/accountUsage";
-import {
-  AccountStatusLabel,
-  barClass,
-  meterWindows,
-  ProviderAccountSubtitle,
-  UsageMeter,
-} from "../../providers";
-import {
-  identityKey,
-  identityOrganizationTag,
-  useProviderAccountIdentities,
-  type ProviderAccountIdentity,
-} from "../../providers/model/providerAccountIdentity";
-import { useShowRemainingUsage } from "../../settings/model/displayPrefs";
+import { ProviderSignInPanel, type ProviderSignInState } from "./ProviderSignInPanel";
+import { supportsProviderAccounts, type ProviderAccount } from "../../providers/model/providerAccounts";
+import { accountStatus, accountUsageKey, bestAlternativeAccount, useProviderAccountUsage } from "../../providers/model/accountUsage";
+import { AccountStatusLabel, barClass, meterWindows, UsageMeter } from "../../../shared/ui/ProviderAccountUsage";
+import { ProviderAccountSubtitle } from "../../../shared/ui/ProviderAccountSubtitle";
+import { identityKey, identityOrganizationTag, useProviderAccountIdentities, type ProviderAccountIdentity } from "../../providers/model/providerAccountIdentity";
+import { useMaskEmails, useShowRemainingUsage } from "../../settings/model/displayPrefs";
 
 type Translate = ReturnType<typeof useTranslation>["t"];
 
@@ -87,7 +42,6 @@ export function UsageProviderChip({
   onConsumeReset,
   onReconnect,
   presentation,
-  identitySource,
 }: {
   limits: ProviderRateLimits;
   now: number;
@@ -95,13 +49,14 @@ export function UsageProviderChip({
   project?: string;
   accounts?: ProviderAccount[];
   accountId?: string;
-  identitySource?: "host" | "local";
   onSelectAccount?: (accountId: string) => void;
   onAddAccount?: (label: string) => Promise<ProviderAccount>;
   onManageAccounts?: () => void;
   onConsumeReset?: (creditId?: string) => Promise<CodexRateLimitResetOutcome>;
   onReconnect?: () => Promise<void>;
 }) {
+  const masked = useMaskEmails();
+
   const { t: uiT } = useTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -138,7 +93,6 @@ export function UsageProviderChip({
   const identities = useProviderAccountIdentities(
     accounts,
     `${open}:${limits.updatedAt}:${reconnectState}`,
-    identitySource,
   );
   const activeIdentity = activeAccount
     ? identities[identityKey(activeAccount)]
@@ -334,7 +288,7 @@ export function UsageProviderChip({
               <span className="max-w-[45%] shrink-0 truncate font-medium">
                 {activeAccountLabel}
               </span>
-              <ProviderAccountSubtitle
+              <ProviderAccountSubtitle masked={masked}
                 key={activeAccount && identityKey(activeAccount)}
                 identity={activeIdentity}
                 className="text-[10px] text-content/40"
@@ -514,6 +468,9 @@ function ProviderAccountPicker({
   onManage?: () => void;
   onSelect: (accountId: string) => void;
 }) {
+  const masked = useMaskEmails();
+  const showRemaining = useShowRemainingUsage();
+
   const { t: uiT } = useTranslation();
   const statusId = useId();
   return (
@@ -566,7 +523,7 @@ function ProviderAccountPicker({
               <span className="min-w-0 flex-1 py-0.5">
                 <span className="flex min-w-0 items-baseline gap-1.5">
                   <span className="shrink-0 truncate">{account.label}</span>
-                  <ProviderAccountSubtitle
+                  <ProviderAccountSubtitle masked={masked}
                     identity={identity}
                     className="text-[10px] text-content/35"
                   />
@@ -591,7 +548,7 @@ function ProviderAccountPicker({
                     <span className="flex min-w-0 flex-1 gap-2.5">
                       {meters.map((entry) => (
                         // Short "5h" / "wk" titles, as on the footer chip.
-                        <UsageMeter
+                        <UsageMeter showRemaining={showRemaining}
                           key={entry.title}
                           title={formatWindowLabel(entry.window.windowMinutes)}
                           window={entry.window}

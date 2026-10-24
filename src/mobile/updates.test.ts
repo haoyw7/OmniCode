@@ -2,15 +2,7 @@ import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motion
 // @vitest-environment happy-dom
 import { createElement, act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => vi.stubEnv("OMNICODE_UPDATE_CHANNEL", "lan"));
 afterAll(() => vi.unstubAllEnvs());
@@ -48,18 +40,11 @@ vi.mock("../shared/i18n/useTranslation", () => ({
       text.replace(/\{(\w+)\}/g, (_, key: string) => String(values?.[key])),
   }),
 }));
-vi.mock("../features/sessions/ui/AgentMarkdown", () => ({
+vi.mock("../shared/ui/markdown/AgentMarkdown", () => ({
   AgentMarkdown: ({ text }: { text: string }) =>
     createElement("div", null, text),
 }));
-import {
-  checkMobileUpdate,
-  parseMobileUpdate,
-  hasMobileUpdate,
-  updateBaseUrl,
-  updateBaseUrls,
-  updateDownloadUrl,
-} from "./updates";
+import { checkMobileUpdate, parseMobileUpdate, hasMobileUpdate, updateBaseUrl, updateBaseUrls, updateDownloadUrl } from "./updates";
 import { MobileAppUpdates, useMobileAppUpdates } from "./MobileAppUpdates";
 
 const manifest = {

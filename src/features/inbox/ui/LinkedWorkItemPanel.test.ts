@@ -4,11 +4,13 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { clearInboxCache, type GithubWorkItem } from "../model/githubTasks";
-import type { LinkedWorkItem } from "../../sessions/model/session";
+import { clearInboxCache } from "../model/githubTasks";
+import type { GithubWorkItem, LinkedWorkItem } from "../../../contracts/session";
+
 import { LinkedWorkItemPanel } from "./LinkedWorkItemPanel";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../connections/model/inboxHost", async () => ({ inboxHostCommand: (await import("@tauri-apps/api/core")).invoke }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 
 const target: LinkedWorkItem = {

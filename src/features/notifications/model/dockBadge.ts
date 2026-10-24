@@ -1,5 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
-import { sessionNeedsInput, type Session } from "../../sessions/model/session";
+import { setNativeDockBadge } from "../../../platform/tauri/notifications";
+import { sessionNeedsInput } from "../../../domain/session";
+import { type Session } from "../../../contracts/session";
 
 let lastCount = -1;
 
@@ -11,5 +12,5 @@ export function syncDockBadge(sessions: Session[]): void {
   }
   if (count === lastCount) return;
   lastCount = count;
-  void invoke("set_dock_badge", { count }).catch(() => {});
+  void setNativeDockBadge(count).catch(() => {});
 }

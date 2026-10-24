@@ -49,6 +49,8 @@ export type MachineExecOptions = {
   maxBuffer?: number;
   encoding?: BufferEncoding | "buffer";
   input?: string | Buffer;
+  /** Live stderr for progress display; machines without streaming report it only on completion. */
+  onStderr?: (text: string) => void;
 };
 export interface MachineIO {
   readonly key: string;
@@ -126,8 +128,9 @@ export const localMachineIO: MachineIO = {
   hostPath: async (file) => { assertMachinePath(file, localMachineIO); return file; },
   exec: (async (command: string, args: string[], options: MachineExecOptions = {}) => {
     if (options.cwd) assertMachinePath(options.cwd, localMachineIO);
-    const { input, ...native } = options;
+    const { input, onStderr, ...native } = options;
     const pending = localExec(command, args, { ...native, encoding: options.encoding ?? "utf8" });
+    if (onStderr) pending.child.stderr?.on("data", (chunk: string | Buffer) => onStderr(chunk.toString()));
     if (input !== undefined) {
       pending.child.stdin?.on("error", () => {}); // execFile reports process failure through pending.
       pending.child.stdin?.end(input);

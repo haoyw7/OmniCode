@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { newAppViewWorkspaceTab } from "../../../workspace/model/layout";
 import { AppViewRendererContext } from "../../../workspace/ui/AppViewHost";
-import { FilePane } from "./FilePane";
+import { FilePane } from "../../../../app/ui/FilePane";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => []),

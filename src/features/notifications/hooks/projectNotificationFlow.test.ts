@@ -2,24 +2,13 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { inboxItemKey, type InboxItem } from "../../inbox/model/githubTasks";
-import {
-  isInboxEntryUnseen,
-  markInboxItemSeen,
-} from "../../inbox/model/inboxSeen";
-import {
-  loadNotificationPreferences,
-  updateNotificationPreferences,
-} from "../model/notificationPreferences";
-import {
-  inboxNotificationProject,
-  rememberNotificationProjects,
-} from "../model/notificationProjects";
+import { inboxItemKey } from "../../inbox/model/githubTasks";
+import { type InboxItem } from "../../../contracts/session";
+import { isInboxEntryUnseen, markInboxItemSeen } from "../../inbox/model/inboxSeen";
+import { loadNotificationPreferences, updateNotificationPreferences } from "../model/notificationPreferences";
+import { inboxNotificationProject, rememberNotificationProjects } from "../model/notificationProjects";
 import { ProjectNotificationSettings } from "../ui/ProjectNotificationSettings";
-import {
-  useInboxActivity,
-  type InboxActivity,
-} from "../../inbox/hooks/useInboxUnseen";
+import { useInboxActivity, type InboxActivity } from "../../inbox/hooks/useInboxUnseen";
 
 // Only provider I/O and the audio device are replaced. Notification policy,
 // polling, persisted preferences, unread tracking, and Settings are real.

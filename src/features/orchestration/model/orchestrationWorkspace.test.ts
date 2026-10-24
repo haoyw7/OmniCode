@@ -1,13 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  attachOrchestrationWorkers,
-  consolidateOrchestrationTabs,
-  prepareOrchestrationWorkerDetails,
-  releaseOrchestrationWorker,
-} from "./orchestrationWorkspace";
+import { attachOrchestrationWorkers, consolidateOrchestrationTabs, prepareOrchestrationWorkerDetails, releaseOrchestrationWorker } from "./orchestrationWorkspace";
 import { leafIds, newTab, splitPane } from "../../workspace/model/layout";
 import { newSession } from "../../sessions/model/session";
-import type { OrchestrationRun, OrchestrationTask } from "./orchestration";
+import type { OrchestrationRun, OrchestrationTask } from "../../../contracts/session";
 
 const tasks: OrchestrationTask[] = ["worker-a", "worker-b"].map(
   (sessionId) => ({

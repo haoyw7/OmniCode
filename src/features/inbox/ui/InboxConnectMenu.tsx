@@ -1,9 +1,6 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  INBOX_SOURCE_LABELS,
-  type ConnectableInboxSource,
-} from "../model/inboxFilters";
-import { InboxProviderMark } from "./InboxProviderMark";
+import { INBOX_SOURCE_LABELS, type ConnectableInboxSource } from "../model/inboxFilters";
+import { InboxProviderMark } from "../../../shared/ui/branding/InboxProviderMark";
 import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 

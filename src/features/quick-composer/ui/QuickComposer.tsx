@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { motion, AnimatePresence } from "motion/react";
 import { panelTransition, popTransition, immediateTransition, popInitial, popAnimate, popExit } from "../../../shared/motion/tokens";
@@ -5,90 +6,33 @@ import { useMotionPreference } from "../../../shared/motion/useMotionPreference"
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useHarnessRefreshSync } from "../../providers/model/harnessRefreshSync";
 import { QuickWorkspaceControls } from "./QuickWorkspaceControls";
-import {
-  workspaceForProject,
-  quickWorkspaceLaunch,
-  type QuickWorkspace,
-} from "../model/quickWorkspace";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { emit, listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { workspaceForProject, quickWorkspaceLaunch, type QuickWorkspace } from "../model/quickWorkspace";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { dismissQuickComposerWindow, submitQuickComposerLaunch, subscribeQuickComposerSignal, requestQuickComposerCatalog } from "../../../platform/tauri/quickComposer";
+import { desktopWindow } from "../../../platform/tauri/window";
 import { prettyParent, projectName } from "../../../shared/lib/paths";
-import {
-  ChevronDown,
-  Search,
-  Plus,
-  X,
-  ImagePlus,
-  Maximize2,
-} from "../../../shared/ui/icons";
-import {
-  QuickProjectIcon,
-  loadQuickProjectAppearance,
-} from "./QuickProjectIcon";
-import {
-  getModelSnapshot,
-  subscribeModels,
-  mergeModelSettings,
-  loadLastModelSettings,
-  saveLastModelSettings,
-  saveRecentModelChoice,
-  saveLastSelectedModel,
-} from "../../sessions/model/models";
-import {
-  DEFAULT_RUNTIME_MODE,
-  HARNESS_TITLE,
-  RUNTIME_MODE_LABEL,
-  type HarnessId,
-  type RuntimeMode,
-  harnessSupportsAttachments,
-} from "../../sessions/model/session";
+import { ChevronDown, Search, Plus, X, ImagePlus, Maximize2 } from "../../../shared/ui/icons";
+import { QuickProjectIcon, loadQuickProjectAppearance } from "./QuickProjectIcon";
+import { mergeModelSettings, loadLastModelSettings, saveLastModelSettings, saveRecentModelChoice, saveLastSelectedModel } from "../../sessions/model/models";
+import { getModelSnapshot, subscribeModels } from "../../../integrations/harness/core/modelCatalog";
+import { DEFAULT_RUNTIME_MODE, type HarnessId, type RuntimeMode } from "../../../contracts/session";
+import { RUNTIME_MODE_LABEL } from "../../../contracts/session";
+import { harnessSupportsAttachments } from "../../../domain/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
 import { Popover } from "../../../shared/ui/Popover";
-import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
+import { AttachmentChip } from "../../../shared/ui/attachments/AttachmentChip";
 import { quickLaunchAttachments } from "../model/quickAttachments";
 import { useQuickAttachments } from "./useQuickAttachments";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { QuickModelSelector } from "./QuickModelSelector";
 import { QuickPermissionIcon, QuickPermissions } from "./QuickPermissions";
 import { useQuickPickerMotion } from "./useQuickPickerMotion";
-import { OPERATOR_COMMAND } from "../../sessions/model/operatorCommand";
+import { OPERATOR_COMMAND } from "../../../domain/operatorCommand";
 import { ORCHESTRATOR_COMMAND } from "../../sessions/model/orchestratorCommand";
-import { PLAN_COMMAND } from "../../sessions/model/plan";
+import { PLAN_COMMAND } from "../../../domain/plan";
 import { DRAFT_COMMAND } from "../../sessions/model/draftCommand";
-import {
-  leadingModeCommand,
-  MODE_COMMAND_STYLES,
-  ModeCommandText,
-} from "../../sessions/ui/modeCommands";
-import {
-  rankSkills,
-  replaceSlashToken,
-  slashTokenAt,
-  type SlashToken,
-} from "../../skills/model/slashCommands";
-import {
-  applyQuickCatalog,
-  filterQuickProjects,
-  initialQuickChoice,
-  initialQuickProject,
-  loadQuickProjects,
-  QUICK_COMPOSER_CATALOG_EVENT,
-  QUICK_COMPOSER_CATALOG_REQUEST_EVENT,
-  QUICK_COMPOSER_SHOWN_EVENT,
-  rememberQuickProject,
-  resolveQuickModel,
-  type QuickLaunch,
-} from "../model/quickComposer";
+import { rankSkills, replaceSlashToken, slashTokenAt, type SlashToken } from "../../skills/model/slashCommands";
+import { applyQuickCatalog, filterQuickProjects, initialQuickChoice, initialQuickProject, loadQuickProjects, QUICK_COMPOSER_CATALOG_EVENT, QUICK_COMPOSER_SHOWN_EVENT, rememberQuickProject, resolveQuickModel, type QuickLaunch } from "../model/quickComposer";
 
 /** Tallest the prompt grows before it scrolls, in px. */
 const PROMPT_MAX_HEIGHT = 220;
@@ -118,7 +62,12 @@ export function quickPromptMode(text: string): {
   return { prompt: text.slice(match![0].length), mode };
 }
 
-export function QuickComposer({ onShown }: { onShown: () => void }) {
+export type QuickComposerPresentation = {
+  mode(text: string, names: ReadonlySet<string>, indent: string): { name: string; end: number; node: ReactNode } | null;
+  commandLabel(name: string): ReactNode;
+};
+
+export function QuickComposer({ onShown, presentation }: { onShown: () => void; presentation: QuickComposerPresentation }) {
   const { t: uiT } = useTranslation();
   useHarnessRefreshSync();
   const reducedMotion = useMotionPreference();
@@ -146,7 +95,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
   const [runtimeMode, setRuntimeMode] =
     useState<RuntimeMode>(DEFAULT_RUNTIME_MODE);
   const [prompt, setPrompt] = useState("");
-  const leadingMode = leadingModeCommand(prompt, MODE_NAMES);
+  const leadingMode = presentation.mode(prompt, MODE_NAMES, MODE_INDENT);
   const [slash, setSlash] = useState<SlashToken | null>(null);
   const [picker, setPicker] = useState<
     "project" | "model" | "permissions" | "attachments" | "commands" | null
@@ -182,7 +131,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
   useEffect(() => {
     let disposed = false;
     let unlisten: (() => void) | undefined;
-    void listen(QUICK_COMPOSER_SHOWN_EVENT, () => {
+    void subscribeQuickComposerSignal(QUICK_COMPOSER_SHOWN_EVENT, () => {
       onShown();
       const nextProjects = loadQuickProjects();
       const nextChoice = initialQuickChoice();
@@ -199,7 +148,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
       setPicker(null);
       setSlash(null);
       setError(null);
-      void emit(QUICK_COMPOSER_CATALOG_REQUEST_EVENT, nextChoice.harness);
+      void requestQuickComposerCatalog(nextChoice.harness);
       focusPrompt();
     }).then((stop) => {
       if (disposed) stop();
@@ -216,7 +165,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
   useEffect(() => {
     let disposed = false;
     let unlisten: (() => void) | undefined;
-    void listen(QUICK_COMPOSER_CATALOG_EVENT, (event) => {
+    void subscribeQuickComposerSignal(QUICK_COMPOSER_CATALOG_EVENT, (event) => {
       const available = applyQuickCatalog(event.payload);
       if (available) setAvailableHarnesses(available);
     }).then((stop) => {
@@ -225,10 +174,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
         return;
       }
       unlisten = stop;
-      void emit(
-        QUICK_COMPOSER_CATALOG_REQUEST_EVENT,
-        initialQuickChoice().harness,
-      );
+      void requestQuickComposerCatalog(initialQuickChoice().harness);
     });
     return () => {
       disposed = true;
@@ -356,7 +302,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
   };
 
   const dismiss = () => {
-    void invoke("quick_composer_dismiss");
+    void dismissQuickComposerWindow();
   };
 
   const submit = async (reveal: boolean) => {
@@ -392,7 +338,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
         ...(await quickWorkspaceLaunch(workspace)),
         reveal,
       };
-      await invoke("quick_composer_submit", { request });
+      await submitQuickComposerLaunch(request);
       rememberQuickProject(cwd);
       saveLastModelSettings(settings);
       saveRecentModelChoice(picked.harness, picked.model);
@@ -514,7 +460,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
         onMouseDown={(event) => {
           if (event.button !== 0) return;
           event.preventDefault();
-          void getCurrentWindow()
+          void desktopWindow()
             .startDragging()
             .catch(() => undefined);
         }}
@@ -590,12 +536,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
         >
           {leadingMode ? (
             <>
-              <ModeCommandText
-                text={prompt}
-                mode={leadingMode}
-                indent={MODE_INDENT}
-                iconClassName="size-4"
-              />
+              {leadingMode.node}
               {prompt.slice(leadingMode.end)}
             </>
           ) : (
@@ -802,7 +743,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
                     onClick={() => chooseAt(index)}
                     className={optionClass(index, true)}
                   >
-                    <CommandLabel name={command.name} />
+                    {presentation.commandLabel(command.name)}
                     <span className="text-[11px] leading-4 text-content/50">
                       {uiT(command.description)}
                     </span>
@@ -906,20 +847,6 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
       ) : null}
       </AnimatePresence>
     </motion.div>
-  );
-}
-
-function CommandLabel({ name }: { name: string }) {
-  const style = MODE_COMMAND_STYLES[name];
-  return (
-    <span className="flex items-center gap-1.5">
-      {style ? (
-        <style.Icon
-          className={`size-3.5 shrink-0 ${style.menu?.iconClassName ?? ""}`}
-        />
-      ) : null}
-      {name.charAt(0).toUpperCase() + name.slice(1)}
-    </span>
   );
 }
 

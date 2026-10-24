@@ -2,13 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../../../platform/tauri/platform", () => ({ IS_MAC: true }));
 
-import {
-  isGlobalShortcut,
-  isShortcut,
-  quickComposerShortcutLabel,
-  quickComposerShortcutPreview,
-  shortcutFromKeyEvent,
-} from "./quickComposerShortcut";
+import { isGlobalShortcut, isShortcut, quickComposerShortcutLabel, quickComposerShortcutPreview, shortcutFromKeyEvent } from "./quickComposerShortcut";
 
 describe("quick composer shortcut", () => {
   it("records physical keys and displays the chosen combination", () => {

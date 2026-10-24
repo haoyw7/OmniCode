@@ -2,84 +2,25 @@ import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import { translate as translateUi } from "../../shared/i18n/language";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  AppWindow,
-  Archive,
-  BellOff,
-  FolderOpen,
-  FolderTree,
-  ImagePlus,
-  IconArtworkContext,
-  Pin,
-  PinOff,
-  Settings,
-  Trash2,
-} from "../../shared/ui/icons";
-import {
-  basename,
-  listExternalEditors,
-  openInExternalEditor,
-  revealPath,
-  type ExternalEditor,
-} from "../../platform/tauri/fs";
+import { AppWindow, Archive, BellOff, FolderOpen, FolderTree, ImagePlus, IconArtworkContext, Pin, PinOff, Settings, Trash2 } from "../../shared/ui/icons";
+import { basename, listExternalEditors, openInExternalEditor, revealPath, type ExternalEditor } from "../../platform/tauri/fs";
 import { IS_MAC, IS_WIN } from "../../platform/tauri/platform";
 import { projectKey, projectName } from "../../shared/lib/paths";
-import {
-  loadPinnedProjects,
-  sameProjectPath,
-  subscribeProjectPathsChanged,
-  toggleProjectPin,
-} from "../../features/projects/model/recents";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupLabels,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupColorIndex,
-  resolveTabGroupCustomColor,
-  resolveTabGroupLabel,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-  saveTabGroupColor,
-  saveTabGroupCustomColor,
-  saveTabGroupLabel,
-  saveTabGroupMascot,
-} from "../../features/workspace/model/tabGroups";
-import {
-  createProjectGroup,
-  deleteProjectGroup,
-  loadProjectGroupAssignments,
-  loadProjectGroups,
-  projectGroupColor,
-  projectGroupIdForPath,
-  saveProjectGroups,
-  setProjectGroupAssignment,
-  updateProjectGroup,
-  type ProjectGroup,
-} from "../../features/projects/model/projectGroups";
+import { loadPinnedProjects, sameProjectPath, subscribeProjectPathsChanged, toggleProjectPin } from "../../features/projects/model/recents";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupLabels, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupColorIndex, resolveTabGroupCustomColor, resolveTabGroupLabel, resolveTabGroupLogo, resolveTabGroupMascot, saveTabGroupColor, saveTabGroupCustomColor, saveTabGroupLabel, saveTabGroupMascot } from "../../features/workspace/model/tabGroups";
+import { createProjectGroup, deleteProjectGroup, loadProjectGroupAssignments, loadProjectGroups, projectGroupColor, projectGroupIdForPath, saveProjectGroups, setProjectGroupAssignment, updateProjectGroup, type ProjectGroup } from "../../features/projects/model/projectGroups";
 import { useTabGroupLogos } from "../../features/projects/hooks/useTabGroupLogos";
 import { ProjectBackgroundDialog } from "../../features/projects/ui/ProjectBackgroundDialog";
 import { RemoveProjectDialog } from "../../features/projects/ui/RemoveProjectDialog";
-import {
-  TabGroupMenu,
-  type TabGroupMenuExtraItem,
-} from "../../features/workspace/ui/TabGroupMenu";
-import {
-  knownNotificationProject,
-  type NotificationProject,
-} from "../../features/notifications/model/notificationProjects";
-import { NotificationMuteDatePicker } from "../../features/notifications/ui/NotificationMuteDatePicker";
+import { TabGroupMenu, type TabGroupMenuExtraItem } from "../../features/workspace/ui/TabGroupMenu";
+import { knownNotificationProject, type NotificationProject } from "../../features/notifications/model/notificationProjects";
+import { NotificationMuteDatePicker } from "../../shared/ui/NotificationMuteDatePicker";
 import { Popover } from "../../shared/ui/Popover";
-import {
-  notificationMuteActions,
-  notificationMuteDeadline,
-  notificationMuteStatus,
-} from "../../features/notifications/ui/notificationMuteActions";
+import { notificationMuteActions, notificationMuteDeadline, notificationMuteStatus } from "../../features/notifications/model/notificationMuteActions";
 import { useProjectNotificationPreferences } from "../../features/notifications/hooks/useProjectNotificationPreferences";
 import { useNotificationProjects } from "../../features/notifications/hooks/useNotificationProjects";
 import { updateNotificationPreferences } from "../../features/notifications/model/notificationPreferences";
-import type { ExplorerMenuItem } from "../../features/connections/files/ui/ExplorerMenu";
+import type { ExplorerMenuItem } from "../../shared/ui/primitives/ExplorerMenu";
 import { desktopProjectMenuIconArtwork } from "../desktopIconArtwork";
 
 const REVEAL_LABEL = IS_MAC
@@ -571,7 +512,8 @@ export function useProjectMenu({
             {notificationMenu.project.name}
           </p>
           <NotificationMuteDatePicker
-            projectIds={[notificationMenu.project.id]}
+            initialUntil={notificationPreferences[notificationMenu.project.id]?.mutedUntil}
+            onSave={(mutedUntil) => updateNotificationPreferences([notificationMenu.project.id], { mutedUntil })}
             onCancel={closeNotificationMenu}
             onChanged={closeNotificationMenu}
           />

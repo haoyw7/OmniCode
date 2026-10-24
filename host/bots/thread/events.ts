@@ -1,5 +1,5 @@
-import type { HostSession } from "../../../src/features/connections/model/protocol";
-import { pendingSessionInputKey } from "../../../src/features/sessions/model/sessionActivity";
+import type { HostSession } from "../../../src/contracts/protocol";
+import { pendingSessionInputKey } from "../../../src/domain/sessionActivity";
 import type { Source } from "./store";
 export function importantSources(
   previous: HostSession | undefined,

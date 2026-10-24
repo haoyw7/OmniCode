@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { RemoteAttachment } from "../../connections/model/protocol";
-import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
+import type { RemoteAttachment } from "../../../contracts/protocol";
+import { AttachmentChip } from "../../../shared/ui/attachments/AttachmentChip";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 
 export type ReadBotImage = (messageId: string, file: RemoteAttachment) => Promise<string>;

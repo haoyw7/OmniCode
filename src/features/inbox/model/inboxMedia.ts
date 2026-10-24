@@ -1,5 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
-import { sniffImageMime } from "../../connections/files/model/filePreview";
+import { fetchHostInboxMedia, hostMediaScope } from "../../connections/model/hostMedia";
+import { sniffImageMime } from "../../../domain/imageBytes";
 
 /**
  * Prefixes rehype-harden will keep on issue/PR markdown. The fetcher still
@@ -69,7 +69,8 @@ export function sniffInboxMedia(bytes: Uint8Array): InboxMediaType | null {
 }
 
 export function fetchInboxMedia(url: string): Promise<Uint8Array> {
-  const key = url.trim();
+  const source = url.trim();
+  const key = `${hostMediaScope()}:${source}`;
   const cached = mediaCache.get(key);
   if (cached) {
     mediaCache.delete(key);
@@ -78,9 +79,8 @@ export function fetchInboxMedia(url: string): Promise<Uint8Array> {
   }
   const inFlight = mediaRequests.get(key);
   if (inFlight) return inFlight;
-  const pending = invoke<ArrayBuffer>("fetch_inbox_media", { url: key }).then(
-    (buffer) => {
-      const bytes = new Uint8Array(buffer);
+  const pending = fetchHostInboxMedia(source).then(
+    (bytes) => {
       rememberMedia(key, bytes);
       return bytes;
     },

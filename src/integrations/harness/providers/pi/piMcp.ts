@@ -1,23 +1,4 @@
-import type {
-  McpConnection,
-  McpNativeState,
-} from "../../../../features/settings/model/mcp";
-
-/** Selected metadata returned by the desktop Pi CLI bridge, never raw config. */
-export type PiMcpList = {
-  servers: {
-    name: string;
-    scope: string;
-    source: string;
-    enabled: boolean;
-    state: string;
-    toolCount: number;
-    override?: string | null;
-    error?: string | null;
-  }[];
-  errors: string[];
-  note?: string | null;
-};
+import type { McpConnection, McpNativeState, PiMcpList } from "../../../../contracts/mcp";
 
 const STATUS: Record<McpNativeState, string> = {
   connected: "Connected",

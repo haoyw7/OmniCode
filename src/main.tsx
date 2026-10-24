@@ -1,3 +1,4 @@
+import { TranscriptServices } from "./app/ui/TranscriptServices";
 import { observeNativeScrollbarEdges } from "./shared/ui/nativeScrollbarEdges";
 import { animate, MotionConfig } from "motion/react";
 import { defaultTransition, immediateTransition } from "./shared/motion/tokens";
@@ -9,21 +10,11 @@ import { initializeHostWorkspaces } from "./features/connections/model/hostWorks
 import { initializeHostConnections } from "./features/connections/model/hostConnections";
 import React, { useLayoutEffect } from "react";
 import ReactDOM from "react-dom/client";
-import { listen } from "@tauri-apps/api/event";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import {
-  activateWindowAppearance,
-  initAppearance,
-} from "./features/settings/model/appearance";
+import { subscribeQuitHandshake } from "./platform/tauri/appShell";
+import { activateWindowAppearance, initAppearance } from "./features/settings/model/appearance";
 import { initSounds } from "./features/settings/model/sounds";
 import { initTypography } from "./features/settings/model/typography";
-import {
-  abortQuit,
-  askQuitConfirmation,
-  commitQuit,
-  loadBootWorkspace,
-  reportQuitPoll,
-} from "./app/model/appLifecycle";
+import { abortQuit, askQuitConfirmation, commitQuit, loadBootWorkspace, reportQuitPoll } from "./app/model/appLifecycle";
 import { homeDir } from "./platform/tauri/fs";
 import { setHomeDir } from "./shared/lib/paths";
 import { consumeInstalledUpdate } from "./app/model/updateNotice";
@@ -32,7 +23,7 @@ import { initProviderAccountPublishing } from "./features/providers/model/provid
 // Lets file commands reach a connected machine for `remote://` paths.
 import "./features/connections/model/remoteCommands";
 import "./styles/index.css";
-import { initUiLanguage } from "./shared/i18n/languageSync";
+import { initUiLanguage } from "./platform/tauri/languageSync";
 import { initializeSharedHost } from "./features/connections/model/sharedHost";
 import { WindowResizeHandles } from "./app/shell/WindowResizeHandles";
 import { WindowResizeObserver } from "./app/shell/WindowResizeObserver";
@@ -96,7 +87,7 @@ function BootGate({ children }: { children: React.ReactNode }) {
   }, []);
   return (
     <MotionConfig reducedMotion="user" transition={defaultTransition}>
-      {children}
+      <TranscriptServices>{children}</TranscriptServices>
       <div style={{ position: "fixed", bottom: 8, right: 8, zIndex: 10000, maxWidth: "70vw" }}><SharedStateStatus /></div>
       <WindowResizeHandles />
       <WindowResizeObserver />
@@ -104,23 +95,11 @@ function BootGate({ children }: { children: React.ReactNode }) {
   );
 }
 
-void listen<number>("quit_poll", (event) => {
-  void reportQuitPoll(event.payload);
-});
-// Scoped to this window on purpose: a global `listen` is registered as `Any`,
-// which Tauri matches for every event regardless of the emitter's target, so
-// one dialog would become one per window.
-void getCurrentWebviewWindow().listen<{ id: number; inFlight: number }>(
-  "quit_confirm",
-  (event) => {
-    void askQuitConfirmation(event.payload.id, event.payload.inFlight);
-  },
-);
-void listen<number>("quit_commit", (event) => {
-  void commitQuit(event.payload);
-});
-void listen("quit_aborted", () => {
-  abortQuit();
+subscribeQuitHandshake({
+  poll: (id) => void reportQuitPoll(id),
+  confirm: (id, inFlight) => void askQuitConfirmation(id, inFlight),
+  commit: (id) => void commitQuit(id),
+  aborted: abortQuit,
 });
 
 const root = ReactDOM.createRoot(

@@ -1,17 +1,14 @@
 // @vitest-environment happy-dom
 import { act, createElement, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { newSession, type Block, type Session } from "../model/session";
+import { newSession } from "../model/session";
+import { type Block, type Session } from "../../../contracts/session";
 import { AgentTranscript } from "./AgentTranscript";
 import { SubagentTabView } from "./SubagentTabView";
 import { SubagentTabsContext, useOpenSubagent } from "./SubagentTabsContext";
-import {
-  isSubagentTab,
-  newSubagentTab,
-  newTab,
-  openEditorTab,
-} from "../../workspace/model/layout";
+import { isSubagentTab, newSubagentTab, newTab, openEditorTab } from "../../workspace/model/layout";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),

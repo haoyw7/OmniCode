@@ -1,40 +1,12 @@
 import { animate, type AnimationPlaybackControlsWithThen } from "motion/react";
 import { panelTransition, immediateTransition, motionGeometry } from "../../../../shared/motion/tokens";
 import { reducedMotionQuery } from "../../../../shared/lib/reducedMotion";
-import {
-  closeSearchPanel,
-  findNext,
-  findPrevious,
-  getSearchQuery,
-  highlightSelectionMatches,
-  openSearchPanel,
-  replaceAll,
-  replaceNext,
-  search,
-  SearchQuery,
-  searchPanelOpen,
-  setSearchQuery,
-} from "@codemirror/search";
-import {
-  EditorSelection,
-  Prec,
-  type Extension,
-  type SelectionRange,
-} from "@codemirror/state";
-import {
-  EditorView,
-  keymap,
-  runScopeHandlers,
-  type KeyBinding,
-  type Panel,
-  type ViewUpdate,
-} from "@codemirror/view";
+import { closeSearchPanel, findNext, findPrevious, getSearchQuery, highlightSelectionMatches, openSearchPanel, replaceAll, replaceNext, search, SearchQuery, searchPanelOpen, setSearchQuery } from "@codemirror/search";
+import { EditorSelection, Prec, type Extension, type SelectionRange } from "@codemirror/state";
+import { EditorView, keymap, runScopeHandlers, type KeyBinding, type Panel, type ViewUpdate } from "@codemirror/view";
 import { MOD, ALT, SHIFT } from "../../../../platform/tauri/platform";
 import { keybindingPressed } from "../../../settings/model/settings";
-import {
-  handleFilePreviewFindKey,
-  openFindInActiveFilePreview,
-} from "../ui/FilePreviewSearch";
+import { handleFilePreviewFindKey, openFindInActiveFilePreview } from "../ui/FilePreviewSearch";
 
 const MATCH_CAP = 999;
 const panels = new WeakMap<EditorView, FindPanel>();

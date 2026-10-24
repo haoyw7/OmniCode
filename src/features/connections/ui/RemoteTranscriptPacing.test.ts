@@ -1,14 +1,15 @@
 // @vitest-environment happy-dom
 import { act, createElement, Fragment, StrictMode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { AgentTranscript } from "../../sessions/ui/AgentTranscript";
 import { PooledTranscript, TranscriptPool, TranscriptPoolOutlet } from "../../sessions/ui/TranscriptPool";
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "../../../contracts/session";
 import { rememberRemoteSession } from "../model/connections";
 import { rememberRemoteProject } from "../model/remoteProjects";
-import type { HostSession } from "../model/protocol";
+import type { HostSession } from "../../../contracts/protocol";
 import { RemoteSession } from "./RemoteSession";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));

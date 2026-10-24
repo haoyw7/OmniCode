@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
-import type { HostSessionSummary } from "../../features/connections/model/protocol";
+import type { HostSessionSummary } from "../../contracts/protocol";
 import { traySessions } from "./traySessions";
 
 function row(

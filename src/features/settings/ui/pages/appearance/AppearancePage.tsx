@@ -4,32 +4,9 @@ import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { useImperativeHandle, type Ref } from "react";
 import { ImagePlus, Loader } from "../../../../../shared/ui/icons";
 import { Button } from "../../../../../shared/ui/forms/Button";
-import { GradientBlurBackground } from "../../GradientBlurBackground";
+import { GradientBlurBackground } from "../../../../../shared/ui/GradientBlurBackground";
 import { useColorScheme } from "../../../../../shared/hooks/useColorScheme";
-import {
-  applyChatBackgroundOpacity,
-  applyWindowOpacity,
-  applyPanelOpacity,
-  applyPopoverOpacity,
-  applySidebarBlur,
-  applySidebarOpacity,
-  CHAT_BACKGROUND_OPACITY_MAX,
-  CHAT_BACKGROUND_OPACITY_MIN,
-  chatBackgroundSrc,
-  SIDEBAR_BLUR_MAX,
-  SIDEBAR_BLUR_MIN,
-  SIDEBAR_OPACITY_MAX,
-  SIDEBAR_OPACITY_MIN,
-  PANEL_OPACITY_MAX,
-  PANEL_OPACITY_MIN,
-  WINDOW_OPACITY_MAX,
-  WINDOW_OPACITY_MIN,
-  POPOVER_OPACITY_MAX,
-  POPOVER_OPACITY_MIN,
-  NEW_THREAD_BACKGROUND_EFFECTS,
-  NEW_THREAD_BACKGROUND_EFFECT_LABELS,
-  NEW_THREAD_BACKGROUND_EFFECT_DESCRIPTIONS,
-} from "../../../model/appearance";
+import { applyChatBackgroundOpacity, applyWindowOpacity, applyPanelOpacity, applyPopoverOpacity, applySidebarBlur, applySidebarOpacity, CHAT_BACKGROUND_OPACITY_MAX, CHAT_BACKGROUND_OPACITY_MIN, chatBackgroundSrc, SIDEBAR_BLUR_MAX, SIDEBAR_BLUR_MIN, SIDEBAR_OPACITY_MAX, SIDEBAR_OPACITY_MIN, PANEL_OPACITY_MAX, PANEL_OPACITY_MIN, WINDOW_OPACITY_MAX, WINDOW_OPACITY_MIN, POPOVER_OPACITY_MAX, POPOVER_OPACITY_MIN, NEW_THREAD_BACKGROUND_EFFECTS, NEW_THREAD_BACKGROUND_EFFECT_LABELS, NEW_THREAD_BACKGROUND_EFFECT_DESCRIPTIONS } from "../../../model/appearance";
 import { UI_SCALE_PERCENTS } from "../../../model/uiScale";
 import { IS_LINUX } from "../../../../../platform/tauri/platform";
 import { useAppearanceSettings, type AppearanceSettings } from "./useAppearanceSettings";

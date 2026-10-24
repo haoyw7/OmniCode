@@ -1,5 +1,5 @@
-import type { HostSession } from "./protocol";
-import type { Block } from "../../sessions/model/session";
+import type { HostSession } from "../../../contracts/protocol";
+import type { Block } from "../../../contracts/session";
 
 function metadata(value: HostSession): string {
   return JSON.stringify({

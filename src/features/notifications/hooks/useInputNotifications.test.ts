@@ -2,12 +2,9 @@
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  probeNotificationPermission,
-  saveNotificationsEnabled,
-  setWindowFocused,
-} from "../model/notifications";
-import { newSession, type Session } from "../../sessions/model/session";
+import { probeNotificationPermission, saveNotificationsEnabled, setWindowFocused } from "../model/notifications";
+import { newSession } from "../../sessions/model/session";
+import { type Session } from "../../../contracts/session";
 import { useInputNotifications } from "./useInputNotifications";
 
 const invoke = vi.hoisted(() =>

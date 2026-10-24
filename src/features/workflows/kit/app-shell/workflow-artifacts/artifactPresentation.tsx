@@ -2,10 +2,7 @@ import type { ReactNode } from "react";
 import { ChartLine as ChartLineIcon, File as FileIcon, Gauge as GaugeIcon, SquareKanban as SquareKanbanIcon, Table as TableIcon } from "../../../../../shared/ui/icons";
 import type { WorkflowRunArtifactKind } from "../../_shims/protocol.js";
 import { FileDisplayIcon, resolveFileDisplayDescriptor } from "../../lib/fileDisplay.js";
-import type {
-  ArtifactPresetKind,
-  PresetLabels,
-} from "./presets/index.js";
+import type { ArtifactPresetKind, PresetLabels } from "./presets/index.js";
 
 /**
  * 用户面产物在**几个表面**（run 侧板瓦片、完成卡瓦片、`workflow-artifact` tab、通知行药丸、中枢）

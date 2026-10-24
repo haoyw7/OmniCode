@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { useMobileActivity } from "./useMobileActivity";
 import type { MobileClient } from "./client";
-import type { HostSession } from "../features/connections/model/protocol";
+import type { HostSession } from "../contracts/protocol";
 import { createSessionSnapshotStore } from "./sessionSnapshotStore";
 import { loadMobileActivity } from "./activity";
 

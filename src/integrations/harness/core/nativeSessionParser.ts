@@ -1,24 +1,7 @@
-import { parseClaudeSession } from "../providers/claude/claudeSessionImport";
-import { parseCodexSession } from "../providers/codex/codexSessionImport";
-import { parseOpenCodeSession } from "../providers/opencode/opencodeSessionImport";
-import { parsePiSession } from "../providers/pi/piSessionImport";
-import type { NativeSessionFile, NativeTranscript } from "./nativeSessions";
+import type { NativeSessionFile, NativeTranscript } from "../../../contracts/session";
 
-/** Pure parser routing for the Host native session manager. */
-export function parseNativeSession(
+/** Native history parsing contract; the Host composes provider implementations. */
+export type NativeSessionParser = (
   content: string,
   file: NativeSessionFile,
-): NativeTranscript {
-  switch (file.provider) {
-    case "codex":
-      return parseCodexSession(content, file);
-    case "claude":
-      return parseClaudeSession(content, file);
-    case "opencode":
-      return parseOpenCodeSession(content, file);
-    case "pi":
-    case "omp":
-      return parsePiSession(content, file);
-  }
-}
-
+) => NativeTranscript;

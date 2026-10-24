@@ -1,11 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { HarnessId } from "../../sessions/model/session";
-
-export type ConfigurableBinaryProvider = HarnessId;
+import { configureRuntimeBinaryPaths, type StoredBinaryPaths } from '../../../integrations/harness/core/runtimeBinaryPaths';
+import { ConfigurableBinaryProvider, runtimeProviderBinaryPath } from '../../../integrations/harness/core/runtimeBinaryPaths';
+import { activateDesktopProviderBinaryPaths } from "../../../platform/tauri/connections";
 
 const STORAGE_KEY = "omnicode.providerBinaryPaths.v1";
-
-type StoredBinaryPaths = Partial<Record<ConfigurableBinaryProvider, string>>;
 
 function readProviderBinaryPaths(): StoredBinaryPaths {
   try {
@@ -21,23 +18,11 @@ function readProviderBinaryPaths(): StoredBinaryPaths {
   }
 }
 
-const runtimeBinaryPaths = readProviderBinaryPaths();
-
 export async function initializeProviderBinaryPaths(): Promise<void> {
-  const active = await invoke<StoredBinaryPaths>("harness_runtime_binary_paths", {
-    paths: readProviderBinaryPaths(),
-  });
-  for (const provider of Object.keys(runtimeBinaryPaths)) {
-    delete runtimeBinaryPaths[provider as ConfigurableBinaryProvider];
-  }
-  Object.assign(runtimeBinaryPaths, active);
-}
-
-export function runtimeProviderBinaryPath(
-  provider: ConfigurableBinaryProvider,
-): string | null {
-  const path = runtimeBinaryPaths[provider];
-  return typeof path === "string" && path.trim() ? path.trim() : null;
+  const active: StoredBinaryPaths = await activateDesktopProviderBinaryPaths(
+    readProviderBinaryPaths() as Record<string, string>,
+  );
+  configureRuntimeBinaryPaths(active);
 }
 
 export function loadProviderBinaryPath(
@@ -68,3 +53,5 @@ export function saveProviderBinaryPath(
     return false;
   }
 }
+
+configureRuntimeBinaryPaths(readProviderBinaryPaths());

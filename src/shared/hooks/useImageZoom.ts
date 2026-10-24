@@ -1,11 +1,6 @@
 import { animate as animateValue, cancelFrame, frame, type AnimationPlaybackControls } from "motion/react";
 import { popTransition } from "../motion/tokens";
-import {
-  useLayoutEffect,
-  useRef,
-  type MouseEvent,
-  type PointerEvent,
-} from "react";
+import { useLayoutEffect, useRef, type MouseEvent, type PointerEvent } from "react";
 import { reducedMotionQuery } from "../lib/reducedMotion";
 
 type Point = { x: number; y: number };

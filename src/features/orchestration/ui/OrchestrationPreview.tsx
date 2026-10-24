@@ -1,44 +1,22 @@
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
-import { HARNESS_TITLE, type Block } from "../../sessions/model/session";
-import type {
-  OrchestrationChoice,
-  ProposedTask,
-} from "../model/orchestrationPlan";
+import { useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import type { Block, OrchestrationChoice, ProposedTask } from "../../../contracts/session";
+
 import { resizeComposer } from "../../sessions/model/composerResize";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import {
-  mergeModelSettings,
-  modelEffortLabel,
-  modelEffortSetting,
-} from "../../sessions/model/models";
+import { mergeModelSettings, modelEffortLabel } from "../../sessions/model/models";
+import { modelEffortSetting } from "../../../domain/modelSettings";
 import { LAYER } from "../../../shared/lib/layers";
-import { OrchestrationActions, OrchestrationRuntimeContext } from "./OrchestrationActions";
-import { useModelSource } from "../../sessions/ui/modelSource";
+import { OrchestrationActions, OrchestrationRuntimeContext } from "../model/OrchestrationActions";
+import { useModelSource } from "../../sessions/model/modelSource";
 import { OrchestrationSidebarAgents } from "./OrchestrationSidebarAgents";
-import { localizeOrchestrationMessage } from "./orchestrationMessages";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { localizeOrchestrationMessage } from "../model/orchestrationMessages";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { Popover } from "../../../shared/ui/Popover";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  CircleDashed,
-  CircleHelp,
-  MessageMultiple,
-  Play,
-  Search,
-} from "../../../shared/ui/icons";
+import { Check, ChevronDown, ChevronRight, CircleDashed, CircleHelp, MessageMultiple, Play, Search } from "../../../shared/ui/icons";
 
 function AssignmentModel({
   task,

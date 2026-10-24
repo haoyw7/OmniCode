@@ -1,47 +1,16 @@
-import {
-  resetGenerationMetrics,
-  measureGenerationTurn,
-  emitAcpGenerationEvent,
-} from "../../core/generationMetrics";
+import { resetGenerationMetrics, measureGenerationTurn, emitAcpGenerationEvent } from "../../core/generationMetrics";
 import { nativeAcpTitleEvent, noteAcpTitleCapabilities, readAcpSessionTitle, readAcpTitleInProcess } from "../../core/nativeTitles";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
-import { nativeModelId } from "../../../../features/sessions/model/models";
+import { nativeModelId } from "../../core/modelCatalog";
 import { providerSessionAccessIssue } from "../sessionAccessErrors";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import type { RuntimeMode } from "../../../../contracts/session";
 import { AcpClient, assertAcpPromptCompleted, type AcpHandlers } from "../../core/acp";
 import { AcpSubagents } from "../../core/acpSubagents";
-import {
-  killChild,
-  resolveHermesBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-  readHarnessTextFile,
-} from "../../core/child";
-import {
-  HERMES_AUTH_HELP,
-  hermesBackgroundDispatch,
-  hermesCurrentModelId,
-  hermesModeId,
-  hermesPromptBlocks,
-  hermesSessionId,
-  hermesStderrAuthError,
-  hermesStartupError,
-  type HermesBackgroundDispatch,
-} from "./hermesProtocol";
-import {
-  eventsFromAcpUpdate,
-  permissionOptionId,
-  permissionRequestFromAcp,
-  pickAutoOption,
-} from "../grok/grokProtocol";
-import type {
-  ApprovalDecision,
-  HarnessEvent,
-  HarnessSessionInput,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+import { killChild, resolveHermesBinary, spawnChild, unwatchChild, watchChild, readHarnessTextFile } from "../../core/child";
+import { HERMES_AUTH_HELP, hermesBackgroundDispatch, hermesCurrentModelId, hermesModeId, hermesPromptBlocks, hermesSessionId, hermesStderrAuthError, hermesStartupError, type HermesBackgroundDispatch } from "./hermesProtocol";
+import { eventsFromAcpUpdate, permissionOptionId, permissionRequestFromAcp, pickAutoOption } from "../grok/grokProtocol";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import type { HarnessSessionInput, SendTurnInput, SteerTurnInput } from "../../core/types";
 
 type Live = {
   subagents: AcpSubagents;

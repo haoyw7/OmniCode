@@ -1,68 +1,30 @@
+import { WORKSPACE_MODE_SHORTCUT } from "../model/workspaceShortcut";
 import type { PopoverAnchor } from "../../../shared/ui/Popover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
 import { useProjectWorktrees } from "../../source-control/hooks/useProjectWorktrees";
-import type { Worktree } from "../../source-control/model/worktrees";
+import type { Worktree } from "../../../contracts/worktree";
 import { resolveWorktreeBase } from "../../source-control/model/worktreeBase";
-import { MOD, SHIFT } from "../../../platform/tauri/platform";
 import { prettyCwd } from "../../../shared/lib/paths";
-import type { WorkspaceMode } from "../../sessions/model/session";
-import {
-  Check,
-  ChevronRight,
-  Folder,
-  FolderPlus,
-  FolderTree,
-  GitBranch,
-  Loader,
-  Search,
-  Settings,
-} from "../../../shared/ui/icons";
-import { GitPickerTrigger } from "../../source-control/ui/GitPickerTrigger";
-import { BranchMenuScrollArea, branchMenuLayout } from "../../source-control/ui/branchMenu";
+import type { WorkspaceMode } from "../../../contracts/session";
+import { Check, ChevronRight, Folder, FolderPlus, FolderTree, GitBranch, Loader, Search, Settings } from "../../../shared/ui/icons";
+import { GitPickerTrigger } from "../../../shared/ui/forms/GitPickerTrigger";
+import { BranchMenuScrollArea, branchMenuLayout } from "../../../shared/ui/primitives/branchMenu";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { LAYER } from "../../../shared/lib/layers";
-import {
-  keybindingPressed,
-  keybindingShortcutLabel,
-  keybindingShortcutTokens,
-} from "../../settings/model/settings";
+import { keybindingShortcutLabel, keybindingShortcutTokens } from "../../settings/model/settings";
 
-export const WORKSPACE_MODE_SHORTCUT = `${MOD}${SHIFT}G`;
+
 const WORKSPACE_SURFACES =
   "[data-workspace-picker],[data-existing-worktrees-submenu]";
 const SUBMENU_GAP = 4;
 const HOVER_CLOSE_MS = 100;
 
-export function isWorkspaceModeShortcut(event: {
-  code: string;
-  key: string;
-  metaKey: boolean;
-  ctrlKey: boolean;
-  altKey: boolean;
-  shiftKey: boolean;
-}): boolean {
-  return keybindingPressed(
-    "Composer: Toggle Workspace",
-    event,
-    (event.metaKey || event.ctrlKey) &&
-      event.shiftKey &&
-      !event.altKey &&
-      event.key.toLowerCase() === "g",
-  );
-}
 
 export function WorkspacePicker({
   cwd,

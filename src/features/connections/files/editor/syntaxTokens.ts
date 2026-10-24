@@ -1,15 +1,9 @@
-import {
-  ensureSyntaxTree,
-  syntaxTree,
-} from "@codemirror/language";
+import { ensureSyntaxTree, syntaxTree } from "@codemirror/language";
 import { EditorState, type Extension } from "@codemirror/state";
 import { highlightCode } from "@lezer/highlight";
 import type { ColorScheme } from "../../../settings/model/appearance";
 import type { UnifiedBlock, UnifiedLine } from "../../../source-control/model/unifiedDiff";
-import {
-  languageForPath,
-  syntaxTagHighlighter,
-} from "./editorLanguage";
+import { languageForPath, syntaxTagHighlighter } from "./editorLanguage";
 
 type DiffFile = {
   path: string;

@@ -3,10 +3,7 @@ import { panelTransition, immediateTransition } from "../../../shared/motion/tok
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import type { CSSProperties, ReactNode, UIEventHandler } from "react";
 import { useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../../../shared/ui/SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 
 /** Collapsed tools retain their editor and PTY lifetimes until explicitly closed. */
 export function SessionSurfacePane({

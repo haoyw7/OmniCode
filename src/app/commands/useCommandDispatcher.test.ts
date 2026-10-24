@@ -2,10 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  useCommandDispatcher,
-  type CommandDispatch,
-} from "./useCommandDispatcher";
+import { useCommandDispatcher, type CommandDispatch } from "./useCommandDispatcher";
 
 const native = vi.hoisted(() => ({
   listeners: new Map<string, () => void>(),

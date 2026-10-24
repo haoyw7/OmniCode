@@ -1,36 +1,10 @@
-import { modelsFor } from "../../../../features/sessions/model/models";
-import {
-  childUsesSelectedMachine,
-  killChild,
-  resolveClaudeBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-  writeChild,
-} from "../../core/child";
-import { isAgentToolName } from "../../core/preview";
-import {
-  assistantTextBlocks,
-  buildClaudeSpawnArgs,
-  buildClaudeUserMessage,
-  inputJsonDeltaFromEvent,
-  isClaudeUltracodeEffort,
-  normalizeClaudeCliEffort,
-  parseJsonLine,
-  previewFromTool,
-  resolveClaudeApiModelId,
-  streamDeltaFromEvent,
-  stringField,
-  summarizeToolRequest,
-  toolKindFromName,
-  toolStartFromEvent,
-  toolTitle,
-  tryParseJsonRecord,
-  turnStatusFromResult,
-} from "./claudeProtocol";
-import type { TurnIntent } from "../../../../features/sessions/model/session";
-import type { HarnessEvent } from "../../core/types";
-import { mergeStream } from "../../core/streamText";
+import { modelsFor } from "../../core/modelCatalog";
+import { childUsesSelectedMachine, killChild, resolveClaudeBinary, spawnChild, unwatchChild, watchChild, writeChild } from "../../core/child";
+import { isAgentToolName } from "../../../../domain/preview";
+import { assistantTextBlocks, buildClaudeSpawnArgs, buildClaudeUserMessage, inputJsonDeltaFromEvent, isClaudeUltracodeEffort, normalizeClaudeCliEffort, parseJsonLine, previewFromTool, resolveClaudeApiModelId, streamDeltaFromEvent, stringField, summarizeToolRequest, toolKindFromName, toolStartFromEvent, toolTitle, tryParseJsonRecord, turnStatusFromResult } from "./claudeProtocol";
+import type { TurnIntent } from "../../../../contracts/session";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import { mergeStream } from "../../../../domain/streamText";
 
 const TEXT_CHILD_ID = "omnicode-claude-text";
 const INIT_TIMEOUT_MS = 8_000;

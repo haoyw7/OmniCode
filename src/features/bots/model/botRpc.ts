@@ -1,11 +1,5 @@
-import type {
-  BotHistory,
-  BotHistoryCursor,
-  BotMessage,
-  BotMessages,
-  BotConfiguration,
-} from "./botView";
-import type { RemoteAttachment } from "../../connections/model/protocol";
+import type { BotHistory, BotHistoryCursor, BotMessage, BotMessages, BotConfiguration } from "./botView";
+import type { RemoteAttachment } from "../../../contracts/protocol";
 export type BotRpc = <T>(method: string, params?: object) => Promise<T>;
 type BotSync = {
   assistant: BotConfiguration | null;

@@ -1,44 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
-
-export type CheckpointFile = {
-  path: string;
-  relative: string;
-  status: string;
-  additions: number;
-  deletions: number;
-  /** True when an exact recorded before/after diff is available. */
-  exact: boolean;
-  /** False when restoring could overwrite a change made outside this session. */
-  undoable: boolean;
-  /** Recorded during the turn, but no edit tool of this session reported it;
-   * it may come from shell commands or another writer. Never undone in bulk. */
-  external?: boolean;
-};
-
-export type CheckpointStatus = {
-  files: CheckpointFile[];
-  /** Identity of the durable Git recording, absent for structured-edit fallback. */
-  turnId?: string;
-  /** This turn's workspace snapshot may include other concurrent sessions. */
-  workspaceShared?: boolean;
-  /** Host only: another running conversation shares this checkout. */
-  undoLocked?: boolean;
-};
-
-export type CheckpointFileDiff = {
-  path: string;
-  relative: string;
-  status: string;
-  original: string;
-  current: string;
-  binary: boolean;
-  tooLarge: boolean;
-};
-
-export type CheckpointApplyResult = {
-  files: string[];
-  alreadyApplied: number;
-};
+import type { CheckpointStatus, CheckpointFileDiff } from "../../../contracts/checkpoint";
 
 const REVIEW_CHANGED = "omnicode-review-changed";
 
@@ -65,31 +25,13 @@ export function registerHostCheckpointRoute(
     notifyReviewChanged(sessionId);
   };
 }
-const checkpointQueues = new Map<string, Promise<void>>();
-const activeTurns = new Map<string, { id: string; cwd: string }>();
 
-function enqueueCheckpoint<T>(
-  sessionId: string,
-  operation: () => Promise<T>,
-): Promise<T> {
-  const previous = checkpointQueues.get(sessionId) ?? Promise.resolve();
-  const result = previous.then(operation, operation);
-  const tail = result.then(
-    () => undefined,
-    () => undefined,
-  );
-  checkpointQueues.set(sessionId, tail);
-  void tail.then(() => {
-    if (checkpointQueues.get(sessionId) === tail) {
-      checkpointQueues.delete(sessionId);
-    }
-  });
-  return result;
-}
-
-/** Wait until every queued checkpoint write for this session is durable. */
-export function flushSessionCheckpoint(sessionId: string): Promise<void> {
-  return checkpointQueues.get(sessionId) ?? Promise.resolve();
+/** Checkpoints are recorded only by the Host; this computer never reads or
+ * restores a separate store for the same tab id. */
+function hostRoute(sessionId: string): HostCheckpointRoute {
+  const route = hostRoutes.get(sessionId);
+  if (!route) throw new Error("Session changes are available only while the conversation is connected to its Host.");
+  return route;
 }
 
 export function notifyReviewChanged(sessionId?: string) {
@@ -108,184 +50,40 @@ export function subscribeReviewChanged(
   return () => window.removeEventListener(REVIEW_CHANGED, handler);
 }
 
-/** Record the workspace before execution, including existing uncommitted files. */
-export async function beginSessionTurn(
+export async function sessionCheckpointStatus(
   sessionId: string,
-  cwd: string,
-  editedPaths?: readonly string[],
-  turnId?: string,
-): Promise<string | undefined> {
-  if (!cwd || cwd === "~") return undefined;
-  const id = turnId ?? crypto.randomUUID();
-  activeTurns.set(sessionId, { id, cwd });
-  // Capture errors are also persisted by the backend and shown in the review.
-  await enqueueCheckpoint(sessionId, () =>
-    invoke<void>("session_checkpoint_begin_turn", {
-      sessionId,
-      cwd,
-      turnId: id,
-      ...(editedPaths === undefined ? {} : { editedPaths }),
-    }),
-  ).catch(console.error);
-  notifyReviewChanged(sessionId);
-  return id;
-}
-
-/** Capture the settled workspace before exposing the turn's recorded diff. */
-export function finishSessionTurn(
-  sessionId: string,
-  cwd: string,
-  options?: { turnId?: string; after?: Promise<unknown> },
-): Promise<void> {
-  const active = activeTurns.get(sessionId);
-  const id = options?.turnId ?? (active?.cwd === cwd ? active.id : undefined);
-  if (!id) return Promise.resolve();
-  return enqueueCheckpoint(sessionId, async () => {
-    // Cancellation must stop the provider before its final snapshot is taken.
-    await options?.after;
-    await invoke<void>("session_checkpoint_finish_turn", {
-      sessionId,
-      cwd,
-      turnId: id,
-    });
-  })
-    .catch(console.error)
-    .finally(() => {
-      if (activeTurns.get(sessionId)?.id === id) activeTurns.delete(sessionId);
-      notifyReviewChanged(sessionId);
-    });
-}
-
-/** Capture a file immediately before a structured edit starts. */
-export function prepareSessionCheckpoint(
-  sessionId: string,
-  cwd: string,
-  paths: string[],
-): Promise<void> {
-  if (paths.length === 0) return Promise.resolve();
-  return enqueueCheckpoint(sessionId, () =>
-    invoke<void>("session_checkpoint_prepare", {
-      sessionId,
-      cwd,
-      paths,
-    }),
-  );
-}
-
-export function captureSessionCheckpoint(
-  sessionId: string,
-  cwd: string,
-  paths: string[],
-): Promise<void> {
-  if (paths.length === 0) return Promise.resolve();
-  return enqueueCheckpoint(sessionId, () =>
-    invoke<void>("session_checkpoint_capture", {
-      sessionId,
-      cwd,
-      paths,
-    }),
-  );
-}
-
-export function sessionCheckpointStatus(
-  sessionId: string,
-  cwd: string,
-  editedPaths?: readonly string[],
+  _cwd: string,
+  _editedPaths?: readonly string[],
   turnId?: string,
 ): Promise<CheckpointStatus> {
-  const host = hostRoutes.get(sessionId);
-  if (host) return turnId ? host("status", undefined, turnId) : host("status");
-  return enqueueCheckpoint(sessionId, () =>
-    invoke<CheckpointStatus>("session_checkpoint_status", {
-      sessionId,
-      cwd,
-      ...(editedPaths === undefined ? {} : { editedPaths }),
-      ...(turnId ? { turnId } : {}),
-    }),
-  );
-}
-
-/** Apply one isolated worker's captured delta to its lead checkout. */
-export function applySessionCheckpoint(
-  sessionId: string,
-  fromCwd: string,
-  toCwd: string,
-): Promise<CheckpointApplyResult> {
-  return enqueueCheckpoint(sessionId, () =>
-    invoke<CheckpointApplyResult>("session_checkpoint_apply", {
-      sessionId,
-      fromCwd,
-      toCwd,
-    }),
-  );
-}
-
-/** True only when the checkout still matches its seeded, pre-worker state. */
-export function sessionCheckpointCleanupSafe(
-  sessionId: string,
-  cwd: string,
-): Promise<boolean> {
-  return enqueueCheckpoint(sessionId, () =>
-    invoke<boolean>("session_checkpoint_cleanup_safe", { sessionId, cwd }),
-  );
-}
-
-export function forgetSessionCheckpoint(sessionId: string): Promise<void> {
-  const activeId = activeTurns.get(sessionId)?.id;
-  return enqueueCheckpoint(sessionId, () =>
-    invoke<void>("session_checkpoint_forget", { sessionId }),
-  ).then(() => {
-    if (activeTurns.get(sessionId)?.id === activeId) activeTurns.delete(sessionId);
-  });
+  const host = hostRoute(sessionId);
+  return turnId ? host("status", undefined, turnId) : host("status");
 }
 
 /** The before/after contents saved in the session's recorded checkpoint. */
-export function sessionCheckpointFileDiff(
+export async function sessionCheckpointFileDiff(
   sessionId: string,
-  cwd: string,
+  _cwd: string,
   relative: string,
   turnId?: string,
 ): Promise<CheckpointFileDiff> {
-  const host = hostRoutes.get(sessionId);
-  if (host) return turnId ? host("diff", relative, turnId) : host("diff", relative);
-  return enqueueCheckpoint(sessionId, () =>
-    invoke<CheckpointFileDiff>("session_checkpoint_file_diff", {
-      sessionId,
-      cwd,
-      relative,
-      ...(turnId ? { turnId } : {}),
-    }),
-  );
+  const host = hostRoute(sessionId);
+  return turnId ? host("diff", relative, turnId) : host("diff", relative);
 }
 
-export function undoSessionChanges(
+/** Undo restores a complete turn: the Host rolls back provider history and
+ * files together, so a single file is never restored on its own. */
+export async function undoSessionChanges(
   sessionId: string,
-  cwd: string,
-  relative?: string,
+  _cwd: string,
 ): Promise<CheckpointStatus> {
-  const host = hostRoutes.get(sessionId);
-  if (host) return host("undo", relative);
-  return enqueueCheckpoint(sessionId, () =>
-    invoke<CheckpointStatus>("session_checkpoint_undo", {
-      sessionId,
-      cwd,
-      relative: relative ?? null,
-    }),
-  );
+  return hostRoute(sessionId)("undo");
 }
 
-export function keepSessionChanges(
+export async function keepSessionChanges(
   sessionId: string,
-  cwd: string,
+  _cwd: string,
   relative?: string,
 ): Promise<CheckpointStatus> {
-  const host = hostRoutes.get(sessionId);
-  if (host) return host("keep", relative);
-  return enqueueCheckpoint(sessionId, () =>
-    invoke<CheckpointStatus>("session_checkpoint_keep", {
-      sessionId,
-      cwd,
-      relative: relative ?? null,
-    }),
-  );
+  return hostRoute(sessionId)("keep", relative);
 }

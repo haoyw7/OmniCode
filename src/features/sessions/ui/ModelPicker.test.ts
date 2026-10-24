@@ -1,10 +1,11 @@
 import { menuPanelWidth } from "../../../shared/ui/primitives/MenuPanel";
 // @vitest-environment happy-dom
 import { act, createElement, useState, type CSSProperties, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("../../providers/model/harnessAvailability", () => ({
   getHarnessAvailabilitySnapshot: () => 0,
   hasProbedHarnessAvailability: () => true,
   isHarnessAvailable: () => true,
@@ -12,8 +13,8 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
   subscribeHarnessAvailability: () => () => undefined,
 }));
 
-vi.mock("../../../integrations/harness/core/registry", () => ({
-  refreshHarnessCatalogs: () => Promise.resolve(),
+vi.mock("../../providers/model/hostModelCatalog", () => ({
+  refreshHostModelCatalogs: () => Promise.resolve(),
 }));
 
 vi.mock("../../../shared/ui/Popover", () => ({
@@ -119,17 +120,10 @@ it("omits unsupported Pi thinking choices before a live session is started", () 
 });
 import { setUiLanguage } from "../../../shared/i18n/language";
 import { modelsFromRpcData } from "../../../integrations/harness/providers/pi/piProtocol";
-import {
-  PI_FLAVOR,
-  OMP_FLAVOR,
-} from "../../../integrations/harness/providers/pi/piFlavor";
-import {
-  beginCatalogLoad,
-  resetHarnessModelOverlays,
-  saveRecentModelChoice,
-  setHarnessModels,
-  type ModelSetting,
-} from "../model/models";
+import { PI_FLAVOR, OMP_FLAVOR } from "../../../integrations/harness/providers/pi/piFlavor";
+import { saveRecentModelChoice } from "../model/models";
+import { beginCatalogLoad, resetHarnessModelOverlays, setHarnessModels } from "../../../integrations/harness/core/modelCatalog";
+import { type ModelSetting } from "../../../contracts/session";
 
 let container: HTMLDivElement;
 let root: Root;

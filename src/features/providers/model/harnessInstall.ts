@@ -1,19 +1,12 @@
 import { useSyncExternalStore } from "react";
-import {
-  isHarnessAvailable,
-  probeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
-import { inspectHarnessBinary } from "../../../integrations/harness/core/child";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
-import {
-  installLocalHarness,
-  uninstallLocalHarness,
-} from "../../../platform/tauri/harnessInstall";
+import { isHarnessAvailable, probeHarnessAvailability } from "./harnessAvailability";
+import { inspectHarnessBinary, installHostHarness, uninstallHostHarness } from "./hostProviderRuntime";
+import { refreshHostModelCatalogs } from "./hostModelCatalog";
 import { IS_WIN } from "../../../platform/tauri/platform";
 import { translate } from "../../../shared/i18n/language";
-import type { HarnessId } from "../../sessions/model/session";
+import type { HarnessId } from "../../../contracts/session";
 import { announceHarnessesRefreshed } from "./harnessUpdates";
-import { runtimeProviderBinaryPath } from "./providerBinaryPaths";
+import { runtimeProviderBinaryPath } from "../../../integrations/harness/core/runtimeBinaryPaths";
 
 type InstallState =
   | { status: "idle" }
@@ -70,7 +63,7 @@ export function runHarnessInstall(harness: HarnessId): Promise<void> {
     try {
       const reason = harnessInstallUnavailableReason(harness);
       if (reason) throw new Error(reason);
-      await installLocalHarness(harness);
+      await installHostHarness(harness);
       // An installer exiting zero is insufficient: validate the selected CLI,
       // including any configured path, before claiming it is usable.
       const inspection = await inspectHarnessBinary(harness);
@@ -83,7 +76,7 @@ export function runHarnessInstall(harness: HarnessId): Promise<void> {
       if (!isHarnessAvailable(harness)) {
         throw new Error("The installed CLI could not be detected. Check its CLI path and retry.");
       }
-      await refreshHarnessCatalogs([harness], { force: true });
+      await refreshHostModelCatalogs([harness], { force: true });
       void announceHarnessesRefreshed([harness]).catch(() => undefined);
       setState(harness, { status: "installed" });
     } catch (cause) {
@@ -104,12 +97,12 @@ export function runHarnessUninstall(harness: HarnessId): Promise<void> {
   setState(harness, { status: "uninstalling" });
   pending = (async () => {
     try {
-      await uninstallLocalHarness(harness, runtimeProviderBinaryPath(harness));
+      await uninstallHostHarness(harness, runtimeProviderBinaryPath(harness));
       await probeHarnessAvailability();
       await probeHarnessAvailability({ force: true });
       // Another copy on the search path keeps the provider usable.
       const remaining = isHarnessAvailable(harness);
-      if (remaining) await refreshHarnessCatalogs([harness], { force: true });
+      if (remaining) await refreshHostModelCatalogs([harness], { force: true });
       void announceHarnessesRefreshed([harness]).catch(() => undefined);
       setState(harness, { status: "uninstalled", remaining });
     } catch (cause) {

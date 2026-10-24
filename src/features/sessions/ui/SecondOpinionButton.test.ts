@@ -7,7 +7,7 @@ const { DEFAULT_AVAILABLE } = vi.hoisted(() => ({
   DEFAULT_AVAILABLE: (harness: string) => harness === "grok",
 }));
 
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("../../providers/model/harnessAvailability", () => ({
   getHarnessAvailabilitySnapshot: () => 0,
   hasProbedHarnessAvailability: () => true,
   isHarnessAvailable: vi.fn(DEFAULT_AVAILABLE),
@@ -15,13 +15,13 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
   subscribeHarnessAvailability: () => () => undefined,
 }));
 
-vi.mock("../../../integrations/harness/core/registry", () => ({
-  refreshHarnessCatalogs: () => Promise.resolve(),
+vi.mock("../../providers/model/hostModelCatalog", () => ({
+  refreshHostModelCatalogs: () => Promise.resolve(),
 }));
 
 import { SecondOpinionButton } from "./SecondOpinionButton";
-import { isHarnessAvailable } from "../../../integrations/harness/core/availability";
-import { resetHarnessModelOverlays, setHarnessModels } from "../model/models";
+import { isHarnessAvailable } from "../../providers/model/harnessAvailability";
+import { resetHarnessModelOverlays, setHarnessModels } from "../../../integrations/harness/core/modelCatalog";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -220,7 +220,7 @@ describe("secondary model target picker", () => {
     // Codex has no built-in fallback list in MODELS, so modelsFor("codex")
     // is empty until its live catalog loads. If it is the only other
     // installed provider, the button must stay enabled so the menu can
-    // open and refreshHarnessCatalogs can populate it - not get disabled
+    // open and refreshHostModelCatalogs can populate it - not get disabled
     // first because the (not yet loaded) list looks empty.
     vi.mocked(isHarnessAvailable).mockImplementation(
       (harness: string) => harness === "codex",

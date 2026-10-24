@@ -1,45 +1,15 @@
 import { supportsProjectTerminal } from "../../features/terminal/model/terminalAvailability";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback, useRef } from "react";
-import {
-  rememberRemoteSession,
-  remoteSessionFor,
-} from "../../features/connections/model/connections";
+import { rememberRemoteSession, remoteSessionFor } from "../../features/connections/model/connections";
 import { remoteProjectFor } from "../../features/connections/model/remoteProjects";
-import {
-  findProjectTerminal,
-  mapProjectTerminal,
-  moveDockToPane,
-  movePaneToDock,
-  takeSessionTerminals,
-  withDockOpen,
-  type DockSide,
-  type ProjectTerminalDock as ProjectTerminal,
-} from "../../features/projects/model/projectTerminal";
-import {
-  sameProjectPath,
-} from "../../features/projects/model/recents";
-import type { RuntimeMode } from "../../features/sessions/model/session";
-import {
-  newDefaultSession,
-  type Session,
-} from "../../features/sessions/model/session";
-import {
-  leafIds,
-  moveTabPane,
-  neighborLeafId,
-  newTerminalFile,
-  sessionToolPanes,
-  setSplitRatio,
-  splitPane,
-  type FocusDir,
-  type LayoutNode,
-  type PaneEdge,
-  type SplitDir,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { findProjectTerminal, mapProjectTerminal, moveDockToPane, movePaneToDock, takeSessionTerminals, withDockOpen, type DockSide, type ProjectTerminalDock as ProjectTerminal } from "../../features/projects/model/projectTerminal";
+import { sameProjectPath } from "../../features/projects/model/recents";
+import type { RuntimeMode, Session } from "../../contracts/session";
+import { newDefaultSession } from "../../features/sessions/model/session";
+
+import { leafIds, moveTabPane, neighborLeafId, newTerminalFile, sessionToolPanes, setSplitRatio, splitPane, type FocusDir, type LayoutNode, type PaneEdge, type SplitDir, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { applyPlaceSessionOnPane } from "../../features/workspace/model/workspaceTabGroups";
-import { forgetHarnessSession } from "../../integrations/harness";
 import type { WorkspaceSessionData } from "../model/workspaceSessionData";
 
 type Options = {
@@ -334,10 +304,6 @@ export function useWorkspacePaneActions({
 
       if (replaceTarget) {
         sessionData.resetPersistence(targetId);
-        const blank = sessionsRef.current.find(
-          (entry) => entry.id === targetId,
-        );
-        if (blank) void forgetHarnessSession(blank.harness, targetId);
       }
 
       const result = applyPlaceSessionOnPane({

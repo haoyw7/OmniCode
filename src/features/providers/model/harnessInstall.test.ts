@@ -4,15 +4,14 @@ const mock = vi.hoisted(() => ({
   install: vi.fn(), uninstall: vi.fn(), inspect: vi.fn(), probe: vi.fn(), available: vi.fn(),
   refresh: vi.fn(), announce: vi.fn(),
 }));
-vi.mock("../../../platform/tauri/harnessInstall", () => ({
-  installLocalHarness: mock.install, uninstallLocalHarness: mock.uninstall,
+vi.mock("./hostProviderRuntime", () => ({
+  installHostHarness: mock.install, uninstallHostHarness: mock.uninstall, inspectHarnessBinary: mock.inspect,
 }));
 vi.mock("../../../platform/tauri/platform", () => ({ IS_WIN: true }));
-vi.mock("../../../integrations/harness/core/child", () => ({ inspectHarnessBinary: mock.inspect }));
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("./harnessAvailability", () => ({
   probeHarnessAvailability: mock.probe, isHarnessAvailable: mock.available,
 }));
-vi.mock("../../../integrations/harness/core/registry", () => ({ refreshHarnessCatalogs: mock.refresh }));
+vi.mock("./hostModelCatalog", () => ({ refreshHostModelCatalogs: mock.refresh }));
 vi.mock("./harnessUpdates", () => ({ announceHarnessesRefreshed: mock.announce }));
 
 beforeEach(() => {

@@ -2,20 +2,13 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  listAutomations,
-  newAutomationDraft,
-  notifyAutomationsChanged,
-  peekAutomations,
-  type Automation,
-} from "../model/automations";
-import { AutomationsView } from "./AutomationsView";
+import { listAutomations, newAutomationDraft, notifyAutomationsChanged, peekAutomations } from "../model/automations";
+import type { Automation } from "../../../contracts/automations";
+
+import { AutomationsPage as AutomationsView } from "../../../app/ui/AutomationsPage";
 
 const invoke = vi.hoisted(() => vi.fn());
-vi.mock("@tauri-apps/api/core", async (original) => ({
-  ...(await original<typeof import("@tauri-apps/api/core")>()),
-  invoke,
-}));
+vi.mock("../model/automationHost", () => ({ automationHostRequest: invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: async () => () => {} }));
 vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: () => ({

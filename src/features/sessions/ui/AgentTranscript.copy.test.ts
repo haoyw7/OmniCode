@@ -1,14 +1,22 @@
 // @vitest-environment happy-dom
-import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act, createElement, type ComponentProps } from "react";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { AgentTranscript } from "./AgentTranscript";
+import { AgentTranscript as Transcript } from "./AgentTranscript";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
+import { desktopTranscriptServices } from "../../../platform/tauri/transcriptServices";
 import { messageFilesFromClipboard } from "../../../platform/tauri/clipboard";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import type { Block } from "../model/session";
+import type { Block } from "../../../contracts/session";
 
 let container: HTMLDivElement;
 let root: Root;
+
+function AgentTranscript(props: ComponentProps<typeof Transcript>) {
+  return createElement(TranscriptPlatformContext.Provider, { value: desktopTranscriptServices },
+    createElement(Transcript, props));
+}
 
 it("keeps actions visible for the latest assistant reply until a new reply arrives", () => {
   const blocks: Block[] = [

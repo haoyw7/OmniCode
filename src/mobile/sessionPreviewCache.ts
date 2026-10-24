@@ -1,5 +1,5 @@
-import type { HostSession } from "../features/connections/model/protocol";
-import type { Block } from "../features/sessions/model/session";
+import type { HostSession } from "../contracts/protocol";
+import type { Block } from "../contracts/session";
 
 /** Retain the transcript and attachment metadata for fast navigation, while
  * releasing downloaded image bytes from older cached conversations. */

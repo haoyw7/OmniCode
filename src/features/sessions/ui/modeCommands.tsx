@@ -1,17 +1,10 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  AiIdea,
-  CircleDashed,
-  CursorMagicSelection,
-  MessageSquare,
-  Share,
-  X,
-} from "../../../shared/ui/icons";
+import { AiIdea, CircleDashed, CursorMagicSelection, MessageSquare, Share, X } from "../../../shared/ui/icons";
 import { BTW_COMMAND } from "../model/btw";
 import { DRAFT_COMMAND } from "../model/draftCommand";
-import { OPERATOR_COMMAND } from "../model/operatorCommand";
+import { OPERATOR_COMMAND } from "../../../domain/operatorCommand";
 import { ORCHESTRATOR_COMMAND } from "../model/orchestratorCommand";
-import { PLAN_COMMAND } from "../model/plan";
+import { PLAN_COMMAND } from "../../../domain/plan";
 
 type ModeCommandStyle = {
   Icon: typeof AiIdea;

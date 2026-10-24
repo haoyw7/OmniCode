@@ -1,7 +1,4 @@
-import {
-  memo, useCallback, useEffect, useLayoutEffect, useRef, useState,
-  type ReactNode,
-} from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion as motionElement, usePresence, useMotionValue } from "motion/react";
 import { collapseTransition, duration, immediateTransition } from "../motion/tokens";
 import { useMotionPreference } from "../motion/useMotionPreference";

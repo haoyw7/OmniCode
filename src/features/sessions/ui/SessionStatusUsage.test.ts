@@ -5,23 +5,13 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SessionStatusPanel } from "./SessionStatusPanel";
 import { usageSessionFor } from "../../providers/model/sessionUsage";
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
-import {
-  SessionHeaderActionsContext,
-  type SessionHeaderActions,
-} from "../../workspace/ui/SessionHeaderActions";
-import {
-  saveProviderAccount,
-  selectProviderAccount,
-} from "../../providers/model/providerAccounts";
+import { SessionHeaderActionsContext, type SessionHeaderActions } from "../../workspace/model/SessionHeaderActions";
+import { saveProviderAccount, selectProviderAccount } from "../../providers/model/providerAccounts";
 import { clearCachedRateLimits, setCachedRateLimits } from "../../providers/model/rateLimitsCache";
-import {
-  idleRateLimits,
-  RATE_LIMIT_MIN_REFETCH_MS,
-  unavailableRateLimits,
-} from "../../providers/model/rateLimits";
+import { idleRateLimits, RATE_LIMIT_MIN_REFETCH_MS, unavailableRateLimits } from "../../../domain/rateLimits";
 import { saveShowRemainingUsage } from "../../settings/model/displayPrefs";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "../../../contracts/session";
 import type { DeepseekAccount } from "../../../integrations/harness/providers/deepseek/deepseekAccount";
 import { configureSharedHost, remotePath } from "../../connections/model/remoteProjects";
 

@@ -10,8 +10,8 @@ import { REPORT_CAPS } from "../facade/report-caps.js";
 import { declaredPresetIds, isDeclaredPreset } from "./engine-artifacts.js";
 import { hashMismatch } from "./scheduler.js";
 import type { EngineState } from "./engine-state.js";
-import type { InstanceRef } from "./types.js";
-import { refToString, WorkflowError } from "./types.js";
+import { type InstanceRef, refToString, WorkflowError } from "./types.js";
+
 
 /**
  * 发布一条中间结果（Boundary A 的 `report`）。同步、无返回值、无 driver 往返：

@@ -1,24 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  appendPreparingHandoff,
-  appendReadyHandoff,
-  buildDeterministicHandoff,
-  buildHandoffComposerCard,
-  buildOutgoingHandoffPrompt,
-  chooseHandoffBrief,
-  completeHandoff,
-  consumeHandoff,
-  handoffTurnCard,
-  hasSessionEdits,
-  pendingHandoff,
-  planComposerSwitch,
-  sessionChildHarnesses,
-  sessionThroughTurn,
-  shouldAskOutgoingAgent,
-  userMessagesAfterHandoff,
-  wrapHandoffPrompt,
-} from "./handoff";
-import { newSession, type Block, type Session } from "./session";
+import { appendPreparingHandoff, appendReadyHandoff, buildDeterministicHandoff, buildHandoffComposerCard, buildOutgoingHandoffPrompt, chooseHandoffBrief, completeHandoff, consumeHandoff, handoffTurnCard, hasSessionEdits, pendingHandoff, planComposerSwitch, sessionChildHarnesses, sessionThroughTurn, shouldAskOutgoingAgent, userMessagesAfterHandoff, wrapHandoffPrompt } from "../../../domain/handoff";
+import { newSession } from "./session";
+import { type Block, type Session } from "../../../contracts/session";
 
 function sessionWith(
   blocks: Block[],

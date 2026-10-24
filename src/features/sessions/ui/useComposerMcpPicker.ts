@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { HarnessId } from "../model/session";
+import type { HarnessId } from "../../../contracts/session";
 import { type McpTag } from "../model/mcpPicker";
 import { getComposerMcpTags, setComposerMcpTags } from "../model/draftCache";
-import { type McpConnection } from "../../settings/model/mcp";
-import {
-  getCachedMcpSettings,
-  loadMcpSettings,
-  subscribeMcpSettings,
-  type McpSettingsSnapshot,
-} from "../../settings/model/mcpSettingsCache";
+import { type McpConnection } from "../../../contracts/mcp";
+import { getCachedMcpSettings, loadMcpSettings, subscribeMcpSettings, type McpSettingsSnapshot } from "../../settings/model/mcpSettingsCache";
 
 /** The `/mcp` picker's servers and the servers the next message is tagged with. */
 export function useComposerMcpPicker({

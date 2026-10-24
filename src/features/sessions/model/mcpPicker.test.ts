@@ -1,12 +1,6 @@
 import { expect, it } from "vitest";
-import {
-  mcpContextText,
-  mcpPickerServers,
-  mcpTagParts,
-  newMcpTag,
-  taggedMcpServers,
-} from "./mcpPicker";
-import type { McpConnection } from "../../settings/model/mcp";
+import { mcpContextText, mcpPickerServers, mcpTagParts, newMcpTag, taggedMcpServers } from "./mcpPicker";
+import type { McpConnection } from "../../../contracts/mcp";
 
 const servers: McpConnection[] = [
   {

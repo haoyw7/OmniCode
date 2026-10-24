@@ -5,19 +5,12 @@ import { motionGeometry } from "../../../shared/motion/tokens";
 // state, or — while an agent-launched run waits — the approval view with
 // Run / Discard.
 import { useMemo, useState } from "react";
-import type { Block, Session } from "../../sessions/model/session";
+import type { Block } from "../../../contracts/session";
 
-/** The launching conversation, as the transcript knows it. */
-export type WorkflowRunParent = Pick<Session, "id" | "harness" | "model" | "modelSettings" | "workflowRuns"> & {
-  /** Project folder (desktop path) whose Host runs the workflow. */
-  cwd: string;
-};
+import type { WorkflowRunParent } from "../../sessions/model/sessionPresentation";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { WorkflowRunDigest } from "../kit/components/workflow-timeline/WorkflowRunDigest";
-import {
-  WorkflowRunSettingsForm,
-  type WorkflowRunSettingsHost,
-} from "../kit/components/workflow-timeline/WorkflowRunSettingsPopover";
+import { WorkflowRunSettingsForm, type WorkflowRunSettingsHost } from "../kit/components/workflow-timeline/WorkflowRunSettingsPopover";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { ChevronRight } from "../../../shared/ui/icons";
 import { isWorkflowRunConfigurable } from "../kit/components/workflow-timeline/workflowRunSettings";

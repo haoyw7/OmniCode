@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { harnessSupportsAttachments, RUNTIME_MODES } from "../../../../features/sessions/model/session";
-import { ATTACHMENT_ONLY_PROMPT } from "../../../../features/sessions/model/attachments";
+import { harnessSupportsAttachments } from "../../../../domain/session";
+import { RUNTIME_MODES } from "../../../../contracts/session";
+import { ATTACHMENT_ONLY_PROMPT } from "../../../../domain/attachmentPrompt";
 import * as antigravity from "./antigravityProtocol";
 
 const providers = [

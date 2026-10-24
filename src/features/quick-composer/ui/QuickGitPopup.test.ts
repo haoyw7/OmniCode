@@ -3,7 +3,7 @@ import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { gitCheckout, gitCreateBranch } from "../../../platform/tauri/fs";
-import { QuickGitPopupPicker } from "./QuickGitPopup";
+import { QuickGitPopupPicker } from "../../../app/ui/QuickGitPopupPicker";
 import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
 import type { QuickGitRequest } from "../model/quickGitPopup";
 import type { QuickWorkspace } from "../model/quickWorkspace";

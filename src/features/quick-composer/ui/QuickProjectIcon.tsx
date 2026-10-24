@@ -1,16 +1,10 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../projects/model/projectMascots";
 import { useEffect, useState } from "react";
 import { projectKey, projectName } from "../../../shared/lib/paths";
 import { projectLogoSrc } from "../../projects/model/projectLogos";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupLogos,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupLogos, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLogo, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
 
 export function loadQuickProjectAppearance() {
   return {
@@ -49,15 +43,15 @@ export function QuickProjectIcon({
       />
     );
   return (
-    <ProjectMascot
-      project={seed}
-      name={resolveTabGroupMascot(key, appearance.mascots)}
-      color={resolveTabGroupColor(
+    <Omi compact
+      expression={projectMascot(seed, resolveTabGroupMascot(key, appearance.mascots)).name}
+      
+      style={{ color: resolveTabGroupColor(
         key,
         appearance.colors,
         appearance.customColors,
         seed,
-      )}
+      ) || undefined }}
       className={className}
     />
   );

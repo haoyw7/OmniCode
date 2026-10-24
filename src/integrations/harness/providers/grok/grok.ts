@@ -1,50 +1,16 @@
-import {
-  resetGenerationMetrics,
-  measureGenerationTurn,
-  emitAcpGenerationEvent,
-} from "../../core/generationMetrics";
+import { resetGenerationMetrics, measureGenerationTurn, emitAcpGenerationEvent } from "../../core/generationMetrics";
 import { nativeAcpTitleEvent, noteAcpTitleCapabilities, readAcpSessionTitle, readAcpTitleInProcess } from "../../core/nativeTitles";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
-import { nativeModelId } from "../../../../features/sessions/model/models";
+import { nativeModelId } from "../../core/modelCatalog";
 import { AcpSubagents } from "../../core/acpSubagents";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import type { RuntimeMode, UserQuestionReply } from "../../../../contracts/session";
 import { AcpClient, assertAcpPromptCompleted, type AcpHandlers } from "../../core/acp";
-import {
-  killChild,
-  resolveGrokBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import {
-  AUTH_HELP,
-  askQuestionResponse,
-  askQuestionsFromAcp,
-  asRecord,
-  contextWindowFromSetup,
-  currentModelId,
-  eventsFromAcpUpdate,
-  grokAuthError,
-  grokAuthMethodId,
-  grokEffort,
-  grokPromptBlocks,
-  grokSessionNewParams,
-  grokSpawnArgs,
-  permissionOptionId,
-  permissionRequestFromAcp,
-  pickAutoOption,
-  planFromExitPlan,
-  sessionIdFromResult,
-} from "./grokProtocol";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  HarnessEvent,
-  HarnessSessionInput,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
-import { questionPromptTitle, type UserQuestionReply } from "../../../../features/sessions/model/userQuestion";
+import { killChild, resolveGrokBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { AUTH_HELP, askQuestionResponse, askQuestionsFromAcp, asRecord, contextWindowFromSetup, currentModelId, eventsFromAcpUpdate, grokAuthError, grokAuthMethodId, grokEffort, grokPromptBlocks, grokSessionNewParams, grokSpawnArgs, permissionOptionId, permissionRequestFromAcp, pickAutoOption, planFromExitPlan, sessionIdFromResult } from "./grokProtocol";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import type { CompactContextInput, HarnessSessionInput, SendTurnInput, SteerTurnInput } from "../../core/types";
+import { questionPromptTitle } from "../../../../domain/userQuestion";
+
 
 type Live = {
   subagents: AcpSubagents;

@@ -1,26 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  applyBtwHarnessEvent,
-  BTW_COMMAND,
-  BTW_MAX_BLOCK_CHARS,
-  BTW_MAX_SNAPSHOT_CHARS,
-  buildBtwPrompt,
-  btwOpenTargetTurnId,
-  btwThreadBlocks,
-  btwTurnHarness,
-  btwVisibleBlocks,
-  consumeBtwCommand,
-  consumeBtwPrefix,
-  replaceBtwThread,
-  resolveBtwHarness,
-  sessionHasBtwEligibleTurn,
-  sessionHasBtwThreads,
-  serializeBtwBlock,
-  serializeBtwSnapshot,
-  sessionBtwThreads,
-  supportsBtwHarness,
-} from "./btw";
-import type { Block, BtwThread } from "./session";
+import { BTW_COMMAND, btwOpenTargetTurnId, btwThreadBlocks, consumeBtwCommand, consumeBtwPrefix, replaceBtwThread, resolveBtwHarness, sessionHasBtwEligibleTurn, sessionHasBtwThreads, sessionBtwThreads } from "./btw";
+import { BTW_MAX_BLOCK_CHARS, BTW_MAX_SNAPSHOT_CHARS, buildBtwPrompt, btwTurnHarness, btwVisibleBlocks, serializeBtwBlock, serializeBtwSnapshot, supportsBtwHarness } from "../../../domain/btw";
+import type { Block, BtwThread } from "../../../contracts/session";
 
 function block(id: string, role: Block["role"], text = id): Block {
   return { id, role, text };
@@ -468,24 +449,6 @@ describe("buildBtwPrompt", () => {
     expect(prompt).toContain(
       "## By-the-way conversation\n(no side question yet)",
     );
-  });
-});
-
-describe("applyBtwHarnessEvent", () => {
-  it("records harness activity blocks for a BTW reply", () => {
-    const blocks = applyBtwHarnessEvent(
-      [],
-      { type: "reasoning.delta", text: "Checking docs" },
-      "codex",
-      "codex:gpt-5.4",
-      "user-1",
-    );
-    expect(blocks).toHaveLength(1);
-    expect(blocks[0]).toMatchObject({
-      role: "reasoning",
-      text: "Checking docs",
-      streaming: true,
-    });
   });
 });
 

@@ -1,27 +1,15 @@
+import { DEFAULT_PROVIDER_ACCOUNT_ID } from "../../../domain/providerAccount";
 import { loadSharedAgentDefaults, updateSharedAgentDefault } from "../../settings/model/agentPreferences";
 import { preferenceStorage } from "../../settings/model/sharedPreferences";
 import { pathKey } from "../../../shared/lib/paths";
-import type { HarnessId } from "../../sessions/model/session";
+import type { HarnessId } from "../../../contracts/session";
 import { translate } from "../../../shared/i18n/language";
 
 const ACCOUNTS_KEY = "omnicode.providerAccounts.v1";
 const SELECTIONS_KEY = "omnicode.providerAccountSelections.v1";
 const SHARED_DEFAULTS_KEY = "omnicode.sharedProviderDefaults.cache.v1";
 const CHANGE_EVENT = "omnicode-provider-accounts-changed";
-
-export const DEFAULT_PROVIDER_ACCOUNT_ID = "default";
 const DEFAULT_PROVIDER_ACCOUNT_LABEL = "Default account";
-
-/** Legacy sessions predate persisted account ids and belong to the default profile. */
-export function sameProviderAccountId(
-  left: string | undefined,
-  right: string | undefined,
-): boolean {
-  return (
-    (left ?? DEFAULT_PROVIDER_ACCOUNT_ID) ===
-    (right ?? DEFAULT_PROVIDER_ACCOUNT_ID)
-  );
-}
 
 /**
  * The account a conversation is pinned to. A started conversation without a

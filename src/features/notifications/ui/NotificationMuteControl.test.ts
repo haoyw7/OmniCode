@@ -3,10 +3,7 @@ import { duration } from "../../../shared/motion/tokens";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  loadNotificationPreferences,
-  updateNotificationPreferences,
-} from "../model/notificationPreferences";
+import { loadNotificationPreferences, updateNotificationPreferences } from "../model/notificationPreferences";
 import { NotificationMuteControl } from "./NotificationMuteControl";
 
 let container: HTMLDivElement;

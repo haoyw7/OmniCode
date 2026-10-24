@@ -1,39 +1,19 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { RefreshCw } from "../../../shared/ui/icons";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { Popover, type PopoverDismissReason } from "../../../shared/ui/Popover";
 import { consumeCodexRateLimitResetCredit } from "../../providers/model/rateLimitsFetch";
-import {
-  errorRateLimits,
-  type ProviderRateLimits,
-  type RateLimitProvider,
-} from "../../providers/model/rateLimits";
-import {
-  getCachedRateLimits,
-  loadRateLimits,
-  setCachedRateLimits,
-} from "../../providers/model/rateLimitsCache";
-import {
-  HARNESS_LABEL,
-  HARNESS_TITLE,
-} from "../model/session";
-import {
-  loginHarness,
-  supportsHarnessLogin,
-} from "../../../integrations/harness/core/auth";
+import { errorRateLimits } from "../../../domain/rateLimits";
+import { type ProviderRateLimits, type RateLimitProvider } from "../../../contracts/session";
+import { getCachedRateLimits, loadRateLimits, setCachedRateLimits } from "../../providers/model/rateLimitsCache";
+import { HARNESS_LABEL, HARNESS_TITLE } from "../../../contracts/session";
+import { loginHarness } from "../../providers/model/providerLogin";
+import { useProviderSignInSupport } from "../../providers/model/useProviderSignInSupport";
 import { UsageProviderChip } from "./UsageProviderChip";
 import { PiUsage } from "./PiUsage";
-import {
-  ProviderSignInPanel,
-  type ProviderSignInState,
-} from "./ProviderSignInPanel";
-import {
-  newProviderAccount,
-  saveProviderAccount,
-  selectProviderAccount,
-  type ProviderAccountProvider,
-} from "../../providers/model/providerAccounts";
+import { ProviderSignInPanel, type ProviderSignInState } from "./ProviderSignInPanel";
+import { newProviderAccount, saveProviderAccount, selectProviderAccount, type ProviderAccountProvider } from "../../providers/model/providerAccounts";
 import { useProviderUsage, useUsageClock } from "../../providers/model/useProviderUsage";
 import { hasSessionUsage, type UsageSession } from "../../providers/model/sessionUsage";
 import { WorkBuddyAccountPicker } from "./WorkBuddyAccountPicker";
@@ -88,7 +68,7 @@ export function ProviderUsageBar({
     accountId: codexAccountId,
     accounts: codexAccounts,
     available: codexAccountAvailable,
-    local: codexLocal,
+    canReset: codexCanReset,
   } = useProviderUsage("codex", session, project, wantCodex);
   const { limits: opencode } = useProviderUsage(
     "opencode",
@@ -271,7 +251,6 @@ export function ProviderUsageBar({
           limits={claude}
           now={now}
           accounts={claudeAccounts}
-          identitySource={session?.nativeSession ? "local" : "host"}
           accountId={claudeAccountId}
           onSelectAccount={(accountId) => selectAccount("claude", accountId)}
           onAddAccount={(label) => addAccount("claude", label)}
@@ -288,14 +267,13 @@ export function ProviderUsageBar({
           now={now}
           project={project}
           accounts={codexAccounts}
-          identitySource={session?.nativeSession ? "local" : "host"}
           accountId={codexAccountId}
           onSelectAccount={(accountId) => selectAccount("codex", accountId)}
           onAddAccount={(label) => addAccount("codex", label)}
           onManageAccounts={
             onManageAccounts ? () => onManageAccounts("codex") : undefined
           }
-          onConsumeReset={codexLocal ? consumeCodexReset : undefined}
+          onConsumeReset={codexCanReset ? consumeCodexReset : undefined}
           onReconnect={reconnectCodex}
         />
       ) : null}
@@ -342,7 +320,8 @@ function SessionChip({
   const authRequired = Boolean(
     session.authRequired && loginState !== "complete",
   );
-  const canLogin = authRequired && supportsHarnessLogin(session.harness);
+  const available = useProviderSignInSupport(session.harness);
+  const canLogin = authRequired && available;
 
   useEffect(() => {
     if (!session.authRequired && loginState === "complete") {

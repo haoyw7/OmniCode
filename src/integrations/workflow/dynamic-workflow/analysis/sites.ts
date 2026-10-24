@@ -1,32 +1,9 @@
 import ts from "typescript";
-import {
-  artifactRowOfSymbol,
-  markerFunctionOfSymbol,
-  worldReadOpOfSymbol,
-  siteProducingFunctionOfSymbol,
-  type ArtifactOp,
-  type WorldReadOp,
-} from "../facade/registry.js";
-import {
-  WORKFLOW_FUNCTION_NAME,
-  type ScriptLoc,
-  type WorkflowProgram,
-} from "../compiler/compile.js";
+import { artifactRowOfSymbol, markerFunctionOfSymbol, worldReadOpOfSymbol, siteProducingFunctionOfSymbol, type ArtifactOp, type WorldReadOp } from "../facade/registry.js";
+import { WORKFLOW_FUNCTION_NAME, type ScriptLoc, type WorkflowProgram } from "../compiler/compile.js";
 import type { NamePattern } from "./types.js";
 import { callbackSemanticsOf, isGlobalLibValue, type CallbackSemantics } from "./callbacks.js";
-import {
-  actorName,
-  actorNamePattern,
-  askLabel,
-  askLabelPattern,
-  Counter,
-  eachCandidate,
-  forOfCandidate,
-  isFacadeDeclared,
-  literalText,
-  resolveSymbol,
-  worldReadLabel,
-} from "./sites-labels.js";
+import { actorName, actorNamePattern, askLabel, askLabelPattern, Counter, eachCandidate, forOfCandidate, isFacadeDeclared, literalText, resolveSymbol, worldReadLabel } from "./sites-labels.js";
 
 // 拆分：本文件顶到 oxlint max-lines 上限（400 行）。名字 / 标签辅助与符号解析
 // （resolveSymbol / isFacadeDeclared）搬到 sites-labels.ts；后两者原本就从这里导出，故原样

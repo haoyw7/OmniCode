@@ -5,11 +5,7 @@
 // Resume 撞上不再编译的老脚本——两条命令都只在控制台记一行 warn，用户面前是「点了没反应」。
 // 现在 ACK 上的 reasonCode 按两张词表反查成一句话，挂在状态头下面；词表之外一律通用文案带 code。
 
-import {
-  BACKGROUND_WORK_CANCEL_REJECTED_FAULT_PREFIX,
-  WORKFLOW_RUN_RESUME_REJECTED_FAULT_PREFIX,
-  type CommandAck,
-} from "../_shims/protocol.js";
+import { BACKGROUND_WORK_CANCEL_REJECTED_FAULT_PREFIX, WORKFLOW_RUN_RESUME_REJECTED_FAULT_PREFIX, type CommandAck } from "../_shims/protocol.js";
 
 export type WorkflowRunAction = "cancel" | "resume";
 

@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import {
-  decodeGeneratedImage,
-  decodeGeneratedPng,
-  MAX_GENERATED_IMAGE_BYTES,
-} from "./generatedImage";
+import { decodeGeneratedImage, decodeGeneratedPng, MAX_GENERATED_IMAGE_BYTES } from "./generatedImage";
 
 export const PNG =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";

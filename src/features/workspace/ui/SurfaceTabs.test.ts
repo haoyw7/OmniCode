@@ -1,20 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import {
-  newAppViewWorkspaceTab,
-  newChangesTab,
-  newCommitTab,
-  newFileTab,
-  newReleaseNotesWorkspaceTab,
-  newSessionChangesTab,
-  newTerminalFile,
-} from "../model/layout";
-import { releaseNotesTitle } from "../../../app/model/releaseNotes";
-import {
-  appendProblems,
-  surfaceTabMenuItems,
-  surfaceTabPresentation,
-} from "./SurfaceTabs";
+import { newAppViewWorkspaceTab, newChangesTab, newCommitTab, newFileTab, newReleaseNotesWorkspaceTab, newSessionChangesTab, newTerminalFile } from "../model/layout";
+import { releaseNotesTitle } from "../../../shared/lib/releaseNotes";
+import { appendProblems, surfaceTabMenuItems, surfaceTabPresentation } from "../../../app/ui/SurfaceTabs";
 
 describe("surfaceTabPresentation", () => {
   it("localizes app titles and tooltips at display time", () => {

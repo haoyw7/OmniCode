@@ -1,12 +1,9 @@
 import { sharedHostMachineId, sharedHostEnvironment } from "../../connections/model/remoteProjects";
 import { loadRemoteHostDescriptor } from "../../connections/model/remoteHostMetadata";
 import { remoteRequest } from "../../connections/model/connections";
-import type { HostProviderAccounts } from "../../connections/model/protocol";
+import type { HostProviderAccounts } from "../../../contracts/protocol";
 import { translate } from "../../../shared/i18n/language";
-import {
-  rememberSharedProviderDefaults, newProviderAccount, restoreProviderAccounts,
-  type ProviderAccount, type SharedProviderDefaults, type ProviderAccountProvider,
-} from "./providerAccounts";
+import { rememberSharedProviderDefaults, newProviderAccount, restoreProviderAccounts, type ProviderAccount, type SharedProviderDefaults, type ProviderAccountProvider } from "./providerAccounts";
 
 type AccountSnapshot = { revision: number; accounts: HostProviderAccounts; defaults: SharedProviderDefaults };
 const CACHE_PREFIX = "omnicode.hostAccounts.cache.v1:";

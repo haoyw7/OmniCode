@@ -21,7 +21,7 @@
  * too).
  */
 import type { McpTag } from "./mcpPicker";
-import type { Attachment, QueuedMessage, QueueReturnPosition, TurnIntent } from "./session";
+import type { Attachment, QueuedMessage, QueueReturnPosition, TurnIntent } from "../../../contracts/session";
 
 const drafts = new Map<string, string>();
 const environments = new Map<string, { cwd: string; distribution: string | null }>();

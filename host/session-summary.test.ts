@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { HostSession } from "../src/features/connections/model/protocol";
+import type { HostSession } from "../src/contracts/protocol";
 import { HostStore, summary } from "./store";
 
 function snapshot(): HostSession {

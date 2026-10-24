@@ -5,7 +5,7 @@ import { Workflow } from "../../../shared/ui/icons";
 import { TooltipProvider } from "../../../shared/ui/primitives/Tooltip";
 import { SavedWorkflowsSection } from "../kit/settings/saved-workflows/SavedWorkflowsSection";
 import { useWorkflowApp } from "./workflowAppContext";
-import { AppPageHeader } from "../../workspace/ui/AppPageHeader";
+import { AppPageHeader } from "../../../shared/ui/messaging/AppPageHeader";
 
 export function WorkflowsView({ cwd }: { cwd: string }) {
   const { t } = useTranslation();

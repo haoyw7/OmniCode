@@ -3,13 +3,16 @@ import { projectMachineKey } from "../src/integrations/harness/core/machine";
 import { createHash, randomUUID } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Orchestrator, type ControlOutcome, type ControlReceiptContext, type OrchestrationRun, type OrchestrationTask, type WorkerPreparation } from "../src/features/orchestration/model/orchestrationRuntime";
-import { completeOrchestrationProposal, orchestrationPlanningPrompt, orchestrationRepairPrompt, proposalBlock, validateProposedTasks, validateOrchestrationSettings, withOrchestrationProposal, type OrchestrationChoice, type OrchestrationProposal } from "../src/features/orchestration/model/orchestrationPlan";
-import { modelsFor } from "../src/features/sessions/model/models";
-import type { Session, TurnOrigin } from "../src/features/sessions/model/session";
-import type { HarnessEvent, ApprovalDecision } from "../src/integrations/harness/core/types";
-import type { UserQuestionReply } from "../src/features/sessions/model/userQuestion";
-import type { CommandReceipt, HostOrchestrationCommand, HostOrchestrationView, HostSession, RemoteProvider } from "../src/features/connections/model/protocol";
+import { Orchestrator, type ControlOutcome, type ControlReceiptContext, type WorkerPreparation } from "../src/domain/orchestrationRuntime";
+import { type OrchestrationRun, type OrchestrationTask } from "../src/contracts/session";
+import { completeOrchestrationProposal, orchestrationPlanningPrompt, orchestrationRepairPrompt, proposalBlock, validateProposedTasks, validateOrchestrationSettings, withOrchestrationProposal } from "../src/domain/orchestrationPlan";
+import type { OrchestrationChoice, OrchestrationProposal, Session, TurnOrigin, UserQuestionReply } from "../src/contracts/session";
+import { modelsFor } from "../src/integrations/harness/core/modelCatalog";
+
+import type { HarnessEvent, ApprovalDecision } from "../src/contracts/harness";
+
+import type { CommandReceipt, HostOrchestrationCommand, HostOrchestrationView, HostSession } from "../src/contracts/protocol";
+import type { RemoteProvider } from "../src/contracts/provider";
 import { HostControl } from "./control";
 import { HostOrchestrationWorkspace } from "./orchestration-workspace";
 import { checkoutPathsOverlap, checkoutPath, waitForProviderDrain } from "./checkout-guards";

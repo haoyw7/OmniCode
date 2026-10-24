@@ -1,23 +1,7 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type Dispatch,
-  type RefObject,
-  type SetStateAction,
-} from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { installNativeSessionSync } from "../../features/sessions/data/nativeSessions";
-import {
-  flushSessionWrites,
-  getSession,
-  listLinkedSessions,
-  listSessionsByProject,
-  rebaseProjectSessions,
-  upsertSession,
-  type SessionSummary,
-} from "../../features/sessions/data/sessionStore";
-import type { Session } from "../../features/sessions/model/session";
+import { flushSessionWrites, getSession, listLinkedSessions, listSessionsByProject, rebaseProjectSessions, upsertSession, type SessionSummary } from "../../features/sessions/data/sessionStore";
+import type { Session } from "../../contracts/session";
 import { WorkspaceSessionData } from "../model/workspaceSessionData";
 
 export function useWorkspaceSessionData(options: {

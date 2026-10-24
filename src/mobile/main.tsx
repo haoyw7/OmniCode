@@ -1,3 +1,4 @@
+import { MarkdownServices } from "./MarkdownServices";
 import "./browserCrypto";
 import { createRoot } from "react-dom/client";
 import { MotionConfig } from "motion/react";
@@ -7,20 +8,7 @@ import { installKeyboardMotion } from "./keyboardMotion";
 import { applyGlassSettings, readGlassSettings } from "./glassSettings";
 import { refreshUiLanguage } from "../shared/i18n/language";
 import { disableStatusToasts } from "../shared/ui/StatusToast";
-import {
-  applyAccentColor,
-  loadAccentColor,
-  loadThemePreference,
-  applyThemeTint,
-  loadThemeHue,
-  loadThemeSaturation,
-  applyThemeDarkLightness,
-  loadThemeDarkLightness,
-  applyChatBackground,
-  loadChatBackgroundPath,
-  applyChatBackgroundOpacity,
-  loadChatBackgroundOpacity,
-} from "../features/settings/model/appearance";
+import { applyAccentColor, loadAccentColor, loadThemePreference, applyThemeTint, loadThemeHue, loadThemeSaturation, applyThemeDarkLightness, loadThemeDarkLightness, applyChatBackground, loadChatBackgroundPath, applyChatBackgroundOpacity, loadChatBackgroundOpacity } from "../features/settings/model/appearance";
 import { initSounds } from "../features/settings/model/sounds";
 import { initTypography } from "../features/settings/model/typography";
 import { subscribeSharedPreferences } from "../features/settings/model/sharedPreferences";
@@ -61,5 +49,5 @@ createRoot(document.getElementById("root")!, {
       error instanceof Error && "cause" in error ? error.cause : error,
     );
   },
-}).render(<MotionConfig reducedMotion="user" transition={defaultTransition}><MobileApp /></MotionConfig>);
+}).render(<MotionConfig reducedMotion="user" transition={defaultTransition}><MarkdownServices><MobileApp /></MarkdownServices></MotionConfig>);
 

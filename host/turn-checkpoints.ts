@@ -9,11 +9,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type {
-  CheckpointFile,
-  CheckpointFileDiff,
-  CheckpointStatus,
-} from "../src/features/sessions/model/checkpoint";
+import type { CheckpointFile, CheckpointFileDiff, CheckpointStatus } from "../src/contracts/checkpoint";
 
 /** Same limit as the desktop checkpoint store. */
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
@@ -57,6 +53,8 @@ type Change = {
   additions: number;
   deletions: number;
 };
+
+export type GitCheckpointUndo = { turnId: string; cwd: string; head: string | null; before: string; after: string; changes: Change[] };
 
 type FileState =
   | { kind: "contents"; bytes: Buffer }
@@ -276,36 +274,52 @@ export class TurnCheckpoints {
     return this.status(sessionId, cwd);
   }
 
-  async undo(sessionId: string, cwd: string, input?: string): Promise<CheckpointStatus | undefined> {
+  async prepareUndo(sessionId: string, cwd: string, input?: string): Promise<GitCheckpointUndo | undefined> {
     const review = await this.matching(sessionId, cwd);
     if (!review) return undefined;
     const status = (await this.status(sessionId, cwd))!;
-    const root = review.cwd;
     const relativePath = input === undefined ? undefined : resolveTurnPath(input);
-    // Undo all restores only the turn's own files; other workspace changes
-    // stay on disk and in the card.
-    const selected = status.files.filter((file) =>
-      relativePath === undefined ? !file.external : file.relative === relativePath);
-    if (selected.some((file) => !file.undoable))
-      throw new Error("Cannot safely undo this turn: the workspace was shared, the branch moved, or a recorded file changed afterward");
+    const selected = status.files.filter(file => relativePath === undefined ? !file.external : file.relative === relativePath);
+    if (selected.some(file => !file.undoable)) throw new Error("Cannot safely undo this turn: the workspace was shared, the branch moved, or a recorded file changed afterward");
     const turn = completedTurn(review);
-    const names = new Set(selected.map((file) => file.relative));
-    const restoring = (await changes(root, turn)).filter((change) => names.has(change.relative));
-    // Validate all paths again before restoring any, preserving later edits
-    // and refusing symlink traversal. The user's Git index is never reset.
-    for (const change of restoring)
-      if (!(await restorable(root, change)))
-        throw new Error("Cannot safely undo: a recorded file changed after the checkpoint");
-    for (const change of restoring) {
-      if (change.before)
-        await runGit(root, ["restore", "--source", turn.before!, "--worktree", "--", change.relative]);
-      else await machineFs.unlink(machinePath.join(root, ...change.relative.split("/")));
+    const names = new Set(selected.map(file => file.relative));
+    const restoring = (await changes(review.cwd, turn)).filter(change => names.has(change.relative));
+    for (const change of restoring) if (!(await restorable(review.cwd, change))) throw new Error("Cannot safely undo: a recorded file changed after the checkpoint");
+    await assertIndexQuiet(review.cwd, turn.head, restoring);
+    return { turnId: turn.id, cwd: review.cwd, head: turn.head, before: turn.before!, after: turn.after!, changes: restoring };
+  }
+
+  async applyUndo(sessionId: string, cwd: string, plan: GitCheckpointUndo): Promise<CheckpointStatus> {
+    // Nothing this session owns (e.g. only external files): nothing to write.
+    if (!plan.changes.length) return (await this.status(sessionId, cwd)) ?? { files: [] };
+    const review = await this.matching(sessionId, cwd);
+    if (!review || review.cwd !== plan.cwd) throw new Error("Checkpoint restoration workspace changed");
+    const turn = completedTurn(review);
+    if (turn.id !== plan.turnId || turn.before !== plan.before || turn.after !== plan.after || turn.shared || (await this.activeTurns(review.cwd, sessionId)).length)
+      throw new Error("Checkpoint restoration boundary changed or workspace is shared");
+    const head = await runGit(review.cwd, ["rev-parse", "--verify", "HEAD"]).then(bytes => bytes.toString("utf8").trim(), () => null);
+    if (head !== plan.head) throw new Error("Checkpoint restoration branch changed");
+    const state = async (change: Change) => {
+      resolveTurnPath(change.relative);
+      if (await restorable(review.cwd, { ...change, after: change.before })) return "before";
+      if (await restorable(review.cwd, change)) return "after";
+      throw new Error("Cannot safely undo: a recorded file changed after the checkpoint");
+    };
+    // A retry can contain both restored and original files. Any third state
+    // blocks the entire retry before it writes another path.
+    for (const change of plan.changes) await state(change);
+    await assertIndexQuiet(review.cwd, plan.head, plan.changes);
+    for (const change of plan.changes) {
+      if (await state(change) === "before") continue;
+      if (change.before) await runGit(review.cwd, ["restore", "--source", plan.before, "--worktree", "--", change.relative]);
+      else await machineFs.unlink(machinePath.join(review.cwd, ...change.relative.split("/")));
+      if (await state(change) !== "before") throw new Error("Checkpoint restoration did not write the recorded baseline");
     }
-    // Status may have dismissed committed files since `review` was read.
     const current = (await this.matching(sessionId, cwd))!;
-    current.latest!.dismissed = [...new Set([...current.latest!.dismissed, ...names])];
+    if (current.latest?.id !== plan.turnId || current.active) throw new Error("Checkpoint restoration boundary changed");
+    current.latest.dismissed = [...new Set([...current.latest.dismissed, ...plan.changes.map(change => change.relative)])];
     await writeReview(this.sessionDir(sessionId), current);
-    return this.status(sessionId, cwd);
+    return (await this.status(sessionId, cwd))!;
   }
 
   async forget(sessionId: string): Promise<void> {
@@ -590,6 +604,32 @@ async function restorable(root: string, change: Change): Promise<boolean> {
     () => "",
   );
   return oid === change.after.oid;
+}
+
+/** Restoring writes only the worktree. Refuse while another Git command holds
+ * the index, or when the turn staged its own result: restoring the file would
+ * leave that staged change behind. */
+async function assertIndexQuiet(root: string, head: string | null, changes: Change[]): Promise<void> {
+  const lock = (await runGit(root, ["rev-parse", "--path-format=absolute", "--git-path", "index.lock"])).toString("utf8").trim();
+  if (await machineFs.lstat(lock).then(() => true, () => false))
+    throw new Error("Another Git command is using this repository. Workspace files were not changed.");
+  if (!changes.length) return;
+  const staged = new Map<string, string>();
+  const listed = (await runGit(root, ["ls-files", "-s", "-z", "--", ...changes.map(change => change.relative)])).toString("utf8");
+  for (const entry of listed.split("\0")) {
+    const match = /^\d+ ([0-9a-f]+) \d+\t(.+)$/s.exec(entry);
+    if (match) staged.set(match[2], match[1]);
+  }
+  const tracked = new Set(head
+    ? (await runGit(root, ["ls-tree", "-z", "--name-only", head, "--", ...changes.map(change => change.relative)])).toString("utf8").split("\0").filter(Boolean)
+    : []);
+  for (const change of changes) {
+    const index = staged.get(change.relative);
+    const stagedResult = change.after
+      ? index === change.after.oid && index !== change.before?.oid
+      : !!change.before && index === undefined && tracked.has(change.relative);
+    if (stagedResult) throw new Error(`Unstage ${change.relative} before restoring this turn. Workspace files were not changed.`);
+  }
 }
 
 async function readBlob(root: string, blob: Blob | undefined): Promise<FileState> {

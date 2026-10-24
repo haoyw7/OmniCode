@@ -1,9 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import {
-  transcriptMutationNeedsRepaint,
-  transcriptWordRanges,
-} from "./transcriptHighlights";
+import { transcriptMutationNeedsRepaint, transcriptWordRanges } from "./transcriptHighlights";
 
 describe("transcriptMutationNeedsRepaint", () => {
   function record(

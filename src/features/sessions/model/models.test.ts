@@ -1,46 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { newDefaultSession, newSession, newSessionForProject, retargetSessionToProject, type HarnessId } from "./session";
-import {
-  MODELS,
-  LAST_SELECTED_MODEL,
-  coerceModelPickerTab,
-  defaultModelId,
-  defaultSessionChoice,
-  fallbackModelName,
-  encodeModelLaunchId,
-  firstEnabledHarness,
-  hasFreshCatalog,
-  hasLiveCatalog,
-  hydrateCachedModelCatalogs,
-  isPickerProviderVisible,
-  loadDefaultModels,
-  loadHiddenPickerProviders,
-  loadLastModelChoice,
-  loadLastModelSettings,
-  loadRecentModelChoices,
-  mergeModelSettings,
-  modelEffortSetting,
-  modelPickerTabs,
-  modelsFor,
-  nativeModelId,
-  preferredModelId,
-  preferredModelSettings,
-  resetHarnessModelOverlays,
-  resolveModel,
-  saveDefaultModel,
-  saveLastModelChoice,
-  saveLastModelSettings,
-  saveLastSelectedModel,
-  savePickerProviderVisible,
-  saveRecentModelChoice,
-  saveUseLastSelection,
-  setHarnessModels,
-  showProviderInModelPicker,
-  stepModelPickerTab,
-  type AgentModel,
-  validCatalogModels,
-  withSessionModelSettings,
-} from "./models";
+import { newDefaultSession, newSession, newSessionForProject, retargetSessionToProject } from "./session";
+import type { HarnessId, AgentModel } from "../../../contracts/session";
+import { coerceModelPickerTab, defaultSessionChoice, encodeModelLaunchId, firstEnabledHarness, isPickerProviderVisible, loadDefaultModels, loadHiddenPickerProviders, loadLastModelChoice, loadLastModelSettings, loadRecentModelChoices, mergeModelSettings, modelPickerTabs, preferredModelId, preferredModelSettings, saveDefaultModel, saveLastModelChoice, saveLastModelSettings, saveLastSelectedModel, savePickerProviderVisible, saveRecentModelChoice, saveUseLastSelection, showProviderInModelPicker, stepModelPickerTab, withSessionModelSettings } from "./models";
+import { modelEffortSetting } from "../../../domain/modelSettings";
+import { MODELS, LAST_SELECTED_MODEL, defaultModelId, fallbackModelName, hasFreshCatalog, hasLiveCatalog, hydrateCachedModelCatalogs, modelsFor, nativeModelId, resetHarnessModelOverlays, resolveModel, setHarnessModels, validCatalogModels } from "../../../integrations/harness/core/modelCatalog";
+
 
 it("keeps live thinking choices local to their session/model", () => {
   const catalog: AgentModel = { id: "pi:provider/model", name: "Model", harness: "pi",
@@ -53,11 +17,7 @@ it("keeps live thinking choices local to their session/model", () => {
   expect(withSessionModelSettings(catalog, options, "pi:provider/another")).toBe(catalog);
   expect(withSessionModelSettings(catalog)).toBe(catalog);
 });
-import {
-  setProjectDefaultModel,
-  setProjectDefaultProvider,
-  setProjectProviderHidden,
-} from "./projectProviders";
+import { setProjectDefaultModel, setProjectDefaultProvider, setProjectProviderHidden } from "./projectProviders";
 
 const opus: AgentModel = {
   id: "claude:opus-5",

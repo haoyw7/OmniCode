@@ -1,8 +1,9 @@
+import type { Skill } from "../contracts/skills";
 import { Button } from "../shared/ui/forms/Button";
 import { MobileSpinner } from "./MobileSpinner";
 import { useEffect, useRef, type ReactNode } from "react";
-import type { Skill } from "../features/skills/model/skillTypes";
-import { HARNESS_TITLE } from "../features/sessions/model/session";
+
+import { HARNESS_TITLE } from "../contracts/session";
 import { Sparkles } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 

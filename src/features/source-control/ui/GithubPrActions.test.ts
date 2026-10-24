@@ -8,11 +8,8 @@ vi.mock("../../inbox/model/githubTasks", async (original) => ({
   githubPrAction: vi.fn(),
 }));
 
-import {
-  githubPrAction,
-  type GithubWorkItem,
-  type InboxItem,
-} from "../../inbox/model/githubTasks";
+import { githubPrAction } from "../../inbox/model/githubTasks";
+import { type GithubWorkItem, type InboxItem } from "../../../contracts/session";
 import { GithubPrActions } from "../../inbox/ui/GithubPrActions";
 
 let container: HTMLDivElement;

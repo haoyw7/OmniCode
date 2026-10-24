@@ -2,31 +2,14 @@ import { AnimatePresence, motion, useIsPresent, type HTMLMotionProps } from "mot
 import { immediateTransition, popAnimate, popExit, popInitial, popTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openExternalUrl } from "../../../platform/tauri/browser";
 import { useEffect, useState } from "react";
-import {
-  linkedWorkItemActivityPrompt,
-  linkedWorkItemTerminalState,
-  linkedWorkItemUpdateSummary,
-  type LinkedWorkItemActivityEntry,
-  type LinkedWorkItemUpdateCard,
-} from "../model/linkedWorkItemActivity";
+import { linkedWorkItemActivityPrompt, linkedWorkItemTerminalState, linkedWorkItemUpdateSummary } from "../model/linkedWorkItemActivity";
+import { type LinkedWorkItemActivityEntry, type LinkedWorkItemUpdateCard } from "../../../contracts/session";
 import { formatRelativeTime } from "../model/githubTasks";
 import { announceLinkedActivity } from "../../settings/model/sounds";
 import { GlassBackdrop } from "../../../shared/ui/GlassBackdrop";
-import {
-  Archive,
-  Check,
-  CircleDot,
-  GitBranch,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestClosed,
-  Loader,
-  MessageSquare,
-  Trash2,
-  X,
-} from "../../../shared/ui/icons";
+import { Archive, Check, CircleDot, GitBranch, GitMerge, GitPullRequest, GitPullRequestClosed, Loader, MessageSquare, Trash2, X } from "../../../shared/ui/icons";
 
 type Props = {
   sessionId: string;
@@ -119,7 +102,7 @@ export function LinkedWorkItemUpdateNotice({
       onOpenDiscussion();
       return;
     }
-    void openUrl(latest?.url || card.url);
+    void openExternalUrl(latest?.url || card.url);
   };
   const dismiss = () => {
     onAcknowledge();
@@ -177,7 +160,7 @@ export function LinkedWorkItemUpdateNotice({
             type="button"
             onClick={() => {
               onAcknowledge();
-              void openUrl(card.url);
+              void openExternalUrl(card.url);
             }}
             className="block w-full text-left"
           >
@@ -203,7 +186,7 @@ export function LinkedWorkItemUpdateNotice({
                 onClick={() => {
                   if (entry.url) {
                     onAcknowledge();
-                    void openUrl(entry.url);
+                    void openExternalUrl(entry.url);
                   }
                 }}
                 className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-content/3 disabled:cursor-default disabled:hover:bg-transparent"

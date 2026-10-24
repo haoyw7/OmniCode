@@ -1,21 +1,12 @@
 // @vitest-environment happy-dom
 import { act, createElement, Fragment } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  cachedRemoteSessions,
-  cachedRemoteSessionSummary,
-  connectMachine,
-  disconnectMachine,
-  hasCachedRemoteProjectSessions,
-  prefetchRemoteProjectSessions,
-  refreshRemoteProjectSessions,
-  useRemoteProjectSessions,
-  type RemoteProjectSessions,
-} from "./connections";
+import { cachedRemoteSessions, cachedRemoteSessionSummary, connectMachine, disconnectMachine, hasCachedRemoteProjectSessions, prefetchRemoteProjectSessions, refreshRemoteProjectSessions, useRemoteProjectSessions, type RemoteProjectSessions } from "./connections";
 import { configureSharedHost, rememberRemoteProject } from "./remoteProjects";
-import type { HostSessionSummary } from "./protocol";
+import type { HostSessionSummary } from "../../../contracts/protocol";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;

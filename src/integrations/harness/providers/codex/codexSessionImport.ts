@@ -1,13 +1,7 @@
 import { translate } from "../../../../shared/i18n/language";
-import {
-  nativeJsonLines,
-  nativeRecord,
-  nativeString,
-  nativeText,
-  type NativeSessionFile,
-  type NativeTranscript,
-} from "../../core/nativeSessions";
-import type { Block } from "../../../../features/sessions/model/session";
+import { nativeJsonLines, nativeRecord, nativeString, nativeText } from "../../core/nativeSessions";
+import type { NativeSessionFile, NativeTranscript, Block } from "../../../../contracts/session";
+
 
 export function parseCodexSession(
   content: string,

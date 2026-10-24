@@ -1,33 +1,8 @@
 import { describe, expect, it } from "vitest";
-import {
-  leafIds,
-  newFileTab,
-  newAppViewWorkspaceTab,
-  isAppViewOnlyTab,
-  openAppViewTab,
-  openEditorTab,
-  newTerminalFile,
-  newTab,
-  splitPane,
-  type WorkspaceTab,
-} from "./layout";
+import { leafIds, newFileTab, newAppViewWorkspaceTab, openEditorTab, newTerminalFile, newTab, splitPane, type WorkspaceTab } from "./layout";
 import { planProjectReturn } from "../../projects/model/projectReturn";
-import type { Session } from "../../sessions/model/session";
-import {
-  applyPlaceSessionOnPane,
-  filterTabsForProject,
-  findOpenSessionTab,
-  findTabForProject,
-  openAddToChatSessionPane,
-  planWorkspaceTabClose,
-  replaceGroupInTabOrder,
-  switchSessionInTab,
-  workspaceTabProject,
-  focusedWorkspaceTabCwd,
-  workspaceTabCwd,
-  tabInWorktree,
-  workspaceTabWorktree,
-} from "./workspaceTabGroups";
+import type { Session } from "../../../contracts/session";
+import { applyPlaceSessionOnPane, filterTabsForProject, findOpenSessionTab, findTabForProject, openAddToChatSessionPane, planWorkspaceTabClose, replaceGroupInTabOrder, switchSessionInTab, workspaceTabProject, focusedWorkspaceTabCwd, workspaceTabCwd, tabInWorktree, workspaceTabWorktree } from "./workspaceTabGroups";
 
 function session(id: string, cwd: string): Session {
   return {

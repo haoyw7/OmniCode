@@ -1,10 +1,8 @@
-import {
-  defaultModelId,
-  firstEnabledHarness,
-  type LastModelChoice,
-} from "../../sessions/model/models";
+import { firstEnabledHarness } from "../../sessions/model/models";
+import { defaultModelId } from "../../../integrations/harness/core/modelCatalog";
+import type { LastModelChoice, HarnessId } from "../../../contracts/session";
 import type { ProjectProviderSettings } from "../../sessions/model/projectProviders";
-import type { HarnessId } from "../../sessions/model/session";
+
 
 /** What Settings shows for the global defaults or one project's overrides. */
 export type ProviderDefaultsScope = {

@@ -3,18 +3,12 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { LAYER } from "../../../shared/lib/layers";
-import {
-  loadNotificationsEnabled,
-  NOTIFICATIONS_CHANGE_EVENT,
-} from "../../notifications/model/notifications";
+import { loadNotificationsEnabled, NOTIFICATIONS_CHANGE_EVENT } from "../../notifications/model/notifications";
 import { projectName } from "../../../shared/lib/paths";
 import { sessionDisplayTitle } from "../model/session";
-import {
-  formatReminderTime,
-  reminderTime,
-  type SessionReminder,
-} from "../model/sessionReminders";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { formatReminderTime, reminderTime } from "../model/sessionReminders";
+import type { SessionReminder } from "../../../contracts/reminders";
+import { ExplorerMenu } from "../../../shared/ui/primitives/ExplorerMenu";
 import { Clock } from "../../../shared/ui/icons";
 import { sessionReminderPresets } from "./sessionReminderPresets";
 

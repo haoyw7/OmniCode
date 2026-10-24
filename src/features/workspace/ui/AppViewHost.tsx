@@ -1,11 +1,4 @@
-import {
-  createContext,
-  memo,
-  Suspense,
-  useContext,
-  useRef,
-  type ReactNode,
-} from "react";
+import { createContext, memo, Suspense, useContext, useRef, type ReactNode } from "react";
 import type { AppViewKind } from "../model/layout";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
 import { useTranslation } from "../../../shared/i18n/useTranslation";

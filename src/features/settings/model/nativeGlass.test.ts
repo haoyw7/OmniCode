@@ -1,10 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  activateWindowAppearance,
-  applyWindowOpacity,
-  syncNativeGlass,
-} from "./appearance";
+import { activateWindowAppearance, applyWindowOpacity, syncNativeGlass } from "./appearance";
 
 const platform = vi.hoisted(() => ({ isLinux: false }));
 vi.mock("../../../platform/tauri/platform", async (importOriginal) => ({

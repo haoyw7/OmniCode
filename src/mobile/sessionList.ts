@@ -1,8 +1,5 @@
-import type {
-  HostProject,
-  HostSessionSummary,
-} from "../features/connections/model/protocol";
-import { sessionRecencyAt } from "../features/sessions/model/sessionActivity";
+import type { HostProject, HostSessionSummary } from "../contracts/protocol";
+import { sessionRecencyAt } from "../domain/sessionActivity";
 
 export function sortMobileProjects(
   projects: readonly HostProject[],

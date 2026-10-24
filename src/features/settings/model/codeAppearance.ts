@@ -1,9 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { ThemeInput } from "@streamdown/code";
-import {
-  DEFAULT_CODE_THEMES, codeThemeInput, codeThemePalette, isCodeTheme, loadCodeThemePalette,
-  type CodeColorScheme, type CodeThemeId, type CodeThemeSelection,
-} from "../../../shared/theme/codeThemes";
+import { DEFAULT_CODE_THEMES, codeThemeInput, codeThemePalette, isCodeTheme, loadCodeThemePalette, type CodeColorScheme, type CodeThemeId, type CodeThemeSelection } from "../../../shared/theme/codeThemes";
 import { preferenceStorage, subscribeSharedPreferences } from "./sharedPreferences";
 
 const CHANGE_EVENT = "omnicode:code-themes-changed";

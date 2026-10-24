@@ -1,8 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { CircleDot, GitPullRequest, X } from "../../../shared/ui/icons";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import type { GithubLabel, InboxComposerCard } from "../model/githubTasks";
-import { InboxProviderMark } from "./InboxProviderMark";
+import { openExternalUrl } from "../../../platform/tauri/browser";
+import type { GithubLabel, InboxComposerCard } from "../../../contracts/session";
+import { InboxProviderMark } from "../../../shared/ui/branding/InboxProviderMark";
 
 type Props = {
   card: InboxComposerCard;
@@ -42,7 +42,7 @@ export function InboxMiniCard({ card, onDismiss }: Props) {
           })}
           disabled={!card.url}
           onClick={() => {
-            if (card.url) void openUrl(card.url);
+            if (card.url) void openExternalUrl(card.url);
           }}
           className="flex w-full flex-col text-left disabled:cursor-default"
         >

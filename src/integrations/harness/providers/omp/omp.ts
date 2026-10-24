@@ -1,24 +1,7 @@
-import { piImageMaterializer } from "../pi/piImages";
-import {
-  bindSession,
-  cancelTurn,
-  compactContext,
-  forgetSession,
-  respondApproval,
-  rewindLastTurn,
-  sendTurn,
-  steerTurn,
-  stopSession,
-} from "../pi/piFamily";
+import { bindSession, cancelTurn, compactContext, forgetSession, respondApproval, rewindLastTurn, sendTurn, steerTurn, stopSession } from "../pi/piFamily";
 import { OMP_FLAVOR } from "../pi/piFlavor";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  RewindLastTurnInput,
-  RewindLastTurnResult,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+import type { ApprovalDecision } from "../../../../contracts/harness";
+import type { CompactContextInput, RewindLastTurnInput, RewindLastTurnResult, SendTurnInput, SteerTurnInput } from "../../core/types";
 
 /**
  * Live omp (oh-my-pi) adapter. Spawns `omp --mode rpc` with the user's config
@@ -27,7 +10,7 @@ import type {
  * Pi and speaks the same RPC protocol, so both run on the `piFamily` core.
  */
 export function sendOmpTurn(input: SendTurnInput): Promise<void> {
-  return sendTurn(OMP_FLAVOR, input, piImageMaterializer());
+  return sendTurn(OMP_FLAVOR, input);
 }
 
 export function compactOmpContext(input: CompactContextInput): Promise<void> {
@@ -69,7 +52,7 @@ export function bindOmpSession(
   providerSessionId: string,
   cwd: string,
   _providerAccountId?: string,
-  nativeSession?: import("../../../../features/sessions/model/session").NativeSessionLink,
+  nativeSession?: import("../../../../contracts/session").NativeSessionLink,
 ): void {
   // An imported omp session resumes by file path and must report the same id.
   bindSession(OMP_FLAVOR, threadId, providerSessionId, cwd, nativeSession?.path);

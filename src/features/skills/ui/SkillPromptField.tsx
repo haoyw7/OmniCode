@@ -1,30 +1,13 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type Ref,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from "react";
 import { resizeComposer } from "../../sessions/model/composerResize";
-import type { HarnessId } from "../../sessions/model/session";
-import {
-  hasNativeCommands,
-  rankSkills,
-  replaceSlashToken,
-  skillTextParts,
-  slashTokenAt,
-  type Skill,
-  type SlashToken,
-} from "../model/skills";
+import type { HarnessId } from "../../../contracts/session";
+import { hasNativeCommands, rankSkills, replaceSlashToken, skillTextParts, slashTokenAt, type Skill, type SlashToken } from "../model/skills";
 import { isImeComposition } from "../../../shared/lib/keyboard";
 import { SkillPicker } from "./SkillPicker";
 import { Popover } from "../../../shared/ui/Popover";
-import { useComposerSkills } from "../../sessions/ui/useComposerSkills";
+import { useComposerSkills } from "../model/useComposerSkills";
 
 type Props = {
   value: string;

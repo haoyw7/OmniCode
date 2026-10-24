@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, createElement, type FormEvent } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./Composer", () => ({
@@ -44,7 +45,7 @@ vi.mock("./Composer", () => ({
 }));
 
 import { BtwSheet, useBtwConversation, type BtwConversation } from "./BtwSheet";
-import type { Block, BtwThread } from "../model/session";
+import type { Block, BtwThread } from "../../../contracts/session";
 
 function thread(id: string, question: string, createdAt: number): BtwThread {
   return {

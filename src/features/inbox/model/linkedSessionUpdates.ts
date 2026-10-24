@@ -1,5 +1,5 @@
-import type { LinkedWorkItem } from "../../sessions/model/session";
-import type { GithubWorkItem } from "./githubTasks";
+import type { LinkedWorkItem, GithubWorkItem } from "../../../contracts/session";
+
 import type { SessionSummary } from "../../sessions/data/sessionStore";
 
 export type LinkedWorkItemTarget = {

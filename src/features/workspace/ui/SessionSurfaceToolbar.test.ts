@@ -5,17 +5,15 @@ import { delegateDesktopSession } from "../../bots/model/delegateDesktopSession"
 vi.mock("../../bots/model/delegateDesktopSession", () => ({ delegateDesktopSession: vi.fn(async () => {}) }));
 // @vitest-environment happy-dom
 import { act, createElement, type ComponentProps } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { SessionSurfaceToolbar } from "./SessionSurfaceToolbar";
+import { SessionSurfaceToolbar } from "../../../app/ui/SessionSurfaceToolbar";
 import { loadStatusCardsVisible } from "../../sessions/model/statusCardOrder";
-import {
-  SessionHeaderActionsContext,
-  type SessionHeaderActions,
-} from "./SessionHeaderActions";
+import { SessionHeaderActionsContext, type SessionHeaderActions } from "../model/SessionHeaderActions";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "../../../contracts/session";
 
 let root: Root;
 let container: HTMLDivElement;

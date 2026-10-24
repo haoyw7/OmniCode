@@ -2,8 +2,8 @@
 
 import { remoteMachineFor, remoteRequest } from "../../connections/model/connections";
 import { remoteProjectFor, sharedHostMachineId } from "../../connections/model/remoteProjects";
-import type { WorkflowAgentRuntime } from "../../../integrations/workflow/createWorkflow";
-import type { WorkflowRunSettings } from "../../../integrations/workflow/sessionTypes";
+import type { WorkflowAgentRuntime, WorkflowRunSettings } from "../../../contracts/workflow";
+
 
 export type WorkflowRpc = <T>(action: string, params?: Record<string, unknown>) => Promise<T>;
 

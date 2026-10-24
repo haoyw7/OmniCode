@@ -2,8 +2,8 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useState, type FormEvent } from "react";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
-import type { LinkedWorkItem } from "../model/session";
-import { parseGithubWorkItemUrl } from "../model/sessionWorkItem";
+import type { LinkedWorkItem } from "../../../contracts/session";
+import { parseGithubWorkItemUrl } from "../../../domain/workItemIdentity";
 
 export function LinkSessionWorkItemDialog({
   initial,

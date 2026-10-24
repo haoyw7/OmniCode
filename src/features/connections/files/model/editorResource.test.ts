@@ -2,14 +2,8 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { configureSharedHost } from "../../model/remoteProjects";
-import {
-  remoteMachineFor,
-  remoteRequest,
-} from "../../model/connections";
-import {
-  claimEditorResource,
-  flushEditorResourceReleases,
-} from "./editorResource";
+import { remoteMachineFor, remoteRequest } from "../../model/connections";
+import { claimEditorResource, flushEditorResourceReleases } from "./editorResource";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("../../model/connections", () => ({
@@ -24,50 +18,56 @@ afterEach(async () => {
   localStorage.clear();
 });
 
-it("holds a native buffer reference through reads and writes until explicit close", async () => {
-  configureSharedHost("local", []);
-  let allowClaim!: () => void;
-  vi.mocked(invoke).mockImplementation(async (command) => {
-    if (command === "shared_host_resource_claim")
-      await new Promise<void>((resolve) => {
-        allowClaim = resolve;
-      });
+const project = { id: "repo", cwd: "/repo", name: "repo" } as never;
+const describeResources = (claim?: () => Promise<void>) =>
+  vi.mocked(remoteRequest).mockImplementation(async (_machine, method) => {
+    if (method === "environment.describe") return { capabilities: ["resources"] } as never;
+    if (method === "resources.claim") await claim?.();
+    return undefined as never;
   });
+
+it("holds a shared-Host buffer reference through reads and writes until explicit close", async () => {
+  configureSharedHost("local", [project], "local-machine");
+  let allowClaim!: () => void;
+  describeResources(() => new Promise<void>((resolve) => { allowClaim = resolve; }));
   const lease = claimEditorResource("/repo/worker/file.ts");
   let ready = false;
   void lease.ready.then(() => {
     ready = true;
   });
-  await Promise.resolve();
-  expect(ready).toBe(false);
-  expect(invoke).toHaveBeenCalledWith("shared_host_resource_claim", {
+  await vi.waitFor(() => expect(remoteRequest).toHaveBeenCalledWith("local-machine", "resources.claim", {
     path: "/repo/worker/file.ts",
     resourceId: expect.stringMatching(/^editor-/),
-  });
+  }));
+  expect(ready).toBe(false);
   allowClaim();
   await lease.ready;
-  expect(invoke).not.toHaveBeenCalledWith(
-    "shared_host_resource_release",
-    expect.anything(),
-  );
+  expect(remoteRequest).not.toHaveBeenCalledWith("local-machine", "resources.release", expect.anything());
   await lease.release();
-  expect(invoke).toHaveBeenLastCalledWith("shared_host_resource_release", {
-    resourceId: vi.mocked(invoke).mock.calls[0][1]?.resourceId,
-  });
+  const claimed = vi.mocked(remoteRequest).mock.calls.find(([, method]) => method === "resources.claim")![2] as { resourceId: string };
+  expect(remoteRequest).toHaveBeenLastCalledWith("local-machine", "resources.release", { resourceId: claimed.resourceId });
   await expect(lease.reclaim()).rejects.toThrow("closed");
+  expect(invoke).not.toHaveBeenCalled();
 });
 
 it("does not open an editable buffer when checkout cleanup has reserved it", async () => {
-  configureSharedHost("local", []);
-  vi.mocked(invoke).mockRejectedValue(
-    new Error("Checkout cleanup is in progress"),
-  );
+  configureSharedHost("local", [project], "local-machine");
+  describeResources(() => Promise.reject(new Error("Checkout cleanup is in progress")));
   const lease = claimEditorResource("/repo/worker/file.ts");
   await expect(lease.ready).rejects.toThrow("cleanup");
-  await expect(lease.release()).rejects.toThrow("cleanup");
-  expect(invoke).toHaveBeenCalledWith("shared_host_resource_release", {
+  await lease.release();
+  expect(remoteRequest).toHaveBeenCalledWith("local-machine", "resources.release", {
     resourceId: expect.any(String),
   });
+});
+
+it("leaves files outside registered projects unclaimed", async () => {
+  configureSharedHost("local", [project], "local-machine");
+  describeResources();
+  const lease = claimEditorResource("/elsewhere/file.ts");
+  await lease.ready;
+  await lease.release();
+  expect(remoteRequest).not.toHaveBeenCalled();
 });
 
 it("claims remote buffers on their owning Host and renews before another write", async () => {

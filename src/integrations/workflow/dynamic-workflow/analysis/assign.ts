@@ -1,13 +1,5 @@
 import ts from "typescript";
-import {
-  collapse,
-  liveField,
-  mergeInto,
-  replayMayAliasWrite,
-  staticIndexKey,
-  unionValues,
-  type AbstractValue,
-} from "./domain.js";
+import { collapse, liveField, mergeInto, replayMayAliasWrite, staticIndexKey, unionValues, type AbstractValue } from "./domain.js";
 import { type EvalContext, type Evaluator } from "./taint.js";
 
 /**

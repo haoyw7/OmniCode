@@ -1,11 +1,5 @@
 import { useTranslation } from "../i18n/useTranslation";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { hexToHsv, hsvToHex, normalizeHex, type Hsv } from "../lib/colorUtils";
 import { Pipette } from "./icons";
 

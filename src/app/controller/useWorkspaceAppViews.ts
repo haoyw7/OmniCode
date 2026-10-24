@@ -1,43 +1,13 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { flushSync } from "react-dom";
-import {
-  OPEN_CONNECTIONS_EVENT,
-  OPEN_NEW_ENVIRONMENT_EVENT,
-  OPEN_REMOTE_PROJECT_EVENT,
-} from "../../features/connections/model/connections";
+import { OPEN_CONNECTIONS_EVENT, OPEN_NEW_ENVIRONMENT_EVENT, OPEN_REMOTE_PROJECT_EVENT } from "../../features/connections/model/connections";
 import type { ConnectableInboxSource } from "../../features/inbox/model/inboxFilters";
-import { type Session } from "../../features/sessions/model/session";
-import {
-  loadFileTabMode,
-  loadNotesEnabled,
-  loadSettingsSection,
-  saveSettingsSection,
-  type SettingsSectionId,
-} from "../../features/settings/model/settings";
-import type { SettingsAnchor } from "../../features/settings/ui/SettingsView";
-import {
-  findSurfacePane,
-  focusedFileTab,
-  isAppPageKind,
-  leafIds,
-  openAppViewTab,
-  openSessionAppView,
-  type AppPageKind,
-  type AppViewKind,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { type Session } from "../../contracts/session";
+import { loadFileTabMode, loadNotesEnabled, loadSettingsSection, saveSettingsSection, type SettingsSectionId } from "../../features/settings/model/settings";
+import type { SettingsAnchor } from "../ui/SettingsView";
+import { findSurfacePane, focusedFileTab, isAppPageKind, leafIds, openAppViewTab, openSessionAppView, type AppPageKind, type AppViewKind, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { useMouseHistoryNavigation } from "../hooks/useMouseHistoryNavigation";
-import {
-  usePageNavigation,
-  type PageDestination,
-} from "../hooks/usePageNavigation";
+import { usePageNavigation, type PageDestination } from "../hooks/usePageNavigation";
 
 /** These views open over the current workspace rather than in a pane. */
 const DIALOG_APP_VIEWS: ReadonlySet<AppViewKind> = new Set([

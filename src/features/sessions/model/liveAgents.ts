@@ -1,13 +1,9 @@
-import { composeToolTitle } from "../../../integrations/harness/core/preview";
+import { composeToolTitle } from "../../../domain/preview";
 import { isInFlightSession } from "./inFlight";
-import { displayPath } from "../../../shared/lib/paths";
-import { userTurnStartTimes } from "./turnTiming";
-import {
-  sessionDisplayTitle,
-  type Block,
-  type HarnessId,
-  type Session,
-} from "./session";
+import { displayPath } from '../../../domain/pathDisplay';
+import { userTurnStartTimes } from "../../../domain/turnTiming";
+import { sessionDisplayTitle } from "./session";
+import { type Block, type HarnessId, type Session } from "../../../contracts/session";
 
 export type LiveAgent = {
   id: string;

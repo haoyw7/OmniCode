@@ -1,8 +1,9 @@
+import { playCue } from "../features/settings/model/sounds";
 import { Capacitor } from "@capacitor/core";
 import { Clipboard } from "@capacitor/clipboard";
 import { Browser } from "@capacitor/browser";
 import { copyText as browserCopyText } from "../platform/tauri/clipboard";
-import type { Attachment } from "../features/sessions/model/session";
+import type { Attachment } from "../contracts/session";
 
 async function copyText(text: string) {
   if (Capacitor.isNativePlatform()) await Clipboard.write({ string: text });
@@ -10,6 +11,7 @@ async function copyText(text: string) {
 }
 export const mobileTranscriptPlatform = {
   copyText,
+  onCopy: () => playCue("copy"),
   async copyMessage(text: string, attachments: Attachment[] = []) {
     await copyText(
       [text, ...attachments.map((item) => item.name)]

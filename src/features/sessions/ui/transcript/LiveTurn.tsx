@@ -1,15 +1,17 @@
+import { Omi } from "../../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../../projects/model/projectMascots";
 import { AssistantStatus } from "../../../../shared/ui/messaging/AssistantStatus";
 import { AnimatePresence, motion } from "motion/react";
 import { msgTransition, immediateTransition } from "../../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../../shared/motion/useMotionPreference";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
-import { ProjectMascot } from "../../../projects/ui/ProjectMascot";
-import { useProjectMascotAppearance } from "../../../projects/ui/useProjectMascotAppearance";
+
+import { useProjectMascotAppearance } from "../../../projects/model/useProjectMascotAppearance";
 import { liveStatus } from "../../model/liveStatus";
 import { Shimmer } from "../../../../shared/ui/Shimmer";
 import { TypingDots } from "../../../../shared/ui/TypingDots";
 import { RollingClock, rollingClockMotion } from "../../../../shared/ui/RollingClock";
-import { type Block, type SessionExecutionState } from "../../model/session";
+import { type Block, type SessionExecutionState } from "../../../../contracts/session";
 import { ActivityPhaseIcon } from "./activity/ActivityPhaseIcon";
 import { formatElapsed, formatWorkingDuration, useElapsedFrom, useNow } from "./transcriptClock";
 
@@ -169,11 +171,11 @@ export function LiveTurnFooter({
   return (
     <AssistantStatus
       icon={
-        <ProjectMascot
-          project={mascot.project}
-          name={mascot.name}
-          color={mascot.color}
-          active={!paused}
+        <Omi compact
+          expression={projectMascot(mascot.project, mascot.name).name}
+          
+          style={{ color: mascot.color || undefined }}
+          animated={!paused}
           className="size-4 shrink-0"
         />
       }

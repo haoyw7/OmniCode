@@ -1,6 +1,6 @@
 // Ported from ZCode (Apache-2.0) packages/ui/src/v4/workflowRunCardJoin.ts.
-import { workflowRunStepCounts, type WorkflowRunState } from "../_shims/protocol.js";
-import type { ConversationRow } from "../_shims/protocol.js";
+import { workflowRunStepCounts, type WorkflowRunState, type ConversationRow } from "../_shims/protocol.js";
+
 import type { WorkflowCausalityGraphData } from "../components/workflow-graph/types.js";
 import type { WorkflowRunCardSummary } from "../ToolCallBlocks/fileSummaryTypes.js";
 

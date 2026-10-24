@@ -1,5 +1,5 @@
-import type { ContextCategory } from "../../../integrations/harness/core/contextUsage";
-import type { ContextUsage } from "./contextUsage";
+import type { ContextCategory, ContextUsage } from "../../../contracts/session";
+
 
 const labels: Record<string, string> = {
   "system prompt": "System prompt", "system tools": "System tools",

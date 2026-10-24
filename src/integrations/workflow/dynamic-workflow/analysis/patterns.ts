@@ -1,14 +1,5 @@
 import ts from "typescript";
-import {
-  addOcc,
-  addPlaceholder,
-  bindingPropertyKey,
-  collapse,
-  emptyValue,
-  mergeInto,
-  readField,
-  type AbstractValue,
-} from "./domain.js";
+import { addOcc, addPlaceholder, bindingPropertyKey, collapse, emptyValue, mergeInto, readField, type AbstractValue } from "./domain.js";
 import type { EvalContext, Evaluator } from "./taint.js";
 
 /**

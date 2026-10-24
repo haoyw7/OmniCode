@@ -1,23 +1,20 @@
+import { Omi } from "../../../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../../../projects/model/projectMascots";
+import { useProjectLogoSource } from "../../../../projects/model/useProjectLogoSource";
 import type { ReactNode } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { Globe, RotateCcw } from "../../../../../shared/ui/icons";
 import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
-import { isHarnessAvailable } from "../../../../../integrations/harness/core/availability";
+import { isHarnessAvailable } from "../../../../providers/model/harnessAvailability";
 import { projectKey, projectName } from "../../../../../shared/lib/paths";
-import { LAST_SELECTED_MODEL, modelsFor, resolveModel } from "../../../../sessions/model/models";
-import { HARNESSES, HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
-import { HarnessIcon } from "../../../../sessions/ui/HarnessIcon";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../../../workspace/model/tabGroups";
+import { LAST_SELECTED_MODEL, modelsFor, resolveModel } from "../../../../../integrations/harness/core/modelCatalog";
+import { HARNESSES, type HarnessId } from "../../../../../contracts/session";
+import { HARNESS_TITLE } from "../../../../../contracts/session";
+import { HarnessIcon } from "../../../../../shared/ui/HarnessIcon";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLogo, resolveTabGroupMascot } from "../../../../workspace/model/tabGroups";
 import { useTabGroupLogos } from "../../../../projects/hooks/useTabGroupLogos";
-import { ProjectLogoIcon } from "../../../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../../../projects/ui/ProjectMascot";
+import { ProjectLogoIcon } from "../../../../../shared/ui/ProjectLogoIcon";
+
 import { usePreferenceState } from "../../../model/usePreferenceState";
 import { Group, Row } from "../../settingsLayout";
 
@@ -133,6 +130,7 @@ export function NewSessionDefaults({
 
 /** The icon the activity bar shows: custom logo, else the project mascot. */
 function ProjectScopeIcon({ path }: { path: string }) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const logos = useTabGroupLogos();
   const [colors] = usePreferenceState(loadTabGroupColors);
   const [customColors] = usePreferenceState(loadTabGroupCustomColors);
@@ -143,17 +141,17 @@ function ProjectScopeIcon({ path }: { path: string }) {
   if (logoPath) {
     return (
       <ProjectLogoIcon
-        path={logoPath}
+        src={resolveProjectLogoSrc(logoPath)}
         className="size-4 rounded-sm"
         imageClassName="size-4"
       />
     );
   }
   return (
-    <ProjectMascot
-      project={name}
-      color={resolveTabGroupColor(key, colors, customColors, name)}
-      name={resolveTabGroupMascot(key, mascots)}
+    <Omi compact
+      expression={projectMascot(name, resolveTabGroupMascot(key, mascots)).name}
+      style={{ color: resolveTabGroupColor(key, colors, customColors, name) || undefined }}
+      
       className="size-3.5"
     />
   );

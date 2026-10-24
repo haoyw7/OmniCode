@@ -1,9 +1,7 @@
-import type { Session } from "../../sessions/model/session";
-import {
-  DEFAULT_PROVIDER_ACCOUNT_ID,
-  supportsProviderAccounts,
-} from "../../providers/model/providerAccounts";
-import type { HostSession } from "./protocol";
+import type { Session } from "../../../contracts/session";
+import { DEFAULT_PROVIDER_ACCOUNT_ID } from "../../../domain/providerAccount";
+import { supportsProviderAccounts } from "../../providers/model/providerAccounts";
+import type { HostSession } from "../../../contracts/protocol";
 import { projectPath, type RemoteProject } from "./remoteProjects";
 
 /** Show the host's conversation in the app's ordinary session state while

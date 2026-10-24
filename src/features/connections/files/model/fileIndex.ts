@@ -1,12 +1,11 @@
-import { listProjectFiles, type ProjectFile } from "../../../../platform/tauri/fs";
+import { listProjectFiles } from "../../../../platform/tauri/fs";
+import type { ProjectFile } from "../../../../contracts/workspace";
 import { subscribeDirsChanged } from "./fileTree";
 import { scorePath, type FuzzyHit } from "../../../../shared/lib/fuzzy";
 import { resolveWorkspacePath, slash } from "../../../../shared/lib/paths";
 import { looksLikeProject } from "../../../projects/model/recents";
-import {
-  normalizeEditorPath,
-  type FileOpenOptions,
-} from "../../../search/model/search";
+import { normalizeEditorPath } from "../../../search/model/search";
+import type { FileOpenOptions } from "../../../../shared/lib/fileNavigation";
 
 const MAX_RECENTS = 30;
 const MAX_RESULTS = 80;

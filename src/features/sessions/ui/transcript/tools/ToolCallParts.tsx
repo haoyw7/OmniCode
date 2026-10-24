@@ -1,26 +1,11 @@
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
-import {
-  Bot,
-  ChevronRight,
-  CircleHelp,
-  File,
-  Globe,
-  PenLine,
-  Search,
-  Terminal,
-  WandSparkles,
-  Wrench,
-  X,
-} from "../../../../../shared/ui/icons";
+import { Bot, ChevronRight, CircleHelp, File, Globe, PenLine, Search, Terminal, WandSparkles, Wrench, X } from "../../../../../shared/ui/icons";
 import type { ReactNode } from "react";
-import type { ApprovalDecision } from "../../../../../integrations/harness";
-import { FileTypeIcon } from "../../../../connections/files/ui/FileTypeIcon";
-import type { Block, ToolPreview } from "../../../model/session";
-import {
-  resolveToolCallDisplay,
-  type ToolCallState,
-} from "../../../model/transcriptActivity";
+import type { ApprovalDecision } from "../../../../../contracts/harness";
+import { FileTypeIcon } from "../../../../../shared/ui/FileTypeIcon";
+import type { Block, ToolPreview } from "../../../../../contracts/session";
+import { resolveToolCallDisplay, type ToolCallState } from "../../../model/transcriptActivity";
 import type { ToolRendererKind } from "../../../model/toolRenderer";
 
 /** The pieces every tool row is built from: icons, the summary line, approval. */

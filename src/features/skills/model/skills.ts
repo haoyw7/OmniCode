@@ -1,23 +1,20 @@
-import {
-  createPath,
-  homeDir,
-  listSkills,
-  readTextFile,
-  writeTextFile,
-} from "../../../platform/tauri/fs";
+import type { Skill, NativeSkill, FileSkill, BuiltinSkill } from "../../../contracts/skills";
+export type { Skill, BuiltinSkill } from "../../../contracts/skills";
+import { createPath, homeDir, listSkills, readTextFile, writeTextFile } from "../../../platform/tauri/fs";
 import { invalidateProjectFiles } from "../../connections/files/model/fileIndex";
 import { joinPath } from "../../../shared/lib/paths";
-import { isLocalProject, normalizeProjectPath } from "../../projects/model/recents";
-import type { HarnessId } from "../../sessions/model/session";
+import { isLocalProject } from "../../projects/model/recents";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
+import type { HarnessId } from "../../../contracts/session";
 import { getHarness } from "../../../integrations/harness/core/registry";
-import { CREATE_SKILL_BODY } from "./createSkill";
-import type { Skill, NativeSkill, FileSkill, BuiltinSkill } from "./skillTypes";
-import { mergeCatalog } from "./skillCatalog";
-import { skillNamesInText, injectSkillPrompt } from "./skillPrompt";
+import { CREATE_SKILL_BODY } from "../../../domain/createSkill";
 
-export type { Skill, BuiltinSkill } from "./skillTypes";
-export { BUILTIN_CREATE_SKILL, mergeCatalog } from "./skillCatalog";
-export { skillNamesInText, skillTextParts, injectSkillPrompt } from "./skillPrompt";
+import { mergeCatalog } from "../../../domain/skillCatalog";
+import { skillNamesInText, injectSkillPrompt } from "../../../domain/skillPrompt";
+
+
+export { BUILTIN_CREATE_SKILL, mergeCatalog } from "../../../domain/skillCatalog";
+export { skillNamesInText, skillTextParts, injectSkillPrompt } from "../../../domain/skillPrompt";
 
 export {
   rankSkills,

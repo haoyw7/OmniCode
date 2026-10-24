@@ -1,11 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  finishMotion,
-  startMotionClock,
-  stopMotionClock,
-} from "../../../../tests/helpers/sharedMotionClock";
-import { slidePromptIn, type PromptSlide } from "./promptLaunch";
+import { finishMotion, startMotionClock, stopMotionClock } from "../../../../tests/helpers/sharedMotionClock";
+import { slidePromptIn, type PromptSlide } from "../../../shared/motion/promptLaunch";
 
 let container: HTMLDivElement;
 let slides: PromptSlide[];

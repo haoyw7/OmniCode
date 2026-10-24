@@ -23,12 +23,12 @@ import { HostMachines } from "./host-machines";
 import { HostStore } from "./store";
 import { acquireHostOwner } from "./owner";
 import { HostEngine } from "./engine";
+import { ProjectMoves } from "./project-moves";
+import { HostWorktreeLifecycle } from "./worktree-lifecycle";
+import { SessionCheckpoints } from "./session-checkpoints";
 import { hostProviders } from "./providers";
 import { createHostServer } from "./server";
-import {
-  REMOTE_PROVIDERS,
-  type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+import { REMOTE_PROVIDERS, type RemoteProvider } from "../src/contracts/provider";
 import { connectionInfo, installService, uninstallService } from "./service";
 import { version } from "../package.json";
 import { protectWindowsDirectory } from "./windows";
@@ -95,6 +95,10 @@ async function main() {
   }
   if (command === "assistant") {
     process.exitCode = await runControlCli(args.slice(1), "assistant");
+    return;
+  }
+  if (command === "app") {
+    process.exitCode = await runControlCli(args.slice(1), "app");
     return;
   }
   if (command === "workflow") {
@@ -309,10 +313,14 @@ Connect another computer using an SSH forward to the loopback port.`);
       );
     };
     const available = await discoverAvailableProviders();
+    await new ProjectMoves(store, new SessionCheckpoints(join(dirname(store.attachmentDir), "checkpoints"))).recover(
+      (id, action) => machines.run(store.project(id).machine, action),
+    );
+    await new HostWorktreeLifecycle(store).recover((id, action) => machines.run(store.project(id).machine, action));
     const engine = new HostEngine(store, hostProviders, undefined, { entry: fileURLToPath(import.meta.url), machines });
     closeEngine = () => engine.close();
     // User environment variables first, so Host control variables always win.
-    backend.configureSessionEnvironment((id) => ({ ...engine.environmentVariables(id), ...engine.workflows.environment(id), ...engine.orchestration.environment(id), ...engine.bots.environment(id) }));
+    backend.configureSessionEnvironment((id) => ({ ...engine.environmentVariables(id), ...engine.workflows.environment(id), ...engine.orchestration.environment(id), ...engine.bots.environment(id), ...engine.app.environment(id) }));
     await engine.ready;
     const secret = randomBytes(32).toString("base64url");
     let stopping = false;

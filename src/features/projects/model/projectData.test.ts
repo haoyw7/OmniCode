@@ -1,27 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { projectKey } from "../../../shared/lib/paths";
-import {
-  loadSessionFolders,
-  saveSessionFolders,
-} from "../../sessions/model/sessionFolders";
-import {
-  loadTabGroupLabels,
-  saveTabGroupLabel,
-} from "../../workspace/model/tabGroups";
-import {
-  loadProjectChatBackgroundSettings,
-  saveProjectChatBackgroundSettings,
-} from "./projectChatBackground";
+import { loadSessionFolders, saveSessionFolders } from "../../sessions/model/sessionFolders";
+import { loadTabGroupLabels, saveTabGroupLabel } from "../../workspace/model/tabGroups";
+import { loadProjectChatBackgroundSettings, saveProjectChatBackgroundSettings } from "./projectChatBackground";
 import { rebaseProjectData } from "./projectData";
-import {
-  loadProjectSidebarTab,
-  saveProjectSidebarTab,
-} from "../../settings/model/projectSidebarTab";
-import {
-  loadProjectGroupAssignments,
-  saveProjectGroups,
-  setProjectGroupAssignment,
-} from "./projectGroups";
+import { loadProjectSidebarTab, saveProjectSidebarTab } from "../../settings/model/projectSidebarTab";
+import { loadProjectGroupAssignments, saveProjectGroups, setProjectGroupAssignment } from "./projectGroups";
 
 function mockBrowserStorage() {
   const data = new Map<string, string>();

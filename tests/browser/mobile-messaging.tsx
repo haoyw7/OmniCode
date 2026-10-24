@@ -1,3 +1,4 @@
+import { MarkdownServices } from "../../src/mobile/MarkdownServices";
 import { setUiLanguage } from "../../src/shared/i18n/language";
 import { MobileComposer } from "../../src/mobile/MobileComposer";
 import { IconButton } from "../../src/shared/ui/forms/IconButton";
@@ -8,11 +9,11 @@ import { MobileConversation } from "../../src/mobile/MobileConversation";
 import { MobileDrawer } from "../../src/mobile/MobileDrawer";
 import { MobileEmpty } from "../../src/mobile/MobileEmpty";
 import { BotMessages } from "../../src/features/bots/ui/BotMessages";
-import { TranscriptPlatformContext } from "../../src/features/sessions/ui/TranscriptPlatform";
+import { TranscriptPlatformContext } from "../../src/shared/ui/markdown/TranscriptPlatform";
 import { mobileTranscriptPlatform } from "../../src/mobile/transcriptPlatform";
 import { applyMobileSkin } from "../../src/mobile/theme/skin";
 import { PanelLeft, MoreHorizontal, Plus, Sparkles } from "../../src/shared/ui/icons";
-import type { Block } from "../../src/features/sessions/model/session";
+import type { Block } from "../../src/contracts/session";
 import "../../src/mobile/theme/index.css";
 import "../../src/mobile/styles/index.css";
 import "../../src/mobile/motion.css";
@@ -79,4 +80,4 @@ function Fixture() {
       onSessionActions={noop} onNewSession={() => { setEmpty(true); setDrawer(false); }} onSettings={noop} />
   </div>;
 }
-createRoot(document.getElementById("root")!).render(<Fixture />);
+createRoot(document.getElementById("root")!).render(<MarkdownServices><Fixture /></MarkdownServices>);

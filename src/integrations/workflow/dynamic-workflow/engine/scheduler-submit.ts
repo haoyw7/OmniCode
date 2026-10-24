@@ -8,8 +8,8 @@
  */
 
 import type { AskNode, SchedulerHost } from "./scheduler-types.js";
-import type { InstanceRef, Violation } from "./types.js";
-import { REPAIR_ATTEMPTS, WorkflowError } from "./types.js";
+import { type InstanceRef, type Violation, REPAIR_ATTEMPTS, WorkflowError } from "./types.js";
+
 
 /** 调度器暴露给回报处理的最小接缝：查 live 节点、按结果结算。 */
 export interface SubmitSeam {

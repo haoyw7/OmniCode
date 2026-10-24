@@ -1,24 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  addTabToGroup,
-  addTabsToNewGroup,
-  applyGroupedReorder,
-  canJoinTabGroup,
-  canJoinTabOnto,
-  insertTabBesideActive,
-  insertTabInGroup,
-  joinTabOnto,
-  removeTabFromGroup,
-  loadTabGroupColors,
-  loadTabGroupLabels,
-  resolveTabGroupColor,
-  resolveTabGroupLabel,
-  resolveTabGroupLogo,
-  saveTabGroupColor,
-  saveTabGroupLabel,
-  sharedGroupProject,
-  ungroupTabs,
-} from "./tabGroups";
+import { addTabToGroup, addTabsToNewGroup, applyGroupedReorder, canJoinTabGroup, canJoinTabOnto, insertTabBesideActive, insertTabInGroup, joinTabOnto, removeTabFromGroup, loadTabGroupColors, loadTabGroupLabels, resolveTabGroupColor, resolveTabGroupLabel, resolveTabGroupLogo, saveTabGroupColor, saveTabGroupLabel, sharedGroupProject, ungroupTabs } from "./tabGroups";
 import { projectKey, projectName } from "../../../shared/lib/paths";
 
 type Tab = { id: string; project: string; groupId?: string };

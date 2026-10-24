@@ -1,55 +1,15 @@
-import {
-  markTurnInterrupted,
-  type ResumedWorkspace,
-} from "../../sessions/model/inFlight";
-import {
-  closeLeaf,
-  APP_VIEW_KINDS,
-  isAgentTab as isWorkerTab,
-  isSubagentTab,
-  isAppPageKind,
-  isWorkflowAgentTab,
-  isWorkflowArtifactTab,
-  isWorkflowRunTab,
-  isAppViewTab,
-  isAppViewOnlyTab,
-  isTerminalTab,
-  leafIds,
-  newTab,
-  type CommitTabSource,
-  type AppViewKind,
-  type EditorPane,
-  type FilePaneTab,
-  type LayoutNode,
-  type PlanTabSource,
-  type SessionChangesSource,
-  type WorkspaceTab,
-} from "./layout";
-import type { ReleaseNotesTabSource } from "../../../app/model/releaseNotes";
-import {
-  clampDockSize,
-  isDockSide,
-  type DockSide,
-  type ProjectTerminalDock,
-} from "../../projects/model/projectTerminal";
-import { normalizeProjectPath } from "../../projects/model/recents";
+import { type ResumedWorkspace } from "../../sessions/model/inFlight";
+import { closeLeaf, APP_VIEW_KINDS, isAgentTab as isWorkerTab, isSubagentTab, isAppPageKind, isWorkflowAgentTab, isWorkflowArtifactTab, isWorkflowRunTab, isAppViewTab, isAppViewOnlyTab, isTerminalTab, leafIds, newTab, type CommitTabSource, type AppViewKind, type EditorPane, type FilePaneTab, type LayoutNode, type PlanTabSource, type SessionChangesSource, type WorkspaceTab } from "./layout";
+import type { ReleaseNotesTabSource } from "../../../shared/lib/releaseNotes";
+import { clampDockSize, isDockSide, type DockSide, type ProjectTerminalDock } from "../../projects/model/projectTerminal";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
 import { pathKey } from "../../../shared/lib/paths";
 import { parseRemotePath, remotePath } from "../../connections/model/remoteProjects";
 import { isRetiredSession } from "../../sessions/model/retiredSessions";
-import {
-  isBlankSession,
-  reconcileProjectReturn,
-  type ProjectReturnMemory,
-} from "../../projects/model/projectReturn";
-import type { InboxAskContext } from "../../inbox/model/inboxAsk";
-import {
-  HARNESSES,
-  RUNTIME_MODES,
-  newSession,
-  type HarnessId,
-  type RuntimeMode,
-  type Session,
-} from "../../sessions/model/session";
+import { isBlankSession, reconcileProjectReturn, type ProjectReturnMemory } from "../../projects/model/projectReturn";
+import type { InboxAskContext } from "../../../contracts/inbox";
+import { HARNESSES, RUNTIME_MODES, type HarnessId, type RuntimeMode, type Session } from "../../../contracts/session";
+import { newSession } from "../../sessions/model/session";
 
 export type WorkspaceSessionStub = {
   inboxAsk?: InboxAskContext;
@@ -394,9 +354,7 @@ export function hydrateWorkspaceSnapshot(
     const stub = stubs.get(id);
     const base = record ?? (stub ? sessionFromStub(stub) : null);
     if (!base || base.inboxAsk) return null;
-    const next = interruptedIds.has(id)
-      ? markTurnInterrupted(base)
-      : { ...base, busy: false };
+    const next = base;
     sessions.set(id, next);
     return next;
   };

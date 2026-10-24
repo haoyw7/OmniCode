@@ -1,9 +1,5 @@
 import { useSyncExternalStore } from "react";
-import {
-  preferenceStorage,
-  subscribeSharedPreferences,
-  SHARED_PREFERENCES_CHANGED,
-} from "../../../settings/model/sharedPreferences";
+import { preferenceStorage, subscribeSharedPreferences, SHARED_PREFERENCES_CHANGED } from "../../../settings/model/sharedPreferences";
 
 export type EditorPreferences = {
   previewTabs: boolean;

@@ -1,32 +1,9 @@
-import { walkTranscript } from "./agentTranscript";
-import { stopStreaming } from "../../../integrations/harness/core/apply";
-import { forgetHarnessSession } from "../../../integrations/harness/core/registry";
-import {
-  buildDeterministicHandoff,
-  completeHandoff,
-  isPreparingHandoff,
-  sessionChildHarnesses,
-} from "./handoff";
-import { flushSessionCheckpoint } from "./checkpoint";
+import { walkTranscript } from "../../../domain/agentTranscript";
 import { isFilesystemTab, type WorkspaceTab } from "../../workspace/model/layout";
-import { orchestrator } from "../../orchestration/model/orchestration";
-import {
-  newSession,
-  type HarnessId,
-  type RuntimeMode,
-  type Session,
-} from "./session";
-import {
-  deleteSession,
-  setSessionArchived,
-  shouldPersistSession,
-  upsertSession,
-  type SessionSummary,
-} from "../data/sessionStore";
-import {
-  removeSessionFromWorkspace,
-  type SessionWorkspaceRemoval,
-} from "./sessionWorkspaceLifecycle";
+import { newSession } from "./session";
+import { type HarnessId, type RuntimeMode, type Session } from "../../../contracts/session";
+import { deleteSession, setSessionArchived, type SessionSummary } from "../data/sessionStore";
+import { removeSessionFromWorkspace, type SessionWorkspaceRemoval } from "./sessionWorkspaceLifecycle";
 import type { WorkspaceTabCloseScope } from "../../workspace/model/workspaceTabGroups";
 
 type Workspace = {
@@ -110,59 +87,24 @@ async function removeSession(
   });
   if (!(await options.confirm(plan.closedTabs, options.mode))) return false;
 
-  if (options.mode === "delete") {
-    const run = orchestrator.forSession(sessionId);
-    if (run && (run.status === "active" || run.status === "paused")) {
-      await orchestrator.stopRun(run.leadId);
-    }
-  }
   await options.stop(sessionId);
   const latest = options.workspace
     .snapshot()
     .sessions.find((session) => session.id === sessionId);
-  let stopped = latest;
-  if (latest) {
-    stopped = latest.busy ? stopStreaming(latest) : latest;
-    if (isPreparingHandoff(stopped)) {
-      stopped = completeHandoff(stopped, buildDeterministicHandoff(stopped));
-    }
-    if (stopped.queuedMessages?.length) {
-      stopped = { ...stopped, queueStatus: "paused" };
-    }
-    // Cancellation invalidates normal turn completion. Keep a usable stopped
-    // session even when the following storage operation fails.
-    options.workspace.apply({ type: "stopped", session: stopped });
-  }
-  const harnesses: HarnessId[] = stopped
-    ? sessionChildHarnesses(stopped)
-    : [options.replacement.harness ?? "cursor"];
-  if (options.mode === "delete") {
-    // Release native processes before deleting the record, so a following
-    // worktree removal cannot race fire-and-forget cleanup.
-    await Promise.all(
-      harnesses.map((harness) => forgetHarnessSession(harness, sessionId)),
-    );
-  }
-
-  if (stopped) await flushSessionCheckpoint(sessionId);
+  const stopped = latest;
+  if (stopped?.busy) throw new Error("Wait for the Host to stop this conversation before removing it.");
+  if (stopped) options.workspace.apply({ type: "stopped", session: stopped });
   let savedSummary: SessionSummary | undefined;
   if (options.mode === "delete") {
     const imagePaths = [...walkTranscript(stopped?.blocks ?? [])].flatMap((block) =>
       block.role === "image" && block.image ? [block.image.path] : [],
     );
-    await orchestrator.deleteSession(sessionId, () =>
-      deleteSession(sessionId, imagePaths),
-    );
+    await deleteSession(sessionId, imagePaths);
     options.workspace.apply({
       type: "orchestrationReleased",
       leadId: sessionId,
     });
   } else {
-    if (stopped && shouldPersistSession(stopped)) {
-      const saved = await upsertSession(stopped);
-      if (!saved) throw new Error("The conversation could not be saved.");
-      savedSummary = saved;
-    }
     await setSessionArchived(sessionId, true);
   }
 
@@ -198,11 +140,6 @@ async function removeSession(
   });
   // No await between the final read and commit: unrelated streaming updates,
   // tabs, and focus changes must survive this operation.
-  if (options.mode === "archive") {
-    for (const harness of harnesses) {
-      void forgetHarnessSession(harness, sessionId);
-    }
-  }
   options.workspace.apply({
     type: "removed",
     mode: options.mode,

@@ -3,12 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { popTransition, immediateTransition, motionDistance } from "../shared/motion/tokens";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
 import { MobileSpinner } from "./MobileSpinner";
-import {
-  Internet,
-  CheckCircle,
-  PairingCode,
-  ScanQrCode,
-} from "../shared/ui/icons";
+import { Internet, CheckCircle, PairingCode, ScanQrCode } from "../shared/ui/icons";
 import { useId, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { MobileSheet } from "./MobileSheet";

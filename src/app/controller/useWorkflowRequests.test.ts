@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, createElement, useLayoutEffect, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { newSession } from "../../features/sessions/model/session";
 import { newTab, newEditorWorkspaceTab, newWorkflowRunTab, type WorkspaceTab } from "../../features/workspace/model/layout";

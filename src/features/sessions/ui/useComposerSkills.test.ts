@@ -12,11 +12,7 @@ vi.mock("../../../integrations/harness/core/registry", () => ({
 
 import { describe, expect, it, vi } from "vitest";
 import type { Skill } from "../../skills/model/skills";
-import {
-  nextComposerSkillContextToken,
-  pickerSkillLoadOptions,
-  visibleComposerSkills,
-} from "./useComposerSkills";
+import { nextComposerSkillContextToken, pickerSkillLoadOptions, visibleComposerSkills } from "../../skills/model/useComposerSkills";
 
 const piSkill: Skill = {
   kind: "native",

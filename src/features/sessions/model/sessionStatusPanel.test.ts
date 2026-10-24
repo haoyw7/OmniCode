@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Block, TaskListItem } from "./session";
-import {
-  buildSessionStatusPanelModel,
-  focusedTaskWindow,
-  sessionStatusSummary,
-} from "./sessionStatusPanel";
+import type { Block, TaskListItem } from "../../../contracts/session";
+import { buildSessionStatusPanelModel, focusedTaskWindow, sessionStatusSummary } from "./sessionStatusPanel";
 
 const tasks = (id: string, items: TaskListItem[]): Block => ({
   id,

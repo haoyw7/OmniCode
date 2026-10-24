@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { HostStore } from "./store";
 import { newSession } from "../src/features/sessions/model/session";
-import { applyHarnessEvent } from "../src/integrations/harness/core/apply";
+import { createSessionProjection } from "../src/domain/apply";
+import { resolveModel as projectionResolveModel } from "../src/integrations/harness/core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { contextFromUsageSnapshot } from "../src/integrations/harness/providers/claude/claudeProtocol";
 
 describe("Host context breakdown", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { HostSession } from "../features/connections/model/protocol";
+import type { HostSession } from "../contracts/protocol";
 import { createSessionSnapshotStore, sameSessionShell, selectSessionShell } from "./sessionSnapshotStore";
 
 function snapshot(revision = 1): HostSession {

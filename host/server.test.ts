@@ -20,9 +20,13 @@ import { createHostServer } from "./server";
 import { HostChildBackend } from "./child-backend";
 import { acquireHarnessBridge, configureChildBackend } from "../src/integrations/harness/core/child";
 import type { SendTurnInput } from "../src/integrations/harness/core/types";
-import type { RemoteProvider } from "../src/features/connections/model/protocol";
+import type { RemoteProvider } from "../src/contracts/provider";
 import { checkoutPath, withCheckoutRemoval } from "./checkout-guards";
 import { importDesktopSessions } from "./desktop-import";
+import { HostGitlab } from "./gitlab";
+import { HostGithub } from "./github";
+import { HostAuxiliaryProvider } from "./auxiliary-provider";
+import { HostMcp } from "./mcp";
 
 const modelProbe = vi.hoisted(() => vi.fn());
 const piModelProbe = vi.hoisted(() => vi.fn());
@@ -130,6 +134,163 @@ async function setup(providers: RemoteProvider[] = ["codex"], discoverProviders?
     finish: () => finish(),
   };
 }
+
+it("routes auxiliary provider jobs by authenticated device without exposing credentials", async () => {
+  const s = await setup();
+  const start = vi.spyOn(HostAuxiliaryProvider.prototype, "start").mockReturnValue({ status: "running" });
+  const read = vi.spyOn(HostAuxiliaryProvider.prototype, "read").mockResolvedValue({ status: "cancelled" });
+  try {
+    expect((await s.call("environment.describe")).value.result.capabilities).toContain("providers.auxiliary.v1");
+    await s.call("providers.auxiliary.start", { requestId: "one", projectId: s.project.id, operation: "commit" });
+    await s.call("providers.auxiliary.read", { requestId: "one", projectId: s.project.id });
+    expect(start.mock.calls[0][0]).toMatch(/^[a-f0-9]{64}$/);
+    expect(read).toHaveBeenCalledWith(start.mock.calls[0][0], "one");
+    await s.call("providers.auxiliary.start", { requestId: "one", projectId: s.project.id, operation: "commit" }, s.second.token);
+    expect(start.mock.calls[1][0]).not.toBe(start.mock.calls[0][0]);
+  } finally { start.mockRestore(); read.mockRestore(); }
+});
+
+it("routes MCP jobs by device and keeps configuration changes desktop-owned", async () => {
+  const s = await setup();
+  const start = vi.spyOn(HostMcp.prototype, "start").mockReturnValue({ status: "running" });
+  const status = vi.spyOn(HostMcp.prototype, "status").mockResolvedValue({ status: "completed", result: { operation: "add" } });
+  const discover = vi.spyOn(HostMcp.prototype, "discover").mockResolvedValue([]);
+  try {
+    expect((await s.call("environment.describe")).value.result.capabilities).toContain("mcp.v1");
+    expect((await s.call("mcp.discover", { projectId: s.project.id })).value.result).toEqual([]);
+    expect((await s.call("mcp.start", { requestId: "a", projectId: s.project.id, operation: "add" })).value.error).toContain("Only this computer");
+    expect(start).not.toHaveBeenCalled();
+    await s.call("mcp.start", { requestId: "l", projectId: s.project.id, operation: "claudeList" });
+    s.store.markAdminDevice(s.first.id);
+    expect((await s.call("mcp.start", { requestId: "a", projectId: s.project.id, operation: "add" })).status).toBe(200);
+    expect((await s.call("mcp.status", { requestId: "a" })).value.result).toEqual({ status: "completed", result: { operation: "add" } });
+    expect(start.mock.calls[0][0]).toMatch(/^[a-f0-9]{64}$/);
+    expect(status.mock.calls[0][0]).toBe(start.mock.calls[0][0]);
+  } finally { start.mockRestore(); status.mockRestore(); discover.mockRestore(); }
+});
+
+it("routes GitLab through Host capability, desktop credential ownership and registered project paths", async () => {
+  const s = await setup();
+  const run = vi.spyOn(HostGitlab.prototype, "run").mockResolvedValue({ connected: true });
+  try {
+    expect((await s.call("environment.describe")).value.result.capabilities).toContain("inbox.gitlab.v1");
+    expect((await s.call("inbox.run", { command: "gitlab_set_config", args: { url: "https://gitlab.com", token: "test-token" } }, s.second.token)).value.error).toContain("Only this computer");
+    expect(run).not.toHaveBeenCalled();
+    s.store.markAdminDevice(s.first.id);
+    expect((await s.call("inbox.run", { command: "gitlab_set_config", args: { url: "https://gitlab.com", token: "test-token" } })).status).toBe(200);
+    expect(run).toHaveBeenLastCalledWith("gitlab_set_config", { url: "https://gitlab.com", token: "test-token" });
+    run.mockClear();
+    expect((await s.call("inbox.run", { command: "gitlab_repo", args: { cwd: "/unregistered" } })).status).toBe(400);
+    expect(run).not.toHaveBeenCalled();
+    expect((await s.call("inbox.run", { command: "gitlab_repo", projectId: s.project.id, args: { cwd: "/unregistered" } })).status).toBe(200);
+    expect(run).toHaveBeenLastCalledWith("gitlab_repo", { cwd: s.project.cwd });
+  } finally { run.mockRestore(); }
+});
+
+it("routes GitHub through the Host gh account, registered project checkouts and media/link capabilities", async () => {
+  const s = await setup();
+  const run = vi.spyOn(HostGithub.prototype, "run").mockResolvedValue("owner/repo");
+  try {
+    const capabilities = (await s.call("environment.describe")).value.result.capabilities;
+    expect(capabilities).toEqual(expect.arrayContaining(["inbox.github.v1", "media.inbox.v1", "links.preview.v1", "workspace.attachments.v1", "git.worktreeProgress.v1"]));
+    // A project command never runs in a caller-chosen directory.
+    expect((await s.call("inbox.run", { command: "git_github_repo", args: { cwd: "/unregistered" } })).status).toBe(400);
+    expect(run).not.toHaveBeenCalled();
+    expect((await s.call("inbox.run", { command: "git_github_repo", projectId: s.project.id, args: { cwd: "/unregistered" } })).value.result).toBe("owner/repo");
+    expect(run).toHaveBeenLastCalledWith("git_github_repo", { cwd: s.project.cwd });
+    // Paired devices may read status without a project; gh credentials never leave the Host.
+    run.mockResolvedValueOnce({ installed: true, authenticated: true, connected: true });
+    expect((await s.call("inbox.run", { command: "git_github_status" }, s.second.token)).value.result).toEqual({ installed: true, authenticated: true, connected: true });
+    expect((await s.call("inbox.run", { command: "git_github_unknown_secret" })).status).toBe(400);
+  } finally { run.mockRestore(); }
+});
+
+it("rejects private link previews and keeps media transfers scoped to the requesting device", async () => {
+  const s = await setup();
+  expect((await s.call("links.preview", { url: "http://127.0.0.1/admin" })).value.error).toMatch(/Private addresses|Local addresses/);
+  expect((await s.call("links.preview", { url: "http://localhost/admin" })).value.error).toContain("Local addresses");
+  expect((await s.call("media.inbox", { url: "https://evil.example/pixel.png" })).value.error).toContain("not allowed");
+  expect((await s.call("media.chunk", { transfer: "unknown", offset: 0 }, s.second.token)).value.error).toContain("expired");
+});
+
+it("answers a stopping Host with a retryable 503 that applied nothing, while payload conflicts stay rejections", async () => {
+  const s = await setup();
+  const created = await s.call("commands.dispatch", { type: "create", commandId: "stopping-create", projectId: s.project.id,
+    harness: "codex", model: "codex:test", runtimeMode: "supervised" });
+  const sessionId = created.value.result.sessionId;
+  const send = { type: "send", commandId: "stopping-send", sessionId, text: "Work" };
+  const lifecycle = s.engine as unknown as { closing: boolean };
+  lifecycle.closing = true;
+  const stopping = await s.call("commands.dispatch", send);
+  expect(stopping).toMatchObject({ status: 503, value: { error: "Host is stopping", code: "HOST_UNAVAILABLE" } });
+  lifecycle.closing = false;
+  expect(s.send).not.toHaveBeenCalled();
+  expect((await s.call("commands.dispatch", send)).status).toBe(200);
+  await vi.waitFor(() => expect(s.send).toHaveBeenCalledOnce());
+  const conflict = await s.call("commands.dispatch", { ...send, text: "Changed" });
+  expect(conflict.status).toBe(400);
+  expect(conflict.value.code).toBeUndefined();
+  expect(conflict.value.error).toMatch(/different payload/);
+});
+
+it("reads submission outcomes without polling transcript blocks and rejects unknown submissions", async () => {
+  const s = await setup();
+  const descriptor = (await s.call("environment.describe")).value.result;
+  expect(descriptor.capabilities).toContain("sessions.outcome.v1");
+  const created = await s.call("commands.dispatch", { type: "create", commandId: "outcome-create", projectId: s.project.id,
+    harness: "codex", model: "codex:test", runtimeMode: "supervised" });
+  const sessionId = created.value.result.sessionId;
+  await s.call("commands.dispatch", { type: "send", commandId: "outcome-send", sessionId, text: "Work" });
+  await vi.waitFor(() => expect(s.send).toHaveBeenCalledOnce());
+  expect((await s.call("commands.outcome", { sessionId, commandId: "outcome-send" })).value.result).toMatchObject({ sessionId, commandId: "outcome-send" });
+  s.turn().onEvent({ type: "message.delta", text: "Completed answer" });
+  s.finish();
+  await vi.waitFor(() => expect(s.store.session(sessionId).status).toBe("idle"));
+  const result = (await s.call("commands.outcome", { sessionId, commandId: "outcome-send" })).value.result;
+  expect(result).toMatchObject({ sessionId, commandId: "outcome-send", outcome: { status: "completed", text: "Completed answer" } });
+  expect(result).not.toHaveProperty("blocks");
+  expect(result).not.toHaveProperty("session");
+  expect((await s.call("commands.outcome", { sessionId, commandId: "missing" })).status).toBe(400);
+  expect((await s.call("commands.outcome", { sessionId, commandId: "outcome-send", projectId: "wrong" })).status).toBe(400);
+});
+
+it("advertises Host Linear service and restricts saved credential changes to the local desktop", async () => {
+  const s = await setup();
+  expect((await s.call("environment.describe")).value.result.capabilities).toContain("inbox.linear.v1");
+  expect((await s.call("inbox.run", { command: "linear_status" })).value.result).toEqual({ connected: false });
+  expect((await s.call("inbox.run", { command: "linear_set_token", args: { token: "" } })).value.error).toContain("Only this computer's desktop");
+  s.store.markAdminDevice(s.first.id);
+  expect((await s.call("inbox.run", { command: "linear_set_token", args: { token: "" } })).value.result).toEqual({ connected: false });
+  expect((await s.call("inbox.run", { command: "unknown" })).value.error).toBe("Unsupported inbox operation");
+});
+
+it("routes a registered project root rename through Host while preserving its session ID", async () => {
+  const s = await setup();
+  const from = join(s.directory, "old"); const to = join(s.directory, "new"); mkdirSync(from);
+  const project = await s.engine.openProject(from);
+  const created = await s.call("commands.dispatch", { type: "create", commandId: "move-create", projectId: project.id,
+    harness: "codex", model: "codex:test", runtimeMode: "supervised" });
+  const moved = await s.call("workspace.run", { command: "rename_path", args: { path: from, name: "new" } });
+  expect(moved.value).toEqual({ result: to });
+  expect(s.store.project(project.id).cwd).toBe(to);
+  expect(s.store.session(created.value.result.sessionId).session.cwd).toBe(to);
+});
+
+it("advertises inbox discussions and keeps their source readable only through session sync", async () => {
+  const s = await setup();
+  await s.engine.workflows.ready;
+  expect((await s.call("environment.describe")).value.result.capabilities).toContain("sessions.inbox.v1");
+  const inboxAsk = { key: "github:issue:1", title: "Issue", url: "", provider: "github", description: "Long source body" };
+  const created = await s.call("commands.dispatch", {
+    type: "create", commandId: "inbox-create", projectId: s.project.id,
+    harness: "codex", model: "codex:test", runtimeMode: "supervised", inboxAsk,
+  });
+  expect(created.status).toBe(200);
+  const sessionId = created.value.result.sessionId;
+  expect((await s.call("sessions.list", { projectId: s.project.id })).value.result).toEqual([]);
+  expect((await s.call("sessions.activity")).value.result.sessions).toEqual([]);
+  expect((await s.call("sessions.sync", { sessionId })).value.result.value.session.inboxAsk).toEqual(inboxAsk);
+});
 
 it("scopes background task stop requests to the owning project", async () => {
   const s = await setup();
@@ -250,6 +411,18 @@ it("restricts Host account management to admin devices while sharing safe accoun
   expect((await s.call("providerAccounts.read", {}, s.second.token)).status).toBe(401);
 });
 
+it("advertises Host provider login and authorizes login polling as well as starting", async () => {
+  const s = await setup();
+  expect((await s.call("environment.describe")).value.result.capabilities).toContain("providers.login.v1");
+  for (const method of ["providers.loginStart", "providers.loginStatus"]) {
+    const response = await s.call(method, { provider: "cursor", operationId: "auth-one", id: "auth-one" }, s.second.token);
+    expect(response.value.error).toContain("Only this computer's desktop");
+  }
+  s.store.markAdminDevice(s.first.id);
+  expect((await s.call("providers.loginStart", { provider: "pi", operationId: "invalid-login" })).value.error).toContain("single browser");
+  expect((await s.call("providers.loginStatus", { id: "missing" })).value.error).toContain("interrupted");
+});
+
 it("shares DeepSeek account details with paired devices and validates requests before starting DSH", async () => {
   const s = await setup();
   const client = { version: "0.1.0", locale: "zh-CN", timezoneOffsetSeconds: -25_200 };
@@ -312,6 +485,28 @@ it("keeps environment variables readable and writable only by this computer's de
   expect(JSON.stringify(listed.value)).not.toContain("secret");
 });
 
+it("runs an automation entirely in Host and exposes its session and completion to clients", async () => {
+  const s = await setup();
+  await s.engine.ready;
+  expect((await s.call("environment.describe")).value.result.capabilities).toContain("automations.v1");
+  const automation = { id: "a1", name: "Review", prompt: "Review this project", harness: "codex", model: "codex:test",
+    cwd: s.project.cwd, workspaceMode: "current", reuseSession: false, runtimeMode: "supervised", enabled: false,
+    triggerKind: "time", triggerEvent: "hourly", scheduleKind: "hourly", minute: 0, time: "09:00", dayOfWeek: 1,
+    triggers: [], missedRunGraceMinutes: 60, nextRunAt: 0 };
+  expect((await s.call("automations.upsert", { automation })).status).toBe(200);
+  const launched = await s.call("automations.run", { automationId: "a1" });
+  expect(launched.status).toBe(200);
+  expect(launched.value.result).toMatchObject({ status: "running", automationId: "a1" });
+  await vi.waitFor(() => expect(s.send).toHaveBeenCalledTimes(1));
+  const sessionId = launched.value.result.sessionId;
+  expect(s.store.session(sessionId).session.automationId).toBe("a1");
+  s.finish();
+  await vi.waitFor(() => expect(s.store.session(sessionId).status).toBe("idle"));
+  await s.engine.automations.tick();
+  expect((await s.call("automations.runs", { automationId: "a1" })).value.result[0].status).toBe("succeeded");
+  expect((await s.call("automations.list", {}, "bad-token")).status).toBe(401);
+});
+
 it("advertises notes RPC and shares CRUD and image access only with authenticated devices", async () => {
   const s = await setup();
   expect((await s.call("environment.describe")).value.result.capabilities).toContain("notes.v1");
@@ -364,8 +559,13 @@ it("names both the branch and worktree directory before creation through RPC", a
   const named = await s.call("git.worktreeName", nameParams);
   expect(named.value.result).toBe("oc/fix-login");
   const generated = await s.call("git.worktreeCreate", {
-    projectId: s.project.id, branch: named.value.result, base: "main", existing: false,
+    projectId: s.project.id, branch: named.value.result, base: "main", existing: false, progressId: "progress-1234",
   });
+  // Live progress mirrors the final log and is private to the requesting device.
+  const progress = await s.call("git.worktreeProgress", { progressId: "progress-1234", offset: 0 });
+  expect(progress.value.result).toEqual({ lines: generated.value.result.log, offset: generated.value.result.log.length, done: true });
+  expect((await s.call("git.worktreeProgress", { progressId: "progress-1234", offset: 0 }, s.second.token)).value.result)
+    .toEqual({ lines: [], offset: 0, done: false });
   expect(generated.value.result).toMatchObject({
     branch: "oc/fix-login", path: expect.stringMatching(/[/\\]wt-oc-fix-login$/),
     log: expect.arrayContaining(["Preparing worktree (new branch 'oc/fix-login')"]),
@@ -1079,6 +1279,22 @@ describe("remote host API", () => {
       expect(retried.errors).toEqual({});
       expect(piModelProbe).toHaveBeenCalledTimes(attempts + 1);
     }
+  });
+  it("advertises explicit catalog refresh and invalidates only the requested cached provider", async () => {
+    const s = await setup(["codex", "pi"]);
+    cleanups.push(async () => { modelProbe.mockReset(); piModelProbe.mockReset(); });
+    modelProbe.mockReset().mockResolvedValue([{ id: "codex:old", harness: "codex", name: "Old" }]);
+    piModelProbe.mockReset().mockResolvedValue([{ id: "pi:keep", harness: "pi", name: "Keep" }]);
+    const params = { projectId: s.project.id };
+    await s.call("models.list", params);
+    modelProbe.mockResolvedValue([{ id: "codex:new", harness: "codex", name: "New" }]);
+    expect((await s.call("models.list", params)).value.result.models.codex[0].id).toBe("codex:old");
+    const refreshed = (await s.call("models.list", { ...params, providers: ["codex"], force: true })).value.result;
+    expect(refreshed.models.codex[0].id).toBe("codex:new");
+    expect((await s.call("models.list", params)).value.result.models.pi[0].id).toBe("pi:keep");
+    expect(modelProbe).toHaveBeenCalledTimes(2);
+    expect(piModelProbe).toHaveBeenCalledOnce();
+    expect((await s.call("environment.describe")).value.result.capabilities).toContain("models.refresh.v1");
   });
   it("retries model discovery after a provider becomes available", async () => {
     const s = await setup();
@@ -2097,4 +2313,15 @@ it("streams committed sync revisions and rechecks revoked credentials after wait
   s.store.revokeDevice(s.second.id);
   s.store.updateSession(sessionId, { title: "Changed after revocation" });
   expect((await revoked).value.error).toContain("revoked");
+});
+
+
+it("advertises Host Azure DevOps, protects PAT changes, and requires registered repository projects", async () => {
+  const s = await setup();
+  expect((await s.call("environment.describe")).value.result.capabilities).toContain("inbox.azuredevops.v1");
+  expect((await s.call("inbox.run", { command: "azure_devops_status" })).value.result).toEqual({ connected: false, url: "", organization: "" });
+  expect((await s.call("inbox.run", { command: "azure_devops_set_config", args: { url: "acme", token: "" } })).value.error).toContain("Only this computer's desktop");
+  expect((await s.call("inbox.run", { command: "azure_devops_repo", args: { cwd: "C:/unregistered" } })).status).toBe(400);
+  s.store.markAdminDevice(s.first.id);
+  expect((await s.call("inbox.run", { command: "azure_devops_set_config", args: { url: "acme", token: "" } })).value.result).toEqual({ connected: false, url: "https://dev.azure.com/acme", organization: "https://dev.azure.com/acme" });
 });

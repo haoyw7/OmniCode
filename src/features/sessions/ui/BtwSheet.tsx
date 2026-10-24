@@ -8,23 +8,13 @@ import { Composer } from "./Composer";
 import { AgentTranscript } from "./AgentTranscript";
 import { GlassBackdrop } from "../../../shared/ui/GlassBackdrop";
 import { BtwQuestionBurst, type BurstRect } from "./BtwQuestionBurst";
-import { preferredModelSettings, resolveModel } from "../model/models";
-import {
-  btwOpenTargetTurnId,
-  btwThreadBlocks,
-  btwSurfaceHarness,
-  sessionBtwThreads,
-} from "../model/btw";
+import { preferredModelSettings } from "../model/models";
+import { resolveModel } from "../../../integrations/harness/core/modelCatalog";
+import { btwOpenTargetTurnId, btwThreadBlocks, btwSurfaceHarness, sessionBtwThreads } from "../model/btw";
 import { reducedMotionQuery } from "../../../shared/lib/reducedMotion";
 import { groupTurns } from "../model/transcriptActivity";
-import {
-  DEFAULT_RUNTIME_MODE,
-  HARNESS_TITLE,
-  type Block,
-  type BtwMessage,
-  type BtwThread,
-  type HarnessId,
-} from "../model/session";
+import { DEFAULT_RUNTIME_MODE, type Block, type BtwMessage, type BtwThread, type HarnessId } from "../../../contracts/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
 
 type Options = {
   /** False when this session cannot take side questions right now. */

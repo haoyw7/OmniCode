@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { newSession, type RuntimeMode } from "../../../../features/sessions/model/session";
-import { applyHarnessEvent } from "../../core/apply";
-import { modelsFor, setHarnessModels } from "../../../../features/sessions/model/models";
+import { newSession } from "../../../../features/sessions/model/session";
+import { type RuntimeMode } from "../../../../contracts/session";
+import { createSessionProjection } from "../../../../domain/apply";
+import { resolveModel as projectionResolveModel, modelsFor, setHarnessModels } from "../../core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
+
 
 let onStdout: ((line: string) => void) | undefined;
 let onChildExit: ((code: number | null) => void) | undefined;
@@ -77,7 +80,7 @@ const {
   sendOpenCodeTurn,
   stopOpenCodeSession,
 } = await import("./opencode");
-import type { HarnessEvent } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
 
 const waitFor = async (predicate: () => boolean, label: string) => {
   for (let index = 0; index < 200; index += 1) {

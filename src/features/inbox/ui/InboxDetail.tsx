@@ -1,86 +1,31 @@
+import type { AzureDevOpsWorkItemThread } from "../../../contracts/azureDevOps";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useGithubPrChecks } from "../hooks/useGithubPrChecks";
 import { summarizePrChecks } from "../model/githubPrChecks";
 import type { CiRepairRequest } from "../model/ciRepair";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import {
-  Check,
-  Copy,
-  ExternalLink,
-  GitCompare,
-  MessageSquare,
-  LoaderCircle,
-  MessageMultiple,
-} from "../../../shared/ui/icons";
+import { openExternalUrl } from "../../../platform/tauri/browser";
+import { Check, Copy, ExternalLink, GitCompare, MessageSquare, LoaderCircle, MessageMultiple } from "../../../shared/ui/icons";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { InboxProviderMark } from "./InboxProviderMark";
+import { InboxProviderMark } from "../../../shared/ui/branding/InboxProviderMark";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import {
-  githubPrDiff,
-  githubReviewDecisionLabel,
-  githubWorkItemComment,
-  githubWorkItemDetails,
-  githubWorkItemThread,
-  gitlabAttentionLabel,
-  inboxItemKey,
-  inboxItemRef,
-  inboxItemStatus,
-  peekGithubPrDiff,
-  peekGithubWorkItemDetails,
-  peekGithubWorkItemThread,
-  formatRelativeTime,
-  inboxPersonAvatarUrl,
-  type GithubPrDiff,
-  GITHUB_WORK_ITEM_FRESH_MS,
-  type GithubWorkItemDetails,
-  type GithubWorkItemThread,
-  type InboxItem,
-} from "../model/githubTasks";
+import { githubPrDiff, githubReviewDecisionLabel, githubWorkItemComment, githubWorkItemDetails, githubWorkItemThread, gitlabAttentionLabel, inboxItemKey, inboxItemRef, inboxItemStatus, peekGithubPrDiff, peekGithubWorkItemDetails, peekGithubWorkItemThread, formatRelativeTime, inboxPersonAvatarUrl, GITHUB_WORK_ITEM_FRESH_MS } from "../model/githubTasks";
+import { type GithubPrDiff, type GithubWorkItemDetails, type GithubWorkItemThread, type InboxItem } from "../../../contracts/session";
 import { copyText } from "../../../platform/tauri/clipboard";
 import { projectName } from "../../../shared/lib/paths";
 import { playCue } from "../../settings/model/sounds";
 import { sameProjectPath } from "../../projects/model/recents";
 import { sessionDisplayTitle } from "../../sessions/model/session";
 import type { SessionSummary } from "../../sessions/data/sessionStore";
-import {
-  linearIssueComment,
-  linearIssueDetails,
-  linearIssueThread,
-  peekLinearIssueDetails,
-  peekLinearIssueThread,
-  type LinearIssueThread,
-} from "../model/linear";
-import {
-  jiraIssueComment,
-  jiraIssueDetails,
-  jiraIssueThread,
-  peekJiraIssueDetails,
-  peekJiraIssueThread,
-  type JiraIssueThread,
-} from "../model/jira";
-import {
-  gitlabMrDiff,
-  gitlabWorkItemComment,
-  gitlabWorkItemDetails,
-  gitlabWorkItemThread,
-  peekGitlabMrDiff,
-  peekGitlabWorkItemDetails,
-  peekGitlabWorkItemThread,
-  type GitlabWorkItemThread,
-} from "../model/gitlab";
-import {
-  azureDevOpsMrDiff,
-  azureDevOpsWorkItemComment,
-  azureDevOpsWorkItemDetails,
-  azureDevOpsWorkItemThread,
-  peekAzureDevOpsMrDiff,
-  peekAzureDevOpsWorkItemDetails,
-  peekAzureDevOpsWorkItemThread,
-  type AzureDevOpsWorkItemThread,
-} from "../model/azureDevOps";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+import { linearIssueComment, linearIssueDetails, linearIssueThread, peekLinearIssueDetails, peekLinearIssueThread } from "../model/linear";
+import type { LinearIssueThread } from "../../../contracts/linear";
+import { jiraIssueComment, jiraIssueDetails, jiraIssueThread, peekJiraIssueDetails, peekJiraIssueThread } from "../model/jira";
+import type { JiraIssueThread } from "../../../contracts/jira";
+import { gitlabMrDiff, gitlabWorkItemComment, gitlabWorkItemDetails, gitlabWorkItemThread, peekGitlabMrDiff, peekGitlabWorkItemDetails, peekGitlabWorkItemThread } from "../model/gitlab";
+import { type GitlabWorkItemThread } from "../../../contracts/gitlab";
+import { azureDevOpsMrDiff, azureDevOpsWorkItemComment, azureDevOpsWorkItemDetails, azureDevOpsWorkItemThread, peekAzureDevOpsMrDiff, peekAzureDevOpsWorkItemDetails, peekAzureDevOpsWorkItemThread } from "../model/azureDevOps";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
 import { InboxComments, InboxCommentForm, type InboxReplyTarget } from "./InboxComments";
-import { InboxPrDiff } from "./InboxPrDiff";
+import { useInboxDiffRenderer } from "./inboxPresentation";
 import { InboxDescriptionSummary, InboxPrChangesGlance } from "./InboxPrOverview";
 import { InboxPrChecks, PrChecksTab } from "./InboxPrChecks";
 import { type InboxProjectOption, InboxProjectPicker } from "./InboxProjectPicker";
@@ -161,6 +106,7 @@ export function InboxDetail({
   onOpenSession?: (sessionId: string) => void | Promise<void>;
   onItemChange?: (item: InboxItem) => void;
 }) {
+  const InboxPrDiff = useInboxDiffRenderer();
   const { t: uiT } = useTranslation();
   const detailLock = useLockOverscroll<HTMLDivElement>();
   const panel = mode === "panel";
@@ -795,7 +741,7 @@ export function InboxDetail({
           title={item.url ? externalActionLabel : uiT("No link available")}
           aria-label={externalActionLabel}
           disabled={!item.url}
-          onClick={() => void openUrl(item.url)}
+          onClick={() => void openExternalUrl(item.url)}
           className={`${ACTION_PANEL_HEADER} ml-auto shrink-0 disabled:opacity-40`}
         >
           <ExternalLink className="size-3.5" />
@@ -1020,7 +966,7 @@ export function InboxDetail({
                       item.url ? externalActionLabel : uiT("No link available")
                     }
                     disabled={!item.url}
-                    onClick={() => void openUrl(item.url)}
+                    onClick={() => void openExternalUrl(item.url)}
                     className={`${ACTION_GHOST} disabled:opacity-40`}
                   >
                     <ExternalLink className="size-3.5" />

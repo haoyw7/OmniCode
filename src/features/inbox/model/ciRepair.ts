@@ -1,4 +1,5 @@
-import type { GithubPrCheck, GithubCheckDetails } from "./githubPrChecks";
+import type { GithubPrCheck, GithubCheckDetails } from "../../../contracts/github";
+import { EVIDENCE_SEPARATOR } from "../../../domain/ciRepair";
 
 export type CiRepairRequest = {
   text: string;
@@ -17,24 +18,6 @@ export type CiRepairEvidence = GithubPrCheck & {
 
 const MAX_PROMPT_CHARS = 12_000;
 const MAX_CHECK_LIST_CHARS = 3_000;
-const EVIDENCE_SEPARATOR = "\n\nCI evidence:\n";
-
-/** The budget is soft: instructions and selected checks must survive compaction. */
-export function compactCiRepairContext(
-  context: string,
-  maxChars: number,
-): string {
-  if (context.length <= maxChars) return context;
-  const evidenceStart = context.indexOf(EVIDENCE_SEPARATOR);
-  // Saved prompts without an explicit evidence section cannot be safely shortened.
-  if (evidenceStart < 0) return context;
-  const prefixEnd = evidenceStart + EVIDENCE_SEPARATOR.length;
-  const prefix = context.slice(0, prefixEnd);
-  const evidence = context.slice(prefixEnd);
-  const marker = "\n\n[CI evidence truncated]";
-  const evidenceBudget = Math.max(0, maxChars - prefix.length - marker.length);
-  return `${prefix}${evidence.slice(0, evidenceBudget)}${marker}`;
-}
 
 function clip(value: string, maxChars: number): string {
   return value.length <= maxChars ? value : `${value.slice(0, maxChars - 1)}…`;

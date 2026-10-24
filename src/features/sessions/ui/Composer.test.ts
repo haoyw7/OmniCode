@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, createElement, StrictMode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -15,17 +16,16 @@ vi.mock("../../../shared/ui/StatusToast", async (importOriginal) => ({
 }));
 import { pickWslFolder } from "../../../platform/tauri/wsl";
 import { showStatusToast } from "../../../shared/ui/StatusToast";
-vi.mock("@tauri-apps/api/core", async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import("@tauri-apps/api/core")>();
-  return {
-    ...original,
-    invoke: (command: string, args?: unknown) =>
-      command === "mcp_discover" || command === "claude_mcp_list" || command === "pi_mcp_list"
-        ? mcpInvoke(command, args)
-        : original.invoke(command, args),
-  };
-});
+vi.mock("../../settings/model/mcpHost", () => ({
+  discoverMcpServers: (cwd: string) => mcpInvoke("discover", { cwd }),
+  claudeMcpList: (cwd: string) => mcpInvoke("claudeList", { cwd }),
+  piMcpList: (cwd: string) => mcpInvoke("piList", { cwd }),
+  addMcpServer: (cwd: string, input: object) => mcpInvoke("add", { cwd, ...input }),
+  loginMcpServer: (cwd: string, input: object) => mcpInvoke("login", { cwd, ...input }),
+  removeClaudeMcpServer: (cwd: string, input: object) => mcpInvoke("remove", { cwd, ...input }),
+  inspectHostMcpServer: (cwd: string, server: { provider: string; scope: string; configPath: string; name: string }) =>
+    mcpInvoke("inspect", { cwd, provider: server.provider, scope: server.scope, configPath: server.configPath, name: server.name }),
+}));
 
 vi.mock("@tauri-apps/api/webview", () => ({
   getCurrentWebview: () => ({ onDragDropEvent: async () => () => {} }),
@@ -62,19 +62,11 @@ vi.mock("../../source-control/hooks/useProjectWorktrees", () => ({
 
 import { Composer } from "./Composer";
 import { ComposerAction } from "./ComposerAction";
-import { startWorktreeCreation } from "../../source-control/model/worktreeCreation";
-import {
-  clearMcpSettingsCache,
-  loadMcpSettings,
-} from "../../settings/model/mcpSettingsCache";
-import type { ComposerTurnOptions, Attachment } from "../model/session";
-import {
-  clearComposerDraft,
-  getComposerDraft,
-  setComposerDraft,
-  stashComposerAttachments,
-} from "../model/draftCache";
-import type { UserQuestionPrompt } from "../model/userQuestion";
+import { startWorktreeCreation } from "../../../domain/worktreeCreation";
+import { clearMcpSettingsCache, loadMcpSettings } from "../../settings/model/mcpSettingsCache";
+import type { ComposerTurnOptions, Attachment, UserQuestionPrompt } from "../../../contracts/session";
+import { clearComposerDraft, getComposerDraft, setComposerDraft, stashComposerAttachments } from "../model/draftCache";
+
 
 function renderAction(
   busy: boolean,
@@ -120,7 +112,7 @@ describe("Composer question focus", () => {
     clearMcpSettingsCache();
     mcpInvoke.mockReset();
     mcpInvoke.mockImplementation(async (command: string) =>
-      command === "mcp_discover"
+      command === "discover"
         ? [
             {
               provider: "claude",
@@ -137,7 +129,7 @@ describe("Composer question focus", () => {
               transport: "stdio",
             },
           ]
-        : command === "claude_mcp_list"
+        : command === "claudeList"
           ? "docs: local - ✔ Connected"
           : undefined,
     );
@@ -654,6 +646,16 @@ describe("Composer question focus", () => {
       expect(container.querySelector('[data-mcp-tag="@mcp/docs"]')).toBeNull();
       expect(onOpen).not.toHaveBeenCalled();
       expect(textarea.value).toBe("");
+      const options = onSubmit.mock.calls[0][2] as ComposerTurnOptions;
+      await act(async () => options.onSubmissionRejected?.());
+      expect(textarea.value).toContain("@mcp/docs");
+      expect(textarea.value).toContain("Find the docs");
+      await act(async () => textarea.dispatchEvent(new KeyboardEvent("keydown", {
+        key: "Enter", bubbles: true, cancelable: true,
+      })));
+      expect(onSubmit).toHaveBeenLastCalledWith(
+        expect.stringContaining('"docs" (claude)'), expect.any(Array), expect.any(Object),
+      );
     } finally {
       window.removeEventListener("omnicode:open-mcp-settings", onOpen);
     }
@@ -685,7 +687,7 @@ describe("Composer question focus", () => {
     expect(mcpInvoke).toHaveBeenCalledTimes(2);
 
     mcpInvoke.mockImplementation(async (command: string) =>
-      command === "mcp_discover"
+      command === "discover"
         ? [
             {
               provider: "claude",
@@ -712,7 +714,7 @@ describe("Composer question focus", () => {
   it("loads Pi native health and disables servers that require sign-in or failed", async () => {
     let state = "connected";
     mcpInvoke.mockImplementation(async (command: string) =>
-      command === "mcp_discover"
+      command === "discover"
         ? ["docs", "auth", "failed"].map((name) => ({
             provider: "pi",
             name,
@@ -768,8 +770,8 @@ describe("Composer question focus", () => {
     expect(container.textContent).toContain("Needs authentication");
     expect(container.textContent).toContain("Connection failed");
     expect(mcpInvoke.mock.calls.map(([cmd]) => cmd)).toEqual([
-      "mcp_discover",
-      "pi_mcp_list",
+      "discover",
+      "piList",
     ]);
     state = "needs-auth";
     await act(async () => {
@@ -783,7 +785,7 @@ describe("Composer question focus", () => {
 
   it("shows four MCP rows at a time and dismisses on outside click or Escape", async () => {
     mcpInvoke.mockImplementation(async (command: string) =>
-      command === "mcp_discover"
+      command === "discover"
         ? Array.from({ length: 6 }, (_, index) => ({
             provider: "claude",
             name: `server-${index}`,
@@ -948,7 +950,7 @@ describe("Composer question focus", () => {
 
   it("restores a Codex MCP tag and its context after switching sessions", async () => {
     mcpInvoke.mockImplementation(async (command: string) =>
-      command === "mcp_discover"
+      command === "discover"
         ? [
             {
               provider: "codex",
@@ -987,7 +989,7 @@ describe("Composer question focus", () => {
         '[data-mcp-picker] [role="option"]',
       )!;
       expect(mcpInvoke).not.toHaveBeenCalledWith(
-        "claude_mcp_list",
+        "claudeList",
         expect.anything(),
       );
       await act(async () => docs.click());
@@ -1195,6 +1197,7 @@ describe("Composer question focus", () => {
     await act(async () => send.click());
     expect(onSubmit).toHaveBeenCalledWith("Continue this feature", [], {
       intent: "default",
+      onSubmissionRejected: expect.any(Function),
     });
   });
 
@@ -1282,6 +1285,7 @@ describe("Composer question focus", () => {
     );
     expect(onSubmit).toHaveBeenCalledWith("/operator list my notes", [], {
       intent: "default",
+      onSubmissionRejected: expect.any(Function),
     });
   });
 
@@ -1329,6 +1333,7 @@ describe("Composer question focus", () => {
     );
     expect(onSubmit).toHaveBeenLastCalledWith("sketch the refactor", [], {
       intent: "plan",
+      onSubmissionRejected: expect.any(Function),
     });
   });
 
@@ -1377,6 +1382,7 @@ describe("Composer question focus", () => {
     );
     expect(onSubmit).toHaveBeenLastCalledWith("sketch the refactor", [], {
       intent: "plan",
+      onSubmissionRejected: expect.any(Function),
     });
   });
 
@@ -1424,6 +1430,7 @@ describe("Composer question focus", () => {
     await act(async () => send.click());
     expect(onSubmit).toHaveBeenLastCalledWith("ship the release", [], {
       intent: "orchestrate",
+      onSubmissionRejected: expect.any(Function),
     });
 
     await act(async () => {
@@ -1433,6 +1440,7 @@ describe("Composer question focus", () => {
     await act(async () => send.click());
     expect(onSubmit).toHaveBeenLastCalledWith("fix the build", [], {
       intent: "orchestrate",
+      onSubmissionRejected: expect.any(Function),
     });
   });
 
@@ -1491,6 +1499,7 @@ describe("Composer question focus", () => {
     await act(async () => send.click());
     expect(onSubmit).toHaveBeenLastCalledWith("/operator List my notes", [], {
       intent: "default",
+      onSubmissionRejected: expect.any(Function),
     });
     expect(textarea.value).toBe("List my notes");
     expect(
@@ -1505,6 +1514,7 @@ describe("Composer question focus", () => {
     expect(onSubmit).toHaveBeenCalledTimes(2);
     expect(onSubmit).toHaveBeenLastCalledWith("/operator List my notes", [], {
       intent: "default",
+      onSubmissionRejected: expect.any(Function),
     });
     expect(textarea.value).toBe("");
     expect(
@@ -1561,6 +1571,7 @@ describe("Composer question focus", () => {
 
     expect(onSubmit).toHaveBeenCalledWith("Ship the empty-state fix", [], {
       intent: "default",
+      onSubmissionRejected: expect.any(Function),
     });
     expect(onDraftChange).toHaveBeenCalledWith("");
     expect(parentDraft).toBe("");
@@ -1602,6 +1613,38 @@ describe("Composer question focus", () => {
 
     expect(textarea.value).toBe("Blocked while orchestration is paused");
     expect(parentDraft).toBe("Blocked while orchestration is paused");
+  });
+
+  it.each([false, true])("restores a deferred rejected submission unless a new draft was entered: %s", async (newDraft) => {
+    let rejectSubmission: ComposerTurnOptions["onSubmissionRejected"];
+    let parentDraft = "/plan Preserve my original command";
+    const onSubmit = vi.fn((_text: string, _files: Attachment[], options?: ComposerTurnOptions) => {
+      rejectSubmission = options?.onSubmissionRejected;
+      return true;
+    });
+    await act(async () => root.render(createElement(Composer, {
+      focused: true, harness: "claude", model: "claude-sonnet", runtimeMode: "supervised",
+      executionCwd: "~", hideProjectPicker: true, hideBranchPicker: true,
+      initialDraft: parentDraft, onDraftChange: (text) => { parentDraft = text; },
+      onFocus: vi.fn(), onCwdChange: vi.fn(), onModelChange: vi.fn(),
+      onRuntimeModeChange: vi.fn(), onSubmit,
+    })));
+    const textarea = container.querySelector("textarea")!;
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Send"]')!.click());
+    expect(textarea.value).toBe("");
+    if (newDraft) await act(async () => {
+      textarea.value = "New draft";
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(rejectSubmission).toBeTypeOf("function");
+    await act(async () => rejectSubmission?.());
+    expect(textarea.value).toBe(newDraft ? "New draft" : "/plan Preserve my original command");
+    expect(parentDraft).toBe(textarea.value);
+    // A duplicate callback cannot resurrect a prompt after it was retried.
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Send"]')!.click());
+    const firstRejection = onSubmit.mock.calls[0][2]?.onSubmissionRejected;
+    await act(async () => firstRejection?.());
+    expect(textarea.value).toBe("");
   });
 
   it("does not restore a failed resend over newer composer text", async () => {
@@ -1707,15 +1750,16 @@ describe("Composer question focus", () => {
     );
 
     expect(onSubmit).toHaveBeenCalledTimes(2);
-    expect(onSubmit.mock.calls[1][2]).toEqual({ intent: "default" });
+    expect(onSubmit.mock.calls[1][2]).toEqual({ intent: "default", onSubmissionRejected: expect.any(Function) });
   });
 
-  it("preserves attachment ownership when a resend is restored", async () => {
+  it.each(["resend", "submission"])("preserves attachment ownership when a %s is restored", async (kind) => {
     const createObjectURL = vi.fn(() => "blob:owned");
     const revokeObjectURL = vi.fn();
     vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
     let recallLastTurn: (() => void) | undefined;
     let rejectResend: ComposerTurnOptions["onResendRejected"];
+    let rejectSubmission: ComposerTurnOptions["onSubmissionRejected"];
     const borrowed: Attachment = {
       id: "borrowed",
       name: "borrowed.png",
@@ -1727,6 +1771,7 @@ describe("Composer question focus", () => {
     const onSubmit = vi.fn(
       (_text: string, _files: Attachment[], options?: ComposerTurnOptions) => {
         rejectResend = options?.onResendRejected;
+        rejectSubmission = options?.onSubmissionRejected;
         return true;
       },
     );
@@ -1784,7 +1829,7 @@ describe("Composer question focus", () => {
         .querySelector<HTMLButtonElement>('[aria-label="Send"]')!
         .click(),
     );
-    await act(async () => rejectResend?.({ providerRewound: false }));
+    await act(async () => kind === "resend" ? rejectResend?.({ providerRewound: false }) : rejectSubmission?.());
     await act(async () =>
       container
         .querySelector<HTMLButtonElement>('[aria-label="Remove owned.png"]')!

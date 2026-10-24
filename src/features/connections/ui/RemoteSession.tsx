@@ -1,130 +1,51 @@
+import type { SessionPaneProps } from "../../sessions/model/sessionPane";
+import type { RemoteSessionProps, RemoteSessionOverrides } from "../model/remoteSessionPresentation";
+import { isDefinitiveCommandRejection } from "../../../client/commandOutbox";
+import { startHostPolling } from "../../../client/polling";
+import { browserLifecycle } from "../../../platform/browserLifecycle";
 import { RemoteSnapshotReporter } from "../model/remoteSnapshotReporter";
+import { submitHostSession, type HostSubmissionOptions } from "../model/hostSessionSubmission";
 import { executionWarningText } from "../../../integrations/harness/core/executionWarnings";
-import { sessionComposerConfiguration } from "../../sessions/model/composerConfiguration";
+import { sessionComposerConfiguration } from "../../../domain/composerConfiguration";
 import { requestedProviderAccountId, supportsProviderAccounts, workBuddyAccountIdForModel } from "../../providers/model/providerAccounts";
-import { MessageQueue } from "../../sessions/ui/MessageQueue";
-import { captureQueueReturnPosition, lastQueueUserMessageId } from "../../sessions/model/messageQueue";
+import { MessageQueue } from "../../../shared/ui/messaging/MessageQueue";
+import { captureQueueReturnPosition, lastQueueUserMessageId } from "../../../domain/messageQueue";
 import { CONTINUE_PROMPT } from "../../sessions/model/inFlight";
-import { titleStateFor } from "../../sessions/model/titlePolicy";
+import { titleStateFor } from "../../../domain/titlePolicy";
 import { useHostQueue } from "./useHostQueue";
-import {
-  outgoingPlacement,
-  withOutgoing,
-  type OutgoingMessage,
-} from "../model/outgoing";
+import { outgoingPlacement, withOutgoing, type OutgoingMessage } from "../model/outgoing";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
 import { AlertCircle, Info } from "../../../shared/ui/icons";
 import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useStableHandlers } from "../../../shared/hooks/useStableHandlers";
 import { hostOrchestrationClient } from "../../orchestration/model/orchestrationClient";
-import { localizeOrchestrationMessage } from "../../orchestration/ui/orchestrationMessages";
-import { OrchestrationActions, OrchestrationWorkers, OrchestrationRuntimeContext, type OrchestrationRuntime, type OrchestrationWorkerDetail } from "../../orchestration/ui/OrchestrationActions";
-import type { OrchestrationProposal } from "../../orchestration/model/orchestrationPlan";
-import type { SessionPaneProps } from "../../sessions/ui/SessionPane";
+import { localizeOrchestrationMessage } from "../../orchestration/model/orchestrationMessages";
+import { OrchestrationActions, OrchestrationWorkers, OrchestrationRuntimeContext, type OrchestrationRuntime, type OrchestrationWorkerDetail } from "../../orchestration/model/OrchestrationActions";
+import { type OrchestrationProposal, type Attachment, type Block, type ComposerTurnOptions, type HarnessId, type RuntimeMode, type Session, type WorkspaceMode, type PlanBuildTarget, type QueueReturnPosition, type PersistedWorktreeCreation, type WorktreeCreation, type AgentModel, HARNESSES } from "../../../contracts/session";
 import { sharedSessionBackend } from "../../sessions/data/sharedSessionBackend";
-import type {
-  Attachment,
-  Block,
-  ComposerTurnOptions,
-  HarnessId,
-  RuntimeMode,
-  Session,
-  WorkspaceMode,
-  PlanBuildTarget,
-  QueuedMessage,
-  QueueReturnPosition,
-} from "../../sessions/model/session";
-import { readRemoteQueuedAttachments, uploadRemoteAttachments } from "../model/remoteAttachments";
-import {
-  needsRemoteAttachmentPreviews,
-  reuseRemoteAttachmentPreviews,
-} from "../model/remoteAttachmentPreviews";
-import { loadRemoteHostCatalog, loadRemoteHostDescriptor } from "../model/remoteHostMetadata";
-import { WORKTREE_NAME_ERROR } from "../../source-control/model/worktreeNaming";
-import {
-  anchorWorktreeCreation,
-  appendWorktreeCreationLog,
-  completeWorktreeCreation,
-  failWorktreeCreation,
-  foldWorktreeCreation,
-  persistWorktreeCreation,
-  startWorktreeCreation,
-  WORKTREE_CREATION_FOLD_MS,
-  type PersistedWorktreeCreation,
-  type WorktreeCreation,
-} from "../../source-control/model/worktreeCreation";
-import { fallbackModelName, type AgentModel } from "../../sessions/model/models";
-import { HARNESSES } from "../../sessions/model/session";
-import {
-  LOCAL_MODEL_SOURCE,
-  ModelSourceContext,
-  type ModelSource,
-} from "../../sessions/ui/modelSource";
-import { notifyGitChanged } from "../../../platform/tauri/fs";
-import type { Worktree } from "../../source-control/model/worktrees";
-import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
-import {
-  clearRemoteSessionSubmission,
-  pendingRemoteSessionSubmission,
-  registerRemoteSessionActions,
-} from "../model/remoteSessionActions";
-import { notifyReviewChanged, registerHostCheckpointRoute } from "../../sessions/model/checkpoint";
-import {
-  clearPendingRemoteCommand,
-  loadRemoteSession,
-  loadRemoteSessionPreviews,
-  loadRemoteSessionText,
-  OPEN_CONNECTIONS_EVENT,
-  pendingRemoteCommand,
-  pendingRemoteFollowup,
-  rememberRemotePendingExecutionCwd,
-  rememberRemoteSession,
-  REMOTE_HISTORY_CHANGE,
-  remoteRequest,
-  reportRemoteMachineStatus,
-  remotePendingExecutionCwd,
-  remoteSessionFor,
-  savePendingRemoteCommand,
-  useRemoteMachines,
-} from "../model/connections";
-import {
-  parseRemotePath,
-  projectPath,
-  remoteProjectFor,
-  ensureSharedProject,
-  type RemoteProject,
-} from "../model/remoteProjects";
-import {
-  carryModelSettings,
-  findRemoteModel,
-  remoteModelControls,
-  sameModelSettings,
-} from "../model/remoteModels";
-import {
-  isRemoteProvider,
-  type CommandReceipt,
-  type HostCommand,
-  type HostDescriptor,
-  type HostModelCatalog,
-  type HostSession,
-  type HostWorktree,
-  type RemoteAttachment,
-  type RemoteMachine,
-  type RemoteProvider,
-} from "../model/protocol";
 
-export type RemoteSessionOverrides = Partial<SessionPaneProps> & {
-  initialPromptId?: string;
-  messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
-  composerNotice?: ReactNode;
-  hostManaged: boolean;
-  remoteSession: boolean;
-  hostFeatures: { attachments: boolean; plan: boolean; draft: boolean; orchestration?: boolean; checkpoint?: boolean };
-  hostSessionLoading: boolean;
-  hostSessionStarted: boolean;
-  allowedModelHarnesses: readonly HarnessId[];
-};
+import { readRemoteQueuedAttachments, uploadRemoteAttachments } from "../model/remoteAttachments";
+import { needsRemoteAttachmentPreviews, reuseRemoteAttachmentPreviews } from "../model/remoteAttachmentPreviews";
+import { loadRemoteHostCatalog, loadRemoteHostDescriptor } from "../model/remoteHostMetadata";
+import { WORKTREE_NAME_ERROR } from "../../../domain/worktreeNaming";
+import { anchorWorktreeCreation, appendWorktreeCreationLog, completeWorktreeCreation, failWorktreeCreation, foldWorktreeCreation, persistWorktreeCreation, startWorktreeCreation, WORKTREE_CREATION_FOLD_MS } from "../../../domain/worktreeCreation";
+
+import { fallbackModelName } from "../../../integrations/harness/core/modelCatalog";
+
+
+import { LOCAL_MODEL_SOURCE, ModelSourceContext, type ModelSource } from "../../sessions/model/modelSource";
+import { notifyGitChanged } from "../../../platform/tauri/fs";
+import type { Worktree } from "../../../contracts/worktree";
+import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
+import { registerRemoteSessionActions } from "../model/remoteSessionActions";
+import { notifyReviewChanged, registerHostCheckpointRoute } from "../../sessions/model/checkpoint";
+import { dispatchRemoteCommand, loadRemoteSession, loadRemoteSessionPreviews, loadRemoteSessionText, OPEN_CONNECTIONS_EVENT, pendingRemoteCommand, rememberRemotePendingExecutionCwd, rememberRemoteSession, REMOTE_HISTORY_CHANGE, remoteRequest, reportRemoteMachineStatus, remotePendingExecutionCwd, remoteSessionFor, useRemoteMachines } from "../model/connections";
+import { parseRemotePath, projectPath, remoteProjectFor, ensureSharedProject, type RemoteProject } from "../model/remoteProjects";
+import { carryModelSettings, findRemoteModel, remoteModelControls, sameModelSettings } from "../model/remoteModels";
+import { isRemoteProvider, type RemoteProvider } from "../../../contracts/provider";
+import { type CommandReceipt, type HostCommand, type HostDescriptor, type HostModelCatalog, type HostSession, type HostWorktree, type RemoteAttachment, type RemoteMachine } from "../../../contracts/protocol";
+
 
 type Configuration = {
   harness: RemoteProvider;
@@ -238,17 +159,7 @@ export function RemoteSession({
   onOpenPlan,
   render,
   unavailableHeader,
-}: {
-  /** The tab's local session, which provides its ID and new-session defaults. */
-  shell: Session;
-  visible: boolean;
-  onSnapshot?: (shellId: string, snapshot?: HostSession) => void;
-  onOpenFile: SessionPaneProps["onOpenFile"];
-  onOpenDiff: SessionPaneProps["onOpenDiff"];
-  onOpenPlan: SessionPaneProps["onOpenPlan"];
-  render: (overrides: RemoteSessionOverrides) => ReactNode;
-  unavailableHeader?: ReactNode;
-}) {
+}: RemoteSessionProps) {
   const { t: uiT } = useTranslation();
   const [, refreshProject] = useState(0);
   const [projectError, setProjectError] = useState("");
@@ -401,7 +312,6 @@ function ConnectedRemoteSession({
   );
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
-  const lastPollKey = useRef<string | undefined>(undefined);
   const describedHost = useRef<string | undefined>(undefined);
   const [refresh, setRefresh] = useState(0);
   const [catalog, setCatalog] = useState<HostModelCatalog | undefined>(() =>
@@ -439,10 +349,6 @@ function ConnectedRemoteSession({
   const [starting, setStarting] = useState<
     OptimisticTurn & { failed?: boolean }
   >();
-  const [initialSubmission, setInitialSubmission] = useState(() =>
-    pendingRemoteSessionSubmission(shell.id),
-  );
-  const initialPromptId = useRef(initialSubmission?.id).current;
   const [pending, setPending] = useState(() =>
     pendingRemoteCommand(
       project.key,
@@ -607,7 +513,7 @@ function ConnectedRemoteSession({
 
   useEffect(() => {
     let disposed = false;
-    let timer: ReturnType<typeof setTimeout>;
+    if (!visible) return;
     let failed = 0;
     const version = bindingVersion.current;
     const stale = () =>
@@ -619,7 +525,7 @@ function ConnectedRemoteSession({
     // hiding a tab keeps the description it already has.
     const hostKey = descriptorKey(machine.id, machine.environmentId);
     let described = describedHost.current === hostKey;
-    const poll = async () => {
+    const poll = async (waitMs?: number) => {
       let active = false;
       try {
         if (!described) {
@@ -644,8 +550,7 @@ function ConnectedRemoteSession({
         let next = sessionId
           ? known
             ? await loadRemoteSessionText(machine.id, sessionId, known,
-                visible && !document.hidden && (known.session.busy || known.orchestration?.status === "active") &&
-                  cachedDescriptors.get(hostKey)?.capabilities.includes("sessions.sync.wait.v1") ? 1_000 : undefined)
+                waitMs)
             : await pendingSnapshot(
                 snapshotKey(machine.id, sessionId),
                 () => loadRemoteSessionText(machine.id, sessionId),
@@ -695,35 +600,19 @@ function ConnectedRemoteSession({
         described = false;
         describedHost.current = undefined;
         failed++;
+        throw reason;
       }
-      if (!disposed)
-        timer = setTimeout(
-          () => void poll(),
-          failed
-            ? Math.min(10_000, 750 * 2 ** Math.min(failed, 4))
-            : !visible || document.hidden
-              ? 10_000
-              : active
-                ? cachedDescriptors.get(hostKey)?.capabilities.includes("sessions.sync.wait.v1") ? 50 : 100
-                : 3_000,
-        );
+      return active;
     };
-    // Hiding a tab only slows its polling. Revalidating it at once would add a
-    // host round trip and a render to every tab switch.
-    const pollKey = JSON.stringify([
-      machine.id,
-      machine.environmentId,
-      project.projectId,
-      sessionId,
-      refresh,
-    ]);
-    const justHidden = !visible && lastPollKey.current === pollKey;
-    lastPollKey.current = pollKey;
-    if (justHidden) timer = setTimeout(() => void poll(), 10_000);
-    else void poll();
+    const stopPolling = startHostPolling({
+      poll,
+      supportsWait: () => !!sessionId && !!cachedDescriptors.get(hostKey)?.capabilities.includes("sessions.sync.wait.v1"),
+      onError: () => {}, // The pane owns its connection status and descriptor refresh above.
+      lifecycle: browserLifecycle,
+    });
     return () => {
       disposed = true;
-      clearTimeout(timer);
+      stopPolling();
     };
   }, [
     machine.id,
@@ -886,18 +775,16 @@ function ConnectedRemoteSession({
     // Keep the original ID across disconnects and app restarts. An ambiguous
     // response is retried explicitly instead of silently sending a new prompt.
     try {
-      await savePendingRemoteCommand(
-        project.key,
-        machine.environmentId,
-        command,
-        shell.id,
-        followup,
-      );
       setPending(command);
-      const receipt = await remoteRequest<CommandReceipt>(
-        machine.id,
-        "commands.dispatch",
-        command,
+      const receipt = await dispatchRemoteCommand(
+        machine.id, project.key, machine.environmentId, command, shell.id, followup, {
+          deferFollowup: true,
+          onCreated: id => {
+            if (!alive.current || version !== bindingVersion.current) return false;
+            openSession(id);
+            return true;
+          },
+        },
       );
       if (command.type === "create") {
         if (titleStateFor(shell).source === "manual") {
@@ -907,25 +794,8 @@ function ConnectedRemoteSession({
             title: shell.title,
           });
         }
-        const next = pendingRemoteFollowup(
-          project.key,
-          machine.environmentId,
-          command.commandId,
-        );
-        if (next && next.type !== "create")
-          await savePendingRemoteCommand(
-            project.key,
-            machine.environmentId,
-            { ...next, sessionId: receipt.sessionId },
-            shell.id,
-          );
         if (version === bindingVersion.current) openSession(receipt.sessionId);
       }
-      clearPendingRemoteCommand(
-        project.key,
-        machine.environmentId,
-        command.commandId,
-      );
       if (!alive.current || version !== bindingVersion.current) return receipt;
       if (commandConfiguration) {
         // Retry receipts need the same protection as the first response: a
@@ -987,7 +857,7 @@ function ConnectedRemoteSession({
       if (!alive.current || version !== bindingVersion.current)
         return undefined;
       const message = String(reason);
-      if (message.includes("Host rejected request:")) {
+      if (isDefinitiveCommandRejection(reason)) {
         if (commandConfiguration) {
           // A definitive refusal must not loop the auto-apply effect. Preserve
           // any newer choice the user made while this request was in flight.
@@ -998,20 +868,9 @@ function ConnectedRemoteSession({
           setUnseenSend((current) =>
             current?.commandId === command.commandId ? undefined : current,
           );
-        clearPendingRemoteCommand(
-          project.key,
-          machine.environmentId,
-          command.commandId,
-        );
-        setPending(
-          pendingRemoteCommand(
-            project.key,
-            machine.environmentId,
-            sessionId ?? null,
-            shell.id,
-          ),
-        );
       }
+      setPending(pendingRemoteCommand(project.key, machine.environmentId,
+        remoteSessionFor(shell.id) ?? sessionId ?? null, shell.id));
       setError(uiT(message.replace(/^Error: /, "").replace(/^Host rejected request: /, "")));
       return undefined;
     } finally {
@@ -1247,6 +1106,7 @@ function ConnectedRemoteSession({
           model: draft.model,
           modelSettings: draft.settings,
           runtimeMode: draft.mode,
+          ...(shell.inboxAsk ? { inboxAsk: shell.inboxAsk } : {}),
           ...(project.local && supportsProviderAccounts(draft.harness)
             ? { providerAccountId: draft.harness === "workbuddy" ? workBuddyAccountIdForModel(draft.model, requestedProviderAccountId(draft.harness, project.cwd)) : (shell.harness === draft.harness ? shell.providerAccountId : undefined) ?? requestedProviderAccountId(draft.harness, project.cwd) }
             : {}),
@@ -1312,18 +1172,21 @@ function ConnectedRemoteSession({
   const submit = (
     text: string,
     attachments: Attachment[] = [],
-    options?: ComposerTurnOptions,
+    options?: HostSubmissionOptions,
     asDraft = false,
     planBlockId?: string,
-    initialTurn?: { id: string; startedAt: number },
   ): boolean => {
+    if (shell.inboxAsk && !descriptor?.capabilities.includes("sessions.inbox.v1")) {
+      setError(uiT("Update the Host to discuss inbox items in this conversation."));
+      return false;
+    }
     if (
       !online ||
       sending ||
       preparingRef.current ||
       pending ||
       (busy && (!snapshot?.supportsQueue || asDraft || !!options?.draftBlockId || !!planBlockId)) ||
-      (!text.trim() && !attachments.length)
+      (!text.trim() && !attachments.length && !options?.noteCard && !shell.noteCard && !options?.handoffCard && !shell.handoffCard)
     )
       return false;
     const intent =
@@ -1339,16 +1202,35 @@ function ConnectedRemoteSession({
       options?.draftBlockId,
       planBlockId,
     );
-    if (initialTurn) {
-      turn.commandId = initialTurn.id;
-      turn.startedAt = initialTurn.startedAt;
-    }
     turn.refreshTitle = options?.refreshTitle;
     turn.retryProposalBlockId = options?.retryProposalBlockId;
     turn.questionAnswer = options?.questionAnswer;
     turn.queueReturnPosition = options?.queueReturnPosition;
     preparingRef.current = true;
     setStarting(turn);
+    // Application-launched turns retain their full context and completion
+    // callback even when this pane closes before Host finishes the turn.
+    if (!asDraft && (options?.onSettled || options?.managed || options?.ciRepair || options?.ciContext ||
+      options?.secondOpinion || options?.noteCard || shell.noteCard || options?.handoffCard || shell.handoffCard ||
+      options?.buildTarget || options?.resendEdited || options?.appRequestId || options?.queuedMessageId)) {
+      const version = bindingVersion.current;
+      const target: Session = { ...(hostSession ?? shell), id: shell.id,
+        cwd: projectPath(project, project.cwd), executionCwd: projectPath(project, selectedCwd),
+        harness: configuration.harness, model: configuration.model, modelSettings: configuration.settings,
+        runtimeMode: configuration.mode, workspaceMode: hostSession ? undefined : draftWorkspaceMode,
+        worktreeBase: draftWorktreeBase, inboxAsk: shell.inboxAsk ?? hostSession?.inboxAsk };
+      void submitHostSession(target, text, attachments, { ...options, planBlockId: planBlockId ?? options?.planBlockId, commandId: turn.commandId }, next => {
+        if (alive.current) { setSnapshot(next); setRefresh(value => value + 1); }
+      }).then(accepted => {
+        if (!accepted) options?.onSubmissionRejected?.();
+      }).catch(reason => {
+        options?.onSubmissionRejected?.();
+        if (alive.current && (version === bindingVersion.current || remoteSessionFor(shell.id))) {
+          setError(String(reason)); setStarting({ ...turn, failed: true });
+        }
+      }).finally(() => { preparingRef.current = false; });
+      return true;
+    }
     if (!hostSession) {
       if (sessionId || !draft.model) {
         preparingRef.current = false;
@@ -1380,23 +1262,6 @@ function ConnectedRemoteSession({
       });
     return true;
   };
-
-  useEffect(() => {
-    if (
-      !initialSubmission || !online || !catalog ||
-      !providers.includes(configuration.harness)
-    ) return;
-    const model = findRemoteModel(catalog.models[configuration.harness] ?? [], configuration.model);
-    // Let the Host model defaults settle before handing the turn to its sender.
-    if (!model || !sameModelSettings(
-      carryModelSettings(model.settings ?? [], configuration.settings),
-      configuration.settings,
-    )) return;
-    if (submit(initialSubmission.text, initialSubmission.attachments, initialSubmission.options, false, undefined, initialSubmission)) {
-      clearRemoteSessionSubmission(shell.id);
-      setInitialSubmission(undefined);
-    }
-  });
 
   const modelSource = useMemo<ModelSource>(() => {
     const models = (harness: HarnessId) =>
@@ -1464,7 +1329,7 @@ function ConnectedRemoteSession({
       ? outgoing
       : startingActive && starting && !starting.draft
         ? { id: starting.commandId, startedAt: starting.startedAt }
-        : initialSubmission;
+        : undefined;
     return turn ? {
       runId: turn.id,
       phase: "starting",
@@ -1472,7 +1337,7 @@ function ConnectedRemoteSession({
     } : undefined;
   }, [
     hostSession, snapshot?.clockOffsetMs, outgoing?.id, outgoing?.placement,
-    outgoing?.startedAt, startingActive, starting, initialSubmission,
+    outgoing?.startedAt, startingActive, starting,
   ]);
 
   // Show a message the host has not confirmed yet in the transcript.
@@ -1516,22 +1381,16 @@ function ConnectedRemoteSession({
           startedAt: starting.startedAt + (hostSession ? snapshot?.clockOffsetMs ?? 0 : 0),
           turnModel: starting.turnModel,
         }
-      : initialSubmission
-        ? {
-            id: initialSubmission.id,
-            role: "user",
-            text: initialSubmission.text,
-            attachments: initialSubmission.attachments,
-            startedAt: initialSubmission.startedAt,
-            sending: true,
-          }
-        : undefined;
+      : undefined;
   const session: Session = {
     ...(viewSession ?? {
       title: shell.title,
       blocks: [],
     }),
     id: shell.id,
+    // The source keeps the discussion in its Inbox portal before the first
+    // Host projection arrives, then the Host owns the persisted marker.
+    inboxAsk: viewSession?.inboxAsk ?? shell.inboxAsk,
     usageLimit:
       usageLimitKey && usageLimitKey !== dismissedUsageLimit
         ? viewSession?.usageLimit
@@ -1551,7 +1410,7 @@ function ConnectedRemoteSession({
       modelSettings: configuration.settings, runtimeMode: configuration.mode,
     } : undefined,
     executionState: startingExecution ?? viewSession?.executionState,
-    busy: busy || !!initialSubmission,
+    busy,
     blocks: (unconfirmed ? [...blocks, unconfirmed] : blocks).map(block => {
       const edit = proposalEdits.get(block.id);
       return edit && block.orchestration?.status === "ready" && snapshot?.orchestration?.proposalId !== block.id
@@ -1653,21 +1512,10 @@ function ConnectedRemoteSession({
       (entry) => entry.id === blockId && entry.role === "plan",
     );
     if (!block || !block.text.trim() || block.streaming || busy) return;
-    if (
-      target &&
-      (target.harness !== configuration.harness ||
-        target.model !== configuration.model ||
-        !sameModelSettings(target.modelSettings, configuration.settings))
-    ) {
-      setError(
-        "Select that model in the composer before building this remote plan.",
-      );
-      return;
-    }
     submit(
       `Build the approved plan:\n\n${block.text}`,
       [],
-      { intent: "build" },
+      { intent: "build", buildTarget: target },
       false,
       blockId,
     );
@@ -1928,7 +1776,6 @@ function ConnectedRemoteSession({
         </ComposerNotice>
       </div>
     ) : undefined,
-    initialPromptId,
     transcriptHistory: transcriptHistory?.session.id === hostSession?.id
       ? transcriptHistory?.session.blocks
       : undefined,
@@ -2048,12 +1895,22 @@ function ConnectedRemoteSession({
     onSteerQueuedMessage: (_, id) => queue.onSteer(id),
     onResumeQueue: () => queue.onResume(),
     onUsageLimitResume: () => {
+      if (descriptor?.capabilities.includes("sessions.usageLimit.v1") && hostSession) {
+        if (!busy) void run({ type: "usageLimit", action: "resume", commandId: crypto.randomUUID(), sessionId: hostSession.id });
+        return;
+      }
       if (busy || !submit(CONTINUE_PROMPT)) return;
       setDismissedUsageLimit(usageLimitKey);
     },
-    // The Host has no scheduler for resuming at reset; hide the action.
-    onUsageLimitResumeAtReset: undefined,
-    onUsageLimitDismiss: () => setDismissedUsageLimit(usageLimitKey),
+    onUsageLimitResumeAtReset: descriptor?.capabilities.includes("sessions.usageLimit.v1") && hostSession
+      ? (_, enabled) => { void run({ type: "usageLimit", action: "resumeAtReset", enabled,
+        commandId: crypto.randomUUID(), sessionId: hostSession.id }); }
+      : undefined,
+    onUsageLimitDismiss: () => {
+      if (descriptor?.capabilities.includes("sessions.usageLimit.v1") && hostSession)
+        void run({ type: "usageLimit", action: "dismiss", commandId: crypto.randomUUID(), sessionId: hostSession.id });
+      else setDismissedUsageLimit(usageLimitKey);
+    },
     onOpenPlan: (_, blockId) => onOpenPlan(shell.id, blockId),
     onBuildPlan: (_, blockId, target) => buildPlan(blockId, target),
     onSecondOpinion: undefined,

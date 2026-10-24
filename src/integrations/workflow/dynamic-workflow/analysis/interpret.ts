@@ -7,16 +7,7 @@ import { Evaluator } from "./taint.js";
 import { traceOrder, type OrderTrace } from "./causality-order.js";
 import { literalCardinality } from "./fanout-cardinality.js";
 import type { ApplicationVia } from "./state.js";
-import type {
-  AnalysisCore,
-  CoreActorSite,
-  CoreAskSite,
-  CoreFacts,
-  CoreFanoutSite,
-  CoreSimpleSite,
-  CoreSites,
-  CoreTypes,
-} from "./core.js";
+import type { AnalysisCore, CoreActorSite, CoreAskSite, CoreFacts, CoreFanoutSite, CoreSimpleSite, CoreSites, CoreTypes } from "./core.js";
 
 /**
  * The fused interpreter: ONE interpretation of

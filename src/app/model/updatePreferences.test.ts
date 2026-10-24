@@ -1,9 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  loadUpdatePreferences,
-  saveUpdatePreferences,
-} from "./updatePreferences";
+import { loadUpdatePreferences, saveUpdatePreferences } from "./updatePreferences";
 
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.unstubAllGlobals());

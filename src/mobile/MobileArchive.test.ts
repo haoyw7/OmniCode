@@ -3,10 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import codexIcon from "../assets/providers/codex.svg";
-import type {
-  HostProject,
-  HostSessionSummary,
-} from "../features/connections/model/protocol";
+import type { HostProject, HostSessionSummary } from "../contracts/protocol";
 import { setUiLanguage } from "../shared/i18n/language";
 import { MobileArchive } from "./MobileArchive";
 

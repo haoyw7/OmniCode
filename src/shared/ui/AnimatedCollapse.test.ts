@@ -3,10 +3,7 @@ import { act, createElement, useEffect, useState, type ComponentProps } from "re
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AnimatedCollapse } from "./AnimatedCollapse";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "./SurfaceVisibility";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "./SurfaceVisibility";
 
 let root: Root;
 let container: HTMLDivElement;

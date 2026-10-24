@@ -1,16 +1,7 @@
 import { Compartment, EditorState } from "@codemirror/state";
-import {
-  Decoration,
-  EditorView,
-  ViewPlugin,
-  lineNumbers,
-  type ViewUpdate,
-} from "@codemirror/view";
+import { Decoration, EditorView, ViewPlugin, lineNumbers, type ViewUpdate } from "@codemirror/view";
 import { useContext, useEffect, useRef, useState } from "react";
-import {
-  ReadonlyTextStateContext,
-  type ReadonlyTextProps,
-} from "./ReadonlyTextView";
+import { ReadonlyTextStateContext, type ReadonlyTextProps } from "./ReadonlyTextView";
 import { useTranslation } from "../i18n/useTranslation";
 import { cspStyleNonce } from "../lib/csp";
 import { useSurfaceVisibility } from "./SurfaceVisibility";

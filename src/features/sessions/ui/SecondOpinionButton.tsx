@@ -1,51 +1,19 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  MessageMultiple,
-  Replace,
-  type IconComponent,
-} from "../../../shared/ui/icons";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
-import {
-  getHarnessAvailabilitySnapshot,
-  hasProbedHarnessAvailability,
-  isHarnessAvailable,
-  probeHarnessAvailability,
-  subscribeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
+import { Check, ChevronDown, ChevronRight, MessageMultiple, Replace, type IconComponent } from "../../../shared/ui/icons";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { getHarnessAvailabilitySnapshot, hasProbedHarnessAvailability, isHarnessAvailable, probeHarnessAvailability, subscribeHarnessAvailability } from "../../providers/model/harnessAvailability";
+import { refreshHostModelCatalogs } from "../../providers/model/hostModelCatalog";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import {
-  getModelSnapshot,
-  getPickerVisibilitySnapshot,
-  hasLiveCatalog,
-  isPickerProviderVisible,
-  mergeModelSettings,
-  modelEffortSetting,
-  modelsFor,
-  preferredModelId,
-  subscribeModels,
-  subscribePickerVisibility,
-} from "../model/models";
+import { getPickerVisibilitySnapshot, isPickerProviderVisible, mergeModelSettings, preferredModelId, subscribePickerVisibility } from "../model/models";
+import { modelEffortSetting } from "../../../domain/modelSettings";
+import { getModelSnapshot, hasLiveCatalog, modelsFor, subscribeModels } from "../../../integrations/harness/core/modelCatalog";
 import { LAYER } from "../../../shared/lib/layers";
-import { secondOpinionTargets } from "../model/secondOpinion";
-import {
-  HARNESS_TITLE,
-  type HarnessId,
-  type ModelTarget,
-} from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import { secondOpinionTargets } from "../../../domain/secondOpinion";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type HarnessId, type ModelTarget } from "../../../contracts/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import { Popover } from "../../../shared/ui/Popover";
 
 type Props = {
@@ -223,7 +191,7 @@ export function SecondOpinionButton({
 
   useEffect(() => {
     if (!open || !activeHarness) return;
-    void refreshHarnessCatalogs([activeHarness]);
+    void refreshHostModelCatalogs([activeHarness]);
   }, [open, activeHarness]);
 
   useEffect(() => {
@@ -272,7 +240,7 @@ export function SecondOpinionButton({
   // A harness whose catalog has not loaded yet (e.g. Codex, which has no
   // built-in fallback list) cannot be confirmed empty, so it gets the
   // benefit of the doubt rather than disabling the button before the menu
-  // can even open to trigger `refreshHarnessCatalogs`.
+  // can even open to trigger `refreshHostModelCatalogs`.
   const hasSelectableModel =
     !excludeFromModel || !fromModel
       ? true

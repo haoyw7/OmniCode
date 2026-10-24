@@ -9,7 +9,7 @@ vi.mock("motion/react", async (importOriginal) => {
   const { motionTestDriver } = await import("../../../tests/helpers/motionDriver");
   return { ...actual, ...motionTestDriver(actual, true) };
 });
-import { AttachmentChip } from "../../features/sessions/ui/AttachmentChip";
+import { AttachmentChip } from "./attachments/AttachmentChip";
 import { dismissImageLightbox, ImageLightbox } from "./ImageLightbox";
 import { SurfaceVisibilityContext } from "./SurfaceVisibility";
 

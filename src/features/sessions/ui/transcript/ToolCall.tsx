@@ -2,19 +2,15 @@ import { Omi } from "../../../../shared/ui/branding/Omi";
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useState } from "react";
-import { FilePreview } from "../../../connections/files/ui/FilePreview";
+import { FilePreview } from "../../../../shared/ui/messaging/FilePreview";
 import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
-import type { ApprovalDecision } from "../../../../integrations/harness";
-import { isEditTool, stubFilePreview } from "../../../../integrations/harness/core/preview";
+import type { ApprovalDecision } from "../../../../contracts/harness";
+import { isEditTool, stubFilePreview } from "../../../../domain/preview";
 import { ToolRow } from "./tools/ToolRow";
 import { ApprovalControls, ToolCallStatusIcon } from "./tools/ToolCallParts";
-import { type Block } from "../../model/session";
-import {
-  isIncompleteTool,
-  needsApproval,
-  toolCallLabel,
-  toolCallState,
-} from "../../model/transcriptActivity";
+import { type Block } from "../../../../contracts/session";
+import { isIncompleteTool, needsApproval, toolCallState } from "../../model/transcriptActivity";
+import { toolCallLabel } from "../../../../domain/toolLabel";
 import { omniCodeToolCall, type OmniCodeToolCall } from "../../model/omnicodeToolCall";
 
 

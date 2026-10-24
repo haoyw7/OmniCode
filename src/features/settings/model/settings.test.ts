@@ -1,45 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import {
-  AUTOSAVE_DEFAULT,
-  searchSettings,
-  SETTINGS_INDEX,
-  settingsSectionsByGroup,
-  MODEL_CONTROLS_DEFAULT,
-  DIFF_VIEWER_DEFAULT,
-  FORMAT_ON_SAVE_DEFAULT,
-  FILE_TAB_MODE_DEFAULT,
-  FOLLOW_UP_BEHAVIOR_DEFAULT,
-  KEYBINDINGS,
-  LIVE_AGENTS_ENABLED_DEFAULT,
-  TAB_ANIMATIONS_ENABLED_DEFAULT,
-  loadAutosave,
-  loadModelControls,
-  loadDiffViewer,
-  loadKeybindingOverrides,
-  loadFormatOnSave,
-  loadFileTabMode,
-  loadFollowUpBehavior,
-  loadLiveAgentsEnabled,
-  loadNotesEnabled,
-  keybindingPressed,
-  matchCustomKeybinding,
-  loadQuickComposerShortcut,
-  loadTabAnimationsEnabled,
-  NOTES_ENABLED_DEFAULT,
-  saveAutosave,
-  saveModelControls,
-  saveDiffViewer,
-  saveFormatOnSave,
-  saveFileTabMode,
-  saveFollowUpBehavior,
-  saveLiveAgentsEnabled,
-  saveNotesEnabled,
-  saveKeybindingOverride,
-  type KeybindingOverride,
-  saveQuickComposerShortcut,
-  saveTabAnimationsEnabled,
-} from "./settings";
+import { AUTOSAVE_DEFAULT, searchSettings, SETTINGS_INDEX, settingsSectionsByGroup, MODEL_CONTROLS_DEFAULT, DIFF_VIEWER_DEFAULT, FORMAT_ON_SAVE_DEFAULT, FILE_TAB_MODE_DEFAULT, FOLLOW_UP_BEHAVIOR_DEFAULT, KEYBINDINGS, LIVE_AGENTS_ENABLED_DEFAULT, TAB_ANIMATIONS_ENABLED_DEFAULT, loadAutosave, loadModelControls, loadDiffViewer, loadKeybindingOverrides, loadFormatOnSave, loadFileTabMode, loadFollowUpBehavior, loadLiveAgentsEnabled, loadNotesEnabled, keybindingPressed, matchCustomKeybinding, loadQuickComposerShortcut, loadTabAnimationsEnabled, NOTES_ENABLED_DEFAULT, saveAutosave, saveModelControls, saveDiffViewer, saveFormatOnSave, saveFileTabMode, saveFollowUpBehavior, saveLiveAgentsEnabled, saveNotesEnabled, saveKeybindingOverride, type KeybindingOverride, saveQuickComposerShortcut, saveTabAnimationsEnabled } from "./settings";
 import { IS_MAC, MOD, SHIFT } from "../../../platform/tauri/platform";
 
 const MODEL_CONTROLS_KEY = "omnicode.modelControls";

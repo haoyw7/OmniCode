@@ -1,33 +1,18 @@
-import { invoke } from "@tauri-apps/api/core";
+import { deleteHostProjection, hostProjectionIdentity, saveHostProjection } from "../../../platform/tauri/hostProjectionCache";
+import { desktopHostHttp } from "../../../platform/tauri/hostTransport";
+import { SessionSyncClient } from "../../../client/sessionSync";
+import { flushCommandOutbox, isDefinitiveCommandRejection, StoredCommandJournal } from "../../../client/commandOutbox";
+import { listDesktopConnections, pairDesktopConnection, removeDesktopConnection } from "../../../platform/tauri/connections";
 import { useEffect, useMemo, useState } from "react";
-import {
-  applySessionSync,
-  migrateSavedHostCommand,
-  sessionClockOffset,
-  type HostCommand,
-  type HostSession,
-  type HostSessionSummary,
-  type RemoteMachine,
-  type SessionSync,
-  type SessionSyncChunk,
-  type SessionSyncResponse,
-} from "./protocol";
+import { migrateSavedHostCommand } from "../../../client/hostProtocol";
+import { type HostCommand, type HostSession, type HostSessionSummary, type RemoteMachine } from "../../../contracts/protocol";
 import { remoteProjectFor, ensureSharedProject, sharedHostMachineId, isSharedHostMachine } from "./remoteProjects";
 import { translate } from "../../../shared/i18n/language";
-import {
-  reuseRemoteAttachmentPreviews,
-  withRemoteAttachmentPreviews,
-} from "./remoteAttachmentPreviews";
+import { reuseRemoteAttachmentPreviews, withRemoteAttachmentPreviews } from "./remoteAttachmentPreviews";
 import { hostOrchestrationClient } from "../../orchestration/model/orchestrationClient";
 import { isRemoteProjectPath } from "../../projects/model/recents";
 import { useHostConnections } from "./hostConnections";
-import {
-  OUTBOX_PREFIX,
-  deleteOutboxEntries,
-  outboxEntry,
-  outboxKeys,
-  putOutboxEntry,
-} from "./remoteOutbox";
+import { OUTBOX_PREFIX, deleteOutboxEntries, outboxEntry, outboxKeys, putOutboxEntry, desktopOutboxStorage } from "../../../platform/tauri/remoteOutbox";
 
 export const REMOTE_MACHINES_CHANGED = "omnicode:remote-machines";
 const CHANGE = REMOTE_MACHINES_CHANGED;
@@ -288,74 +273,72 @@ export const clearPendingRemoteCommand = (
 ) =>
   void deleteOutboxEntries([`${pendingPrefix(project, environment)}${commandId}`]);
 
+/** Pane-independent command dispatch using the same durable journal as the UI. */
+export async function dispatchRemoteCommand(
+  machineId: string,
+  project: string,
+  environment: string,
+  command: HostCommand,
+  shellId?: string,
+  followup?: HostCommand,
+  options?: { deferFollowup?: boolean; onCreated?(sessionId: string): boolean },
+): Promise<import("../../../contracts/protocol").CommandReceipt> {
+  const initialBinding = shellId ? remoteSessionFor(shellId) : undefined;
+  await savePendingRemoteCommand(project, environment, command, shellId, followup);
+  const slot = (commandId: string) => new StoredCommandJournal<PendingEntry>(
+    desktopOutboxStorage, `${pendingPrefix(project, environment)}${commandId}`, readPendingEntry,
+  );
+  let journal = slot(command.commandId);
+  return flushCommandOutbox<PendingEntry>({
+    journal: {
+      read: () => journal.read(),
+      write: async (entry) => {
+        const previous = journal;
+        const next = slot(entry.command.commandId);
+        await next.write(entry);
+        journal = next;
+        await previous.clear();
+      },
+      clear: () => journal.clear(),
+    },
+    validate: () => {},
+    dispatch: (value) => remoteRequest(machineId, "commands.dispatch", value),
+    next: (entry, receipt) => {
+      if (entry.command.type !== "create") return;
+      if (entry.shellId && (remoteSessionFor(entry.shellId) === initialBinding || remoteSessionFor(entry.shellId) === receipt.sessionId)) {
+        // UI callers can acknowledge their own transition before the binding
+        // notification. A late create never replaces a newer user selection.
+        if (options?.onCreated?.(receipt.sessionId) !== false)
+          rememberRemoteSession(entry.shellId, receipt.sessionId, {
+            environmentId: environment, projectId: entry.command.projectId,
+          });
+      }
+      return entry.followup && entry.followup.type !== "create"
+        ? { command: { ...entry.followup, sessionId: receipt.sessionId }, shellId: entry.shellId }
+        : undefined;
+    },
+    definitiveRejection: isDefinitiveCommandRejection,
+    deferFollowup: options?.deferFollowup,
+  });
+}
+
 export async function remoteRequest<T>(
   machineId: string,
   method: string,
   params: unknown = {},
 ): Promise<T> {
-  const result = await invoke<T>("remote_request", { machineId, method, params });
-  if (method === "sessions.delete" && machineId === sharedHostMachineId()) {
-    // Explicit deletion clears the migration row's native worktree/reminder
-    // references, without deleting the original attachment recovery files.
-    await invoke("session_delete", { sessionId: (params as { sessionId: string }).sessionId, imagePaths: [] });
+  const cacheIdentity = method === "sessions.delete" ? await hostProjectionIdentity(machineId).catch(() => undefined) : undefined;
+  const result = await desktopHostHttp.request<T>(machineId, method, params as object);
+  if (method === "sessions.delete" && cacheIdentity) {
+    await deleteHostProjection(machineId, (params as { sessionId: string }).sessionId, cacheIdentity).catch(() => undefined);
   }
   return result;
 }
 
-/** A visibility change or second pane must not overlap the same session's read. */
-const pendingSyncs = new Map<string, { revision?: number; request: Promise<SessionSync> }>();
-
-function syncRemoteSession(
-  machineId: string,
-  sessionId: string,
-  revision?: number,
-  waitMs?: number,
-): Promise<SessionSync> {
-  const key = JSON.stringify([machineId, sessionId]);
-  const pending = pendingSyncs.get(key);
-  if (pending) {
-    if (pending.revision === revision) return pending.request;
-    const retry = () => syncRemoteSession(machineId, sessionId, revision, waitMs);
-    return pending.request.then(retry, retry);
-  }
-  const request = requestSessionSync(machineId, sessionId, revision, waitMs).finally(() => {
-    if (pendingSyncs.get(key)?.request === request) pendingSyncs.delete(key);
-  });
-  pendingSyncs.set(key, { revision, request });
-  return request;
-}
-
-/** Assemble bounded pieces of one Host revision before releasing the request. */
-async function requestSessionSync(
-  machineId: string,
-  sessionId: string,
-  revision?: number,
-  waitMs?: number,
-): Promise<SessionSync> {
-  const sentAt = Date.now();
-  const response = await remoteRequest<SessionSyncResponse>(
-    machineId,
-    "sessions.sync",
-    { sessionId, revision, ...(waitMs ? { waitMs } : {}) },
-  );
-  const clockOffsetMs = sessionClockOffset(response, sentAt, Date.now());
-  if (response.kind !== "chunked") return { ...response, clockOffsetMs };
-  const pieces: string[] = [];
-  let offset = 0;
-  while (offset < response.length) {
-    const { data } = await remoteRequest<SessionSyncChunk>(
-      machineId,
-      "sessions.syncChunk",
-      { sessionId, transfer: response.transfer, offset },
-    );
-    if (!data) throw new Error("Session transfer ended early");
-    pieces.push(data);
-    offset += data.length;
-  }
-  if (offset !== response.length)
-    throw new Error("Session transfer has an unexpected length");
-  return { ...JSON.parse(pieces.join("")) as SessionSync, clockOffsetMs };
-}
+const sessionSyncClient = new SessionSyncClient<{ machineId: string; identity?: string }>({
+  key: ({ machineId, identity }) => JSON.stringify([machineId, identity]),
+  request: ({ machineId }, method, params) => remoteRequest(machineId, method, params),
+});
 
 /** Fetches only what changed since `known`; falls back to a full snapshot. */
 export async function loadRemoteSession(
@@ -376,15 +359,9 @@ export async function loadRemoteSessionText(
   known?: HostSession,
   waitMs?: number,
 ): Promise<HostSession> {
-  const sync = (revision?: number) =>
-    syncRemoteSession(machineId, sessionId, revision, revision === undefined ? undefined : waitMs);
-  const update = await sync(known?.revision);
-  let snapshot: HostSession;
-  try {
-    snapshot = applySessionSync(known, update);
-  } catch {
-    snapshot = applySessionSync(undefined, await sync());
-  }
+  const identity = await hostProjectionIdentity(machineId).catch(() => undefined);
+  const snapshot = await sessionSyncClient.load({ machineId, identity }, sessionId, known, waitMs);
+  if (identity) await saveHostProjection(machineId, snapshot, identity).catch(() => undefined);
   return reuseRemoteAttachmentPreviews(snapshot, known);
 }
 
@@ -417,7 +394,7 @@ export async function remoteMachineFor(
 function readRemoteMachines(): Promise<RemoteMachine[]> {
   if (machineRequest) return machineRequest;
   const revision = machineRevision;
-  const request = invoke<RemoteMachine[]>("remote_machines").then((value) => {
+  const request = listDesktopConnections().then((value) => {
     if (machineRevision === revision) {
       cachedMachines = Array.isArray(value) ? value : [];
       machinesLoaded = true;
@@ -436,11 +413,7 @@ export async function connectMachine(
   url: string,
   token: string,
 ): Promise<RemoteMachine> {
-  const machine = await invoke<RemoteMachine>("remote_connect", {
-    name,
-    url,
-    token,
-  });
+  const machine = await pairDesktopConnection(name, url, token);
   machineRevision++;
   cachedMachines = [
     ...cachedMachines.filter((entry) => entry.id !== machine.id),
@@ -457,7 +430,7 @@ export async function disconnectMachine(machineId: string): Promise<void> {
   const machine = cachedMachines.find((entry) => entry.id === machineId);
   if (machineId === sharedHostMachineId() || (machine && isSharedHostMachine(machine)))
     throw new Error(translate("This computer cannot be removed."));
-  await invoke("remote_disconnect", { machineId });
+  await removeDesktopConnection(machineId);
   machineRevision++;
   cachedMachines = cachedMachines.filter((entry) => entry.id !== machineId);
   window.dispatchEvent(new Event(CHANGE));

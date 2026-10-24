@@ -1,18 +1,8 @@
 import { describe, expect, it } from "vitest";
-import {
-  leaf,
-  leafIds,
-  newFileTab,
-  newPlanTab,
-  newTab,
-  openEditorTab,
-  type WorkspaceTab,
-} from "../../workspace/model/layout";
-import { newSession, type Session } from "./session";
-import {
-  removeSessionFromWorkspace,
-  type SessionWorkspaceRemoval,
-} from "./sessionWorkspaceLifecycle";
+import { leaf, leafIds, newFileTab, newPlanTab, newTab, openEditorTab, type WorkspaceTab } from "../../workspace/model/layout";
+import { newSession } from "./session";
+import { type Session } from "../../../contracts/session";
+import { removeSessionFromWorkspace, type SessionWorkspaceRemoval } from "./sessionWorkspaceLifecycle";
 
 function session(id: string, cwd = "/projects/omnicode"): Session {
   return { ...newSession("cursor", cwd), id };

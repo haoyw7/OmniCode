@@ -1,12 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  clearProjectTreeExpanded,
-  loadProjectTreeExpanded,
-  rebaseProjectTreeExpanded,
-  saveProjectTreeExpanded,
-  subscribeProjectTreeExpanded,
-} from "./projectTree";
+import { clearProjectTreeExpanded, loadProjectTreeExpanded, rebaseProjectTreeExpanded, saveProjectTreeExpanded, subscribeProjectTreeExpanded } from "./projectTree";
 
 beforeEach(() => localStorage.clear());
 afterEach(() => {

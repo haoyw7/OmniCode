@@ -1,4 +1,4 @@
-import { PROJECT_LIST_PREFERENCES, PROJECT_MAP_PREFERENCES } from "./sharedPreferenceSchema";
+import { PROJECT_LIST_PREFERENCES, PROJECT_MAP_PREFERENCES } from "../../../domain/sharedPreferenceSchema";
 import { SHARED_PREFERENCES_CHANGED, SHARED_PREFERENCES_STATUS, type PreferenceCodec, type SharedPreferenceStore } from "./sharedPreferences";
 import { encodeProjectPreferenceListPath, parseProjectPreferenceIdentity } from "./projectPreferenceCodec";
 import { REMOTE_PROJECTS_CHANGED, parseRemotePath, remoteProjectFor, sharedProjects } from "../../connections/model/remoteProjects";

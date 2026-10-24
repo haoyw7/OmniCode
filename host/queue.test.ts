@@ -7,12 +7,9 @@ import { HostEngine, parseCommand } from "./engine";
 import { readAttachmentChunk, writeAttachmentChunk } from "./attachments";
 import type { HostProvider } from "./providers";
 import type { SendTurnInput } from "../src/integrations/harness/core/types";
-import { captureQueueReturnPosition } from "../src/features/sessions/model/messageQueue";
-import {
-  REMOTE_PROVIDERS,
-  applySessionSync,
-  type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+import { captureQueueReturnPosition } from "../src/domain/messageQueue";
+import { REMOTE_PROVIDERS, type RemoteProvider } from "../src/contracts/provider";
+import { applySessionSync } from "../src/domain/sessionSync";
 
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {

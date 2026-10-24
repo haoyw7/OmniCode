@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { newTerminalFile } from "../../workspace/model/layout";
-import {
-  applyTerminalMeta,
-  defaultTerminalTitle,
-  newTerminalCwd,
-  scanOscCwd,
-  terminalTabLabel,
-} from "./terminalTab";
+import { applyTerminalMeta, defaultTerminalTitle, newTerminalCwd, scanOscCwd, terminalTabLabel } from "./terminalTab";
 
 describe("defaultTerminalTitle", () => {
   it("uses the directory basename", () => {

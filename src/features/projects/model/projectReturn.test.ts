@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { newFileTab, newTab, placePane, type WorkspaceTab } from "../../workspace/model/layout";
-import { newSession, type Session } from "../../sessions/model/session";
+import { newSession } from "../../sessions/model/session";
+import { type Session } from "../../../contracts/session";
 import { planProjectReturn, reconcileProjectReturn } from "./projectReturn";
-import {
-  emptyTabVisitHistory,
-  recordTabVisit,
-  tabVisitBack,
-} from "../../workspace/model/tabVisitHistory";
+import { emptyTabVisitHistory, recordTabVisit, tabVisitBack } from "../../workspace/model/tabVisitHistory";
 import { removeSessionFromWorkspace } from "../../sessions/model/sessionWorkspaceLifecycle";
 import { applyPlaceSessionOnPane } from "../../workspace/model/workspaceTabGroups";
 

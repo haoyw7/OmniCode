@@ -2,11 +2,7 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 import { workBuddyAccounts, workBuddyOptionsForOwner } from "./workbuddy";
-import type {
-  HostProviderAccount,
-  HostProviderAccounts,
-  HostAccountIdentity,
-} from "../src/features/connections/model/protocol";
+import type { HostProviderAccount, HostProviderAccounts, HostAccountIdentity } from "../src/contracts/protocol";
 
 export const ACCOUNT_PROVIDERS = ["codex", "claude"] as const;
 const ACCOUNT_ID = /^[A-Za-z0-9_-]{1,80}$/;

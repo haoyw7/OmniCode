@@ -35,9 +35,11 @@ const {
   bindCursorSession,
   __cursorTestReset,
 } = await import("./cursor");
-import type { HarnessEvent } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
 import { newSession } from "../../../../features/sessions/model/session";
-import { applyHarnessEvent } from "../../core/apply";
+import { createSessionProjection } from "../../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 
 function parse() {
   return sent.map((line) => JSON.parse(line) as Record<string, unknown>);

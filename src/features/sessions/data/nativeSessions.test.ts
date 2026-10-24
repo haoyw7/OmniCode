@@ -2,12 +2,9 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { newSession, type Session } from "../model/session";
-import type {
-  NativeSessionAccess,
-  NativeSessionFile,
-  NativeSourceListing,
-} from "../../../integrations/harness/core/nativeSessions";
+import { newSession } from "../model/session";
+import type { Session, NativeSessionAccess, NativeSessionFile, NativeSourceListing } from "../../../contracts/session";
+
 const mocks = vi.hoisted(() => ({
   isTauri: vi.fn(() => true),
   remoteRequest: vi.fn(),
@@ -23,22 +20,7 @@ vi.mock("../../connections/model/remoteProjects", () => ({
   remoteProjectFor: (cwd: string) =>
     cwd.startsWith("remote://") ? { key: cwd, environmentId: "env-2", projectId: "p", cwd: "/far" } : undefined,
 }));
-import {
-  importNativeSession,
-  importNativeSessions,
-  installNativeSessionSync,
-  syncNativeSessions,
-  setNativeAutoSync,
-  nativeAutoSyncEnabled,
-  nativeSessionSnapshot,
-  nativeSessionReadOnly,
-  nativeSessionAccessHint,
-  nativeSessionAccess,
-  pollNativeSessionAccess,
-  externalNativeSessions,
-  refreshNativeDiscovery,
-  discoverNativeSessions,
-} from "./nativeSessions";
+import { importNativeSession, importNativeSessions, installNativeSessionSync, syncNativeSessions, setNativeAutoSync, nativeAutoSyncEnabled, nativeSessionSnapshot, nativeSessionReadOnly, nativeSessionAccessHint, nativeSessionAccess, pollNativeSessionAccess, externalNativeSessions, refreshNativeDiscovery, discoverNativeSessions } from "./nativeSessions";
 import { useNativeSessionAccess } from "../ui/useNativeSessionAccess";
 import { setSharedSessionBackend, type SharedSessionBackend } from "./sharedSessionBackend";
 

@@ -1,59 +1,26 @@
-import { message } from "@tauri-apps/plugin-dialog";
+import { showNativeMessage } from "../../platform/tauri/dialogs";
 import type { Dispatch, RefObject, SetStateAction } from "react";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { releaseOrchestrationWorker } from "../../features/orchestration/model/orchestrationWorkspace";
 import type { ProjectTerminalDock } from "../../features/projects/model/projectTerminal";
-import type { RecentProject } from "../../features/projects/model/recents";
-import { rememberProject } from "../../features/projects/model/recents";
+import { type RecentProject, rememberProject } from "../../features/projects/model/recents";
+
 import { summaryFromSession } from "../../features/sessions/data/sessionHistory";
-import {
-  flushSessionWrites,
-  persistManualSessionTitle,
-  setSessionArchived,
-  setSessionLinkedWorkItem,
-  setSessionPinned,
-  shouldPersistSession,
-  upsertSession,
-  type SessionSummary,
-} from "../../features/sessions/data/sessionStore";
+import { flushSessionWrites, persistManualSessionTitle, setSessionArchived, setSessionLinkedWorkItem, setSessionPinned, shouldPersistSession, upsertSession, type SessionSummary } from "../../features/sessions/data/sessionStore";
 import { archiveFocusedSession } from "../../features/sessions/model/archiveShortcut";
-import {
-  flushSessionCheckpoint,
-  notifyReviewChanged,
-} from "../../features/sessions/model/checkpoint";
-import { sessionChildHarnesses } from "../../features/sessions/model/handoff";
-import {
-  formatSessionTitle,
-  sessionDisplayTitle,
-  sessionExecutionCwd,
-  type LinkedWorkItem,
-  type Session,
-} from "../../features/sessions/model/session";
+import { notifyReviewChanged } from "../../features/sessions/model/checkpoint";
+import { sessionDisplayTitle } from "../../features/sessions/model/session";
+import { formatSessionTitle } from "../../domain/session";
+import { type LinkedWorkItem, type Session } from "../../contracts/session";
 import { createSessionRemover } from "../../features/sessions/model/sessionRemoval";
-import { manualSessionTitle } from "../../features/sessions/model/titlePolicy";
 import { type SessionDeleteChoice } from "../../features/sessions/ui/DeleteSessionDialog";
-import {
-  assertWorktreeFilesClosed,
-  checkWorktreeRemoval,
-  detachSessionWorktree,
-  listWorktrees,
-  removeWorktree,
-  worktreeSessionIds,
-} from "../../features/source-control/model/worktrees";
+import { assertWorktreeFilesClosed, checkWorktreeRemoval, detachSessionWorktree, listWorktrees, removeWorktree, worktreeSessionIds } from "../../features/source-control/model/worktrees";
 import { confirmCloseTerminals } from "../../features/terminal/model/terminalClose";
-import {
-  isFilesystemTab,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import {
-  bindHarnessSession,
-  forgetHarnessSession,
-  stopStreaming,
-} from "../../integrations/harness";
-import { SessionTitleCoordinator } from "../../integrations/harness/core/titleCoordinator";
+import { isFilesystemTab, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { isEqualOrInside, pathKey } from "../../shared/lib/paths";
+import { translate } from "../../shared/i18n/language";
+import { showStatusToast } from "../../shared/ui/StatusToast";
 import type { WorkspaceNavigation } from "../hooks/useWorkspaceNavigation";
-import { bindResumedSessions } from "../model/appLifecycle";
 import { confirmDiscardUnsaved } from "../model/confirmDiscardUnsaved";
 import { filesInWorkspaceTabs } from "../model/workspaceSelectors";
 import type { WorkspaceSessionData } from "../model/workspaceSessionData";
@@ -83,7 +50,6 @@ type Options = {
   >;
   sessionsRef: RefObject<Session[]>;
   sidebarCwd: string;
-  titleCoordinator: RefObject<SessionTitleCoordinator | null>;
   setSessions: Dispatch<SetStateAction<Session[]>>;
   tabsRef: RefObject<WorkspaceTab[]>;
   projectTerminalsRef: RefObject<ProjectTerminalDock[]>;
@@ -136,7 +102,6 @@ export function useSessionHistoryActions({
   sessionData,
   sessionsRef,
   sidebarCwd,
-  titleCoordinator,
   setSessions,
   tabsRef,
   projectTerminalsRef,
@@ -161,6 +126,7 @@ export function useSessionHistoryActions({
   setLinkedWorkItemPanels,
 }: Options) {
   const { refreshHistory } = sessionData;
+  const pendingPins = useRef(new Map<string, symbol>());
   const onRenameHistorySession = useCallback(
     async (sessionId: string, displayTitle: string) => {
       const editedCwd =
@@ -170,42 +136,33 @@ export function useSessionHistoryActions({
         sidebarCwd;
       const trimmed = displayTitle.trim();
       if (!trimmed) return;
-      titleCoordinator.current!.cancel(sessionId);
       sessionData.invalidate(sessionId);
 
       const open = sessionsRef.current.find(
         (session) => session.id === sessionId,
       );
-      if (open) {
-        const title = formatSessionTitle(open.harness, trimmed);
-        const updated = manualSessionTitle(open, title);
-        setSessions((prev) =>
-          prev.map((session) => (session.id === sessionId ? updated : session)),
-        );
-        sessionData.evict(sessionId);
-        await persistManualSessionTitle(updated, title).catch(() => undefined);
-      } else {
-        const restored = await sessionData.load(sessionId);
-        if (!restored) {
+      try {
+        const source = open ?? await sessionData.load(sessionId);
+        if (!source) {
           void refreshHistory(editedCwd, true);
           return;
         }
-        const updated = {
-          ...restored,
-          ...manualSessionTitle(
-            restored,
-            formatSessionTitle(restored.harness, trimmed),
-          ),
-        };
-        await persistManualSessionTitle(updated, updated.title).catch(
-          () => undefined,
+        const updated = await persistManualSessionTitle(
+          source, formatSessionTitle(source.harness, trimmed),
         );
-        const saved = await sessionData.persist(updated);
-        if (saved) {
-          sessionData.retain(updated);
-        }
+        // A Host sync may have advanced this transcript while saving metadata.
+        // Apply only the acknowledged title to the current projection.
+        setSessions((prev) => prev.map((session) => session.id === sessionId
+          ? { ...session, title: updated.title, titleState: updated.titleState }
+          : session));
+        sessionData.updateSummary(sessionId, (entry) => ({
+          ...entry, title: updated.title, titleState: updated.titleState,
+        }));
+        sessionData.evict(sessionId);
+        void refreshHistory(editedCwd, true);
+      } catch (error) {
+        showStatusToast(translate(error instanceof Error ? error.message : String(error)), "error");
       }
-      void refreshHistory(editedCwd, true);
     },
     [sidebarCwd, sessionData],
   );
@@ -234,7 +191,6 @@ export function useSessionHistoryActions({
       }
       removingWorktreePaths.current.add(path);
       const lockedIds = new Set<string>();
-      const forgottenIds = new Set<string>();
       try {
         if (navigation.hasMoveInto(path)) {
           throw new Error(
@@ -269,26 +225,6 @@ export function useSessionHistoryActions({
         }
         for (const id of ids) {
           await stopSessionForRemoval(id);
-          const session = sessionsRef.current.find((entry) => entry.id === id);
-          if (!session) continue;
-          await flushSessionCheckpoint(id);
-          forgottenIds.add(id);
-          for (const harness of sessionChildHarnesses(session)) {
-            await forgetHarnessSession(harness, id);
-          }
-          const latest = sessionsRef.current.find((entry) => entry.id === id);
-          if (!latest) continue;
-          const stopped = {
-            ...stopStreaming(latest),
-            busy: false,
-            queueStatus: "paused" as const,
-            pendingQuestion: undefined,
-          };
-          sessionsRef.current = sessionsRef.current.map((entry) =>
-            entry.id === id ? stopped : entry,
-          );
-          setSessions(sessionsRef.current);
-          if (shouldPersistSession(stopped)) await upsertSession(stopped);
         }
         await flushSessionWrites();
         checkOpenWorktreeFiles(path);
@@ -314,27 +250,6 @@ export function useSessionHistoryActions({
             : entry;
         sessionData.updateSummaries(patchSummary);
         for (const id of affected) notifyReviewChanged(id);
-      } catch (error) {
-        // Removal may fail after idle agent processes were stopped. Rebind
-        // their saved threads so the unchanged working copy can still resume.
-        const kept = sessionsRef.current.filter(
-          (session) => forgottenIds.has(session.id) && !session.worktreeRemoved,
-        );
-        bindResumedSessions(kept);
-        for (const session of kept) {
-          const pending = session.pendingSwitch;
-          if (pending?.fromProviderSessionId) {
-            bindHarnessSession(
-              pending.from,
-              session.id,
-              pending.fromProviderSessionId,
-              sessionExecutionCwd(session),
-              pending.fromProviderAccountId,
-              session.blocks,
-            );
-          }
-        }
-        throw error;
       } finally {
         removingWorktreePaths.current.delete(path);
         for (const id of lockedIds) sessionData.endRemoval(id);
@@ -517,7 +432,7 @@ export function useSessionHistoryActions({
           try {
             await onRemoveWorktree(seed.cwd, deleteWorktreePath, false);
           } catch (error) {
-            void message(
+            void showNativeMessage(
               `The session was deleted. Its worktree was kept.\n\n${String(error)}\n\nYou can manage it in Settings → Worktrees.`,
               { title: "OmniCode", kind: "warning" },
             );
@@ -526,7 +441,7 @@ export function useSessionHistoryActions({
         return removed;
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
-        void message(`Could not ${mode} this conversation.\n\n${detail}`, {
+        void showNativeMessage(`Could not ${mode} this conversation.\n\n${detail}`, {
           title: "OmniCode",
           kind: "error",
         });
@@ -557,7 +472,7 @@ export function useSessionHistoryActions({
         }));
         return true;
       } catch (error) {
-        void message(
+        void showNativeMessage(
           `Could not unarchive this conversation.\n\n${String(error)}`,
           {
             title: "OmniCode",
@@ -595,6 +510,9 @@ export function useSessionHistoryActions({
 
   const onPinHistorySession = useCallback(
     async (sessionId: string, pinned: boolean) => {
+      const previousPinned = sessionData.snapshot().history.find((entry) => entry.id === sessionId)?.pinned ?? false;
+      const request = Symbol();
+      pendingPins.current.set(sessionId, request);
       const open = sessionsRef.current.find(
         (session) => session.id === sessionId,
       );
@@ -606,7 +524,17 @@ export function useSessionHistoryActions({
       if (open && shouldPersistSession(open)) {
         await upsertSession(open).catch(() => undefined);
       }
-      await setSessionPinned(sessionId, pinned).catch(() => undefined);
+      try {
+        await setSessionPinned(sessionId, pinned);
+      } catch (error) {
+        if (pendingPins.current.get(sessionId) === request) {
+          sessionData.updateSummary(sessionId, (entry) => entry.pinned === pinned
+            ? { ...entry, pinned: previousPinned } : entry);
+        }
+        showStatusToast(translate(error instanceof Error ? error.message : String(error)), "error");
+      } finally {
+        if (pendingPins.current.get(sessionId) === request) pendingPins.current.delete(sessionId);
+      }
     },
     [sessionData],
   );
@@ -658,7 +586,7 @@ export function useSessionHistoryActions({
               : session,
           );
           void refreshHistory(editedCwd, true);
-          void message(
+          void showNativeMessage(
             `Could not update this conversation's GitHub link.\n\n${String(error)}`,
             { title: "OmniCode", kind: "error" },
           );

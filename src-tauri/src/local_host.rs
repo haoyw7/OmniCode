@@ -12,6 +12,8 @@ struct Prepared {
     token: String,
     projects: Vec<Value>,
     sessions: Vec<Value>,
+    projections: Vec<Value>,
+    migration_audit: crate::session_store::DesktopImportAudit,
 }
 
 #[derive(Serialize)]
@@ -93,6 +95,15 @@ pub fn shared_host_prepare(
         serde_json::to_string(&binary_paths).map_err(|e| e.to_string())?,
     );
     crate::hide_window_console(&mut command);
+    // Serialize every native session mutation with the read-only source import.
+    // Node uses a separate read-only SQLite connection and never writes it.
+    let mut migration_lock = store.lock_conn()?;
+    // The SQLite write reservation also excludes an older desktop process;
+    // the Rust mutex alone only serializes this process's commands.
+    let migration_transaction = migration_lock
+        .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+        .map_err(|error| error.to_string())?;
+    let migration_before = crate::session_store::desktop_import_audit(&migration_transaction)?;
     let output = command
         .output()
         .map_err(|e| format!("Could not start shared conversation service: {e}"))?;
@@ -101,21 +112,45 @@ pub fn shared_host_prepare(
     }
     let prepared: Prepared = serde_json::from_slice(&output.stdout)
         .map_err(|_| "Invalid conversation service response")?;
+    crate::session_store::accept_host_ownership(
+        &migration_transaction,
+        &migration_before,
+        &prepared.migration_audit,
+    )?;
+    migration_transaction
+        .commit()
+        .map_err(|error| error.to_string())?;
+    drop(migration_lock);
     crate::legacy_orchestration::finish(&store, &manifest)?;
     let machine = crate::remote::remote_connect(
-        app,
+        app.clone(),
         state.clone(),
         String::new(),
         prepared.endpoint,
         prepared.token,
     )?;
     state.remember_shared_host(&machine)?;
-    Ok(SharedHost {
+    let projections = prepared.projections;
+    let result = SharedHost {
         machine,
         projects: prepared.projects,
         sessions: prepared.sessions,
         retired_session_ids,
-    })
+    };
+    // Cache errors do not invalidate an authenticated live startup.
+    if let Ok(snapshot) = serde_json::to_value(&result) {
+        if let Some(machine_id) = snapshot.pointer("/machine/id").and_then(Value::as_str) {
+            let _ = crate::host_projection_cache::save_bootstrap(
+                &app,
+                &state,
+                &store,
+                machine_id,
+                &snapshot,
+                &projections,
+            );
+        }
+    }
+    Ok(result)
 }
 
 /// Stop the shared Host on the way out. Best effort: a Host that is already

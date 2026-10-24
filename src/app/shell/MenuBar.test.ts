@@ -8,10 +8,7 @@ import { MenuBar } from "./MenuBar";
 import { WindowMenuButton } from "./WindowMenuButton";
 import { SurfaceVisibilityContext } from "../../shared/ui/SurfaceVisibility";
 import { APP_COMMANDS, type CommandHandlers } from "../commands/registry";
-import {
-  saveKeybindingOverride,
-  saveMenuBarVisible,
-} from "../../features/settings/model/settings";
+import { saveKeybindingOverride, saveMenuBarVisible } from "../../features/settings/model/settings";
 import { setUiLanguage } from "../../shared/i18n/language";
 
 const windowMock = vi.hoisted(() => ({

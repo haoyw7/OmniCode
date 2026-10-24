@@ -1,10 +1,7 @@
-import {
-  latestTurnNeedsHarnessLogin,
-  supportsHarnessLogin,
-} from "../../../integrations/harness/core/authSupport";
-import type { HarnessId, Session } from "../../sessions/model/session";
+import { latestTurnNeedsHarnessLogin, supportsHarnessLogin } from "../../../integrations/harness/core/authSupport";
+import type { HarnessId, Session } from "../../../contracts/session";
 import { conversationProviderAccountId } from "./providerAccounts";
-import { parseDeepseekModelRoute } from "../../../integrations/harness/providers/deepseek/deepseekModelId";
+import { parseDeepseekModelRoute } from "../../../domain/modelRoute";
 
 export type UsageSession = {
   id?: string;

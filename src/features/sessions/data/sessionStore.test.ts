@@ -1,21 +1,12 @@
-import { appendUser, applyHarnessEvents } from "../../../integrations/harness/core/apply";
+import { createSessionProjection } from "../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../../integrations/harness/core/modelCatalog";
+const { appendUser, applyHarnessEvents } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { describe, expect, it } from "vitest";
 import { mapCodexNotification } from "../../../integrations/harness/providers/codex/codexProtocol";
-import { toolCallLabel } from "../model/transcriptActivity";
-import {
-  newSession,
-  type Block,
-  type BtwThread,
-  type Session,
-} from "../model/session";
-import {
-  backfillClaudeShellCommands,
-  backfillCodexShellCommands,
-  isPersistableId,
-  persistFingerprint,
-  sanitizeSessionForPersist,
-  shouldPersistSession,
-} from "./sessionStore";
+import { toolCallLabel } from "../../../domain/toolLabel";
+import { newSession } from "../model/session";
+import { type Block, type BtwThread, type Session } from "../../../contracts/session";
+import { backfillClaudeShellCommands, backfillCodexShellCommands, isPersistableId, persistFingerprint, sanitizeSessionForPersist, shouldPersistSession } from "./sessionStore";
 
 it("keeps host-owned transcripts out of local session storage", () => {
   const session = newSession("codex", "remote://env/home/me/repo");
@@ -30,11 +21,11 @@ it("retains a submitted turn's checkpoint identity when saving history", () => {
   expect(sanitizeSessionForPersist(session).blocks[0].checkpointTurnId).toBe("recorded-turn");
 });
 
-it("only persists a new composer after its first message is submitted", () => {
+it("keeps local project drafts and submitted turns out of the Rust store", () => {
   const draft = newSession("codex", "/repo");
   expect(shouldPersistSession(draft)).toBe(false);
   expect(shouldPersistSession({ ...draft, title: "My next conversation" })).toBe(false);
-  expect(shouldPersistSession(appendUser(draft, "First message"))).toBe(true);
+  expect(shouldPersistSession(appendUser(draft, "First message"))).toBe(false);
 });
 
 describe("Claude Shell row recovery", () => {

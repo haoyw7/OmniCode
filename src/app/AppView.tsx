@@ -1,5 +1,8 @@
 import { createPortal } from "react-dom";
-import { AppPageHeaderPortalContext } from "../features/workspace/ui/AppPageHeader";
+import { WorkflowPresentationProvider } from "./ui/WorkflowPresentationProvider";
+import { SessionPresentationProvider } from "./ui/SessionPresentationProvider";
+import { InboxPresentationProvider } from "./ui/InboxPresentationProvider";
+import { AppPageHeaderPortalContext } from "../shared/ui/messaging/AppPageHeader";
 import { windowDragRegion } from "./shell/startWindowDrag";
 import type { SidebarProps } from "./shell/Sidebar.types";
 import { PresenceBoundary } from "../shared/ui/PresenceBoundary";
@@ -15,10 +18,7 @@ import {
 AppViewHost,
 AppViewRendererContext
 } from "../features/workspace/ui/AppViewHost";
-import {
-OrchestrationActions,
-OrchestrationWorkers
-} from "../features/orchestration/ui/OrchestrationActions";
+import { OrchestrationActions, OrchestrationWorkers } from "../features/orchestration/model/OrchestrationActions";
 import {
 useState, type CSSProperties
 } from "react";
@@ -26,7 +26,7 @@ import { Sidebar } from "./shell/Sidebar";
 import { DesktopTitlebarNavigation } from "./shell/DesktopNavigation";
 import { WindowMenuButton } from "./shell/WindowMenuButton";
 import { SidebarMain } from "./shell/SidebarMain";
-import { GradientBlurBackground } from "../features/settings/ui/GradientBlurBackground";
+import { GradientBlurBackground } from "../shared/ui/GradientBlurBackground";
 import { ApprovalToasts } from "../features/sessions/ui/ApprovalToasts";
 import { HarnessUpdateNotice } from "../features/providers/ui/HarnessUpdateNotice";
 import { WhatsNewDialog } from "./shell/WhatsNewDialog";
@@ -54,17 +54,15 @@ APP_PAGE_KINDS,leafIds
 import {
 looksLikeProject
 } from "../features/projects/model/recents";
-import { AppViewDialog } from "../features/workspace/ui/AppViewDialog";
-import {
-SessionHeaderActionsContext
-} from "../features/workspace/ui/SessionHeaderActions";
+import { AppViewDialog } from "../shared/ui/messaging/AppViewDialog";
+import { SessionHeaderActionsContext } from "../features/workspace/model/SessionHeaderActions";
 
 import {
 TranscriptPoolOutlet
 } from "../features/sessions/ui/TranscriptPool";
 import { ReminderNotices } from "../features/sessions/ui/ReminderNotices";
 
-import { PaneTree } from "../features/workspace/ui/PaneTree";
+import { PaneTree } from "./ui/PaneTree";
 import { SessionPane } from "../features/sessions/ui/SessionPane";
 import { SubagentTabsContext } from "../features/sessions/ui/SubagentTabsContext";
 import { SessionSurface } from "../features/sessions/ui/SessionSurface";
@@ -348,6 +346,9 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
 
   return (
     <WorkflowAppContext.Provider value={workflowApp}>
+    <WorkflowPresentationProvider>
+    <SessionPresentationProvider>
+    <InboxPresentationProvider>
     <SubagentTabsContext.Provider value={openSubagentTab}>
     <WorkflowProjectsContext.Provider value={workflowProjects}>
     <WorkflowActivityContext.Provider value={workflowActivity}>
@@ -787,6 +788,9 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
     </WorkflowActivityContext.Provider>
     </WorkflowProjectsContext.Provider>
     </SubagentTabsContext.Provider>
+    </InboxPresentationProvider>
+    </SessionPresentationProvider>
+    </WorkflowPresentationProvider>
     </WorkflowAppContext.Provider>
   );
 }

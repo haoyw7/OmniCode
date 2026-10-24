@@ -8,10 +8,7 @@ import { MobileApp } from "./MobileApp";
 import "./MobileSettings";
 import { setUiLanguage } from "../shared/i18n/language";
 import { loadTranscriptAnchor } from "../features/settings/model/appearance";
-import {
-  loadFollowUpBehavior,
-  saveFollowUpBehavior,
-} from "../features/settings/model/settings";
+import { loadFollowUpBehavior, saveFollowUpBehavior } from "../features/settings/model/settings";
 
 const project = vi.hoisted(() => ({
   id: "project",

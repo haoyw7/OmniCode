@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { providerSessionAccessIssue } from "./sessionAccessErrors";
-import type { HarnessId } from "../../../features/sessions/model/session";
+import type { HarnessId } from "../../../contracts/session";
 
 describe("provider session access errors", () => {
   it.each<[HarnessId, string]>([

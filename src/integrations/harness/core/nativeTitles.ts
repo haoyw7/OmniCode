@@ -1,8 +1,8 @@
-import { usefulNativeTitle } from "../../../features/sessions/model/titlePolicy";
-import type { HarnessEvent } from "./types";
+import { usefulNativeTitle } from "../../../domain/titlePolicy";
+import type { HarnessEvent } from "../../../contracts/harness";
 import { AcpClient } from "./acp";
 import { killChild, spawnChild, unwatchChild, watchChild } from "./child";
-import type { HarnessId } from "../../../features/sessions/model/session";
+import type { HarnessId } from "../../../contracts/session";
 import type { NativeTitleInput } from "./titleCoordinator";
 
 export { parseClaudeNativeTitle } from "./nativeTitleParsing";

@@ -1,8 +1,4 @@
-import type {
-  BotPermission,
-  BotPolicy,
-  BotWatch,
-} from "./botView";
+import type { BotPermission, BotPolicy, BotWatch } from "./botView";
 
 export function isExplicitlyWatchedSession(
   policy: BotPolicy,

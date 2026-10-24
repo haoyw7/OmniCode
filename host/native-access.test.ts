@@ -13,7 +13,7 @@ import {
   providerArgv,
   NativeSessionGuard,
 } from "./native-access";
-import type { NativeSessionLink } from "../src/features/sessions/model/session";
+import type { NativeSessionLink } from "../src/contracts/session";
 
 const linux = process.platform === "linux";
 const cleanups: Array<() => void | Promise<void>> = [];

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+
 import { expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { newSession } from "../model/session";

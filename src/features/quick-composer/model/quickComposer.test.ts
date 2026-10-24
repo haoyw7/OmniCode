@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { RUNTIME_MODES } from "../../sessions/model/session";
-import type { AgentModel } from "../../sessions/model/models";
-import {
-  filterQuickModels,
-  filterQuickProjects,
-  orderQuickProjects,
-  parseQuickLaunch,
-} from "./quickComposer";
+import { RUNTIME_MODES, type AgentModel } from "../../../contracts/session";
+
+import { filterQuickModels, filterQuickProjects, orderQuickProjects, parseQuickLaunch } from "./quickComposer";
 
 describe("parseQuickLaunch", () => {
   it("accepts a complete launch", () => {

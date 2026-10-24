@@ -1,12 +1,8 @@
+import { readAttachmentBase64 } from "./attachmentFiles";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import {
-  attachmentsFromFiles,
-  attachmentsFromPaths,
-  isAttachmentFolder,
-  MAX_ATTACHMENTS,
-  MAX_EMBED_BYTES,
-} from "../../features/sessions/model/attachments";
-import type { Attachment } from "../../features/sessions/model/session";
+import { attachmentsFromFiles, attachmentsFromPaths, MAX_ATTACHMENTS, MAX_EMBED_BYTES } from "../../features/sessions/model/attachments";
+import { isAttachmentFolder } from "../../domain/attachmentPrompt";
+import type { Attachment } from "../../contracts/session";
 
 type CopiedFile = { name: string; mimeType: string; data: string };
 
@@ -55,9 +51,7 @@ export async function copyMessage(
     try {
       let data = attachment.data;
       if (data === undefined && attachment.path) {
-        data = await invoke<string>("read_file_base64", {
-          path: attachment.path,
-        });
+        data = await readAttachmentBase64(attachment.path);
       }
       if (data === undefined)
         throw new Error("File content is no longer available.");

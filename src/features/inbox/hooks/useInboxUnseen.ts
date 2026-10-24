@@ -1,68 +1,19 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  inboxListCacheKey,
-  inboxItemKey,
-  inboxProjectsForRail,
-  listInboxItems,
-  type GithubWorkItem,
-  type InboxItem,
-  type InboxQuery,
-  type InboxProvider,
-} from "../model/githubTasks";
-import {
-  applyInboxFilters,
-  inboxFetchState,
-  loadInboxFilters,
-  pruneInboxFilters,
-} from "../model/inboxFilters";
-import {
-  inboxHasUnseenItems,
-  rememberInboxItems,
-  markInboxItemsSeen,
-  seedInboxSeenIfNeeded,
-  subscribeInboxSeen,
-  type InboxSeenEntry,
-} from "../model/inboxSeen";
-import {
-  linkedSessionUpdates,
-  linkedWorkItemUpdateKey,
-  type LinkedSessionUpdate,
-} from "../model/linkedSessionUpdates";
-import {
-  markLinkedSessionUpdateSeen,
-  linkedSessionSeenAt,
-  subscribeLinkedSessionSeen,
-} from "../model/linkedSessionSeen";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { inboxListCacheKey, inboxItemKey, inboxProjectsForRail, listInboxItems } from "../model/githubTasks";
+import { type GithubWorkItem, type InboxItem, type InboxQuery, type InboxProvider } from "../../../contracts/session";
+import { applyInboxFilters, inboxFetchState, loadInboxFilters, pruneInboxFilters } from "../model/inboxFilters";
+import { inboxHasUnseenItems, rememberInboxItems, markInboxItemsSeen, seedInboxSeenIfNeeded, subscribeInboxSeen, type InboxSeenEntry } from "../model/inboxSeen";
+import { linkedSessionUpdates, linkedWorkItemUpdateKey, type LinkedSessionUpdate } from "../model/linkedSessionUpdates";
+import { markLinkedSessionUpdateSeen, linkedSessionSeenAt, subscribeLinkedSessionSeen } from "../model/linkedSessionSeen";
 import { loadHiddenLinearTeamIds } from "../model/linear";
 import { JIRA_CHANGE_EVENT, loadHiddenJiraProjectIds } from "../model/jira";
 import type { RecentProject } from "../../projects/model/recents";
 import type { SessionSummary } from "../../sessions/data/sessionStore";
 import { playCue } from "../../settings/model/sounds";
-import {
-  InboxNotificationTracker,
-  inboxNotificationSubject,
-} from "../model/inboxNotifications";
-import {
-  inboxNotificationProject,
-  rememberNotificationProjects,
-} from "../../notifications/model/notificationProjects";
-import {
-  allowsProjectNotificationIndicator,
-  loadNotificationPreferences,
-  subscribeNotificationPreferences,
-  type NotificationSubject,
-} from "../../notifications/model/notificationPreferences";
-import {
-  consumeInboxSelfActivity,
-  subscribeInboxSelfActivity,
-} from "../model/inboxSelfActivity";
+import { InboxNotificationTracker, inboxNotificationSubject } from "../model/inboxNotifications";
+import { inboxNotificationProject, rememberNotificationProjects } from "../../notifications/model/notificationProjects";
+import { allowsProjectNotificationIndicator, loadNotificationPreferences, subscribeNotificationPreferences, type NotificationSubject } from "../../notifications/model/notificationPreferences";
+import { consumeInboxSelfActivity, subscribeInboxSelfActivity } from "../model/inboxSelfActivity";
 
 const POLL_MS = 2 * 60_000;
 const HIDDEN_POLL_MS = 5 * 60_000;
@@ -102,7 +53,6 @@ export function useInboxActivity(
   recents: RecentProject[],
   cwd: string,
   sessions: readonly SessionSummary[],
-  options?: { onAppeared?: (items: InboxItem[]) => void },
 ): InboxActivity {
   const [unseen, setUnseen] = useState(false);
   const [workItems, setWorkItems] = useState<
@@ -113,7 +63,6 @@ export function useInboxActivity(
   const entriesRef = useRef<ProjectSeenEntry[]>([]);
   const notifications = useRef(new InboxNotificationTracker());
   const sessionsRef = useRef(sessions);
-  const onAppearedRef = useRef(options?.onAppeared);
   const lastPulledAt = useRef<number | null>(null);
 
   const applyUnseen = useCallback(() => {
@@ -132,9 +81,6 @@ export function useInboxActivity(
     sessionsRef.current = sessions;
   }, [sessions]);
 
-  useLayoutEffect(() => {
-    onAppearedRef.current = options?.onAppeared;
-  }, [options?.onAppeared]);
 
   useEffect(() => {
     const stopSeen = subscribeInboxSeen(applyUnseen);
@@ -197,9 +143,6 @@ export function useInboxActivity(
           Object.keys(listed.errors) as InboxProvider[],
         );
         const changed = observed.changed;
-        // Invoke on every successful poll so retained automation claims can be
-        // retried even when the item is no longer newly appeared.
-        onAppearedRef.current?.(observed.appeared);
         const selfAuthored = changed.filter((item) =>
           consumeInboxSelfActivity(item),
         );

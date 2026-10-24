@@ -4,18 +4,9 @@ import { AnimatedCollapse } from "../../shared/ui/AnimatedCollapse";
 import { ChevronDown, ChevronRight } from "../../shared/ui/icons";
 import { withStatusToast } from "../../shared/ui/StatusToast";
 import { pathKey } from "../../shared/lib/paths";
-import {
-  externalNativeSessions,
-  importNativeSession,
-  nativeSessionSnapshot,
-  refreshNativeDiscovery,
-  subscribeNativeSessions,
-} from "../../features/sessions/data/nativeSessions";
-import {
-  nativeProviderLabel,
-  nativeSourceKey,
-  type NativeSessionFile,
-} from "../../integrations/harness/core/nativeSessions";
+import { externalNativeSessions, importNativeSession, nativeSessionSnapshot, refreshNativeDiscovery, subscribeNativeSessions } from "../../features/sessions/data/nativeSessions";
+import { nativeProviderLabel, nativeSourceKey } from "../../integrations/harness/core/nativeSessions";
+import { type NativeSessionFile } from "../../contracts/session";
 
 const PAGE = 5;
 

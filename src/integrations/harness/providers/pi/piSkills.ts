@@ -1,21 +1,9 @@
-import {
-  acquireHarnessBridge,
-  killChild,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-  writeChild,
-} from "../../core/child";
+import type { NativeCommand } from "../../../../contracts/nativeCommands";
+import { acquireHarnessBridge, killChild, spawnChild, unwatchChild, watchChild, writeChild } from "../../core/child";
 import { PiRpc } from "./piClient";
 import { PI_FLAVOR, OMP_FLAVOR, type PiFlavor } from "./piFlavor";
-import { nativeCommandInvocation, type NativeCommand } from "../../core/nativeCommands";
-import {
-  asRecord,
-  buildPiSpawnArgs,
-  extensionUiResponse,
-  needsExtensionUiReply,
-  parseExtensionUiRequest,
-} from "./piProtocol";
+import { nativeCommandInvocation } from "../../core/nativeCommands";
+import { asRecord, buildPiSpawnArgs, extensionUiResponse, needsExtensionUiReply, parseExtensionUiRequest } from "./piProtocol";
 
 const REQUEST_TIMEOUT_MS = 45_000;
 

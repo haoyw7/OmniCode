@@ -1,18 +1,8 @@
-import {
-  isRemoteProjectPath,
-  sameProjectPath,
-} from "../../features/projects/model/recents";
+import { isRemoteProjectPath, sameProjectPath } from "../../features/projects/model/recents";
 import { rememberLoadedSession } from "../../features/sessions/data/sessionCache";
-import {
-  mergeProjectHistorySummary,
-  replaceProjectHistory,
-} from "../../features/sessions/data/sessionHistory";
-import {
-  persistFingerprint,
-  shouldPersistSession,
-  type SessionSummary,
-} from "../../features/sessions/data/sessionStore";
-import type { Session } from "../../features/sessions/model/session";
+import { mergeProjectHistorySummary, replaceProjectHistory } from "../../features/sessions/data/sessionHistory";
+import { persistFingerprint, shouldPersistSession, type SessionSummary } from "../../features/sessions/data/sessionStore";
+import type { Session } from "../../contracts/session";
 import { pathKey } from "../../shared/lib/paths";
 import { createProjectHistoryLoader } from "./projectHistoryLoader";
 import { lastUserBlockId } from "./sessionTransforms";

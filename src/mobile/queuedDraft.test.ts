@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { takeBackQueuedMessage } from "./queuedDraft";
-import type { QueuedMessage } from "../features/sessions/model/session";
+import type { QueuedMessage } from "../contracts/session";
 
 const queued: QueuedMessage = {
   id: "queue",

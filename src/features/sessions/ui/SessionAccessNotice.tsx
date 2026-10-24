@@ -1,4 +1,4 @@
-import type { HarnessId } from "../model/session";
+import type { HarnessId } from "../../../contracts/session";
 import type { SessionAccessIssue } from "../../../integrations/harness/providers/sessionAccessErrors";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 

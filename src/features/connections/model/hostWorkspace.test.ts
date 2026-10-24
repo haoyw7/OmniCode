@@ -1,9 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from "vitest";
-import {
-  decodeHostWorkspace, encodeHostWorkspace, HostWorkspaceJournal,
-  mobileWorkspaceLocation, type HostStateRequest, type WorkspaceRecord,
-} from "./hostWorkspace";
+import { decodeHostWorkspace, encodeHostWorkspace, HostWorkspaceJournal, mobileWorkspaceLocation, type HostStateRequest, type WorkspaceRecord } from "./hostWorkspace";
 import { configureSharedHost, remoteProjectFor, rememberRemoteProject } from "./remoteProjects";
 import { rememberRemoteSession, remoteSessionFor, remoteSessionScopeFor } from "./connections";
 import { newTab } from "../../workspace/model/layout";

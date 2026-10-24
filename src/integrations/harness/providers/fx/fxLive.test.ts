@@ -23,7 +23,7 @@ vi.mock("../../core/child", () => ({
 }));
 
 const { sendFxTurn, stopFxSession, bindFxSession } = await import("./fx");
-import type { HarnessEvent } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
 
 function reply(id: number, result: unknown) {
   onLine!(JSON.stringify({ jsonrpc: "2.0", id, result }));

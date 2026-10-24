@@ -21,7 +21,6 @@ vi.mock("../../sessions/data/sessionStore", () => ({
 }));
 vi.mock("../model/search", () => ({
   searchProject: vi.fn(async () => ({ matches: [], truncated: false })),
-  cancelProjectSearch: vi.fn(async () => {}),
 }));
 
 let root: Root;

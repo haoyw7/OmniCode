@@ -1,12 +1,6 @@
 import { animate, cancelFrame, frame as motionFrame, type AnimationPlaybackControls } from "motion/react";
 import { duration as motionDuration, immediateTransition, panelTransition } from "../motion/tokens";
-import {
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { reducedMotionQuery } from "../lib/reducedMotion";
 import { flushSync } from "react-dom";
 import { createDragGhost, setGrabbing, suppressTextSelection } from "../lib/drag";

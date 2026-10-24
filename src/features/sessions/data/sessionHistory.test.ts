@@ -1,23 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  allProjectHistoryWithLiveSessions,
-  historyWithLiveSessions,
-  filterSessionsByArchive,
-  filterSessionsByQuery,
-  mergeHistorySummary,
-  mergeProjectHistorySummary,
-  replaceProjectHistory,
-  reuseEqualSummaries,
-  sidebarLiveSessions,
-  summaryFromSession,
-  mergeLiveSessionSummaries,
-  compareSessionSummaries,
-} from "./sessionHistory";
+import { allProjectHistoryWithLiveSessions, historyWithLiveSessions, filterSessionsByArchive, filterSessionsByQuery, mergeHistorySummary, mergeProjectHistorySummary, replaceProjectHistory, reuseEqualSummaries, sidebarLiveSessions, summaryFromSession, mergeLiveSessionSummaries, compareSessionSummaries } from "./sessionHistory";
 import { pathKey } from "../../../shared/lib/paths";
 import { newSession } from "../model/session";
-import { appendUser } from "../../../integrations/harness/core/apply";
+import { createSessionProjection } from "../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../../integrations/harness/core/modelCatalog";
+const { appendUser } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import type { SessionSummary } from "./sessionStore";
-import type { OrchestrationRun } from "../../orchestration/model/orchestration";
+import type { OrchestrationRun } from "../../../contracts/session";
 
 function summary(id: string, cwd: string, updatedAt = 1): SessionSummary {
   return {

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
-import { initUiLanguage } from "./languageSync";
+import { initUiLanguage } from "../../platform/tauri/languageSync";
 import { getUiLanguage, setUiLanguage } from "./language";
 
 const bus = vi.hoisted(() => ({

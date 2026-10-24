@@ -1,11 +1,5 @@
 import { useTranslation } from "../i18n/useTranslation";
-import {
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ChevronLeft, ChevronRight, Clock } from "./icons";
 
 export function toLocalDateTime(date: Date): string {

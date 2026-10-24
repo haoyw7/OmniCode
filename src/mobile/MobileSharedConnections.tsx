@@ -1,7 +1,7 @@
 import { Button } from "../shared/ui/forms/Button";
 import { useEffect, useState } from "react";
 import { useHostConnections } from "../features/connections/model/hostConnections";
-import type { HostConnectionDefinition } from "../features/connections/model/hostState";
+import type { HostConnectionDefinition } from "../contracts/hostState";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import type { MobileClient } from "./client";
 

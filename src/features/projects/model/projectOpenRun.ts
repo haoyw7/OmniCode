@@ -1,9 +1,8 @@
-import {
-  newSessionForProject,
-  type Session,
-} from "../../sessions/model/session";
+import { newSessionForProject } from "../../sessions/model/session";
+import { type Session } from "../../../contracts/session";
 import { newTab, type WorkspaceTab } from "../../workspace/model/layout";
-import { looksLikeProject, normalizeProjectPath } from "./recents";
+import { looksLikeProject } from "./recents";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
 import { planProjectReturn, type ProjectReturnMemory } from "./projectReturn";
 
 export type ProjectOpenStep =

@@ -1,9 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
-import {
-  applyThemePreference,
-  type ThemePreference,
-} from "../../features/settings/model/appearance";
+import { applyThemePreference, type ThemePreference } from "../../features/settings/model/appearance";
 
 /** Order matches the Settings picker: dark skins, then light ones. */
 export const MOBILE_SKINS = [

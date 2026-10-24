@@ -1,13 +1,7 @@
 import { motion as motionElement } from "motion/react";
 import { workflowEntry } from "./workflow-motion.js";
 import { ArrowUpRight as ArrowUpRightIcon, Ellipsis as EllipsisIcon } from "../../../../../shared/ui/icons";
-import {
-  ArtifactDetail,
-  ArtifactKindIcon,
-  artifactDetailText,
-  artifactDisplayTitle,
-  artifactKindMessageId,
-} from "../../app-shell/workflow-artifacts/artifactPresentation.js";
+import { ArtifactDetail, ArtifactKindIcon, artifactDetailText, artifactDisplayTitle, artifactKindMessageId } from "../../app-shell/workflow-artifacts/artifactPresentation.js";
 import type { PresetLabels } from "../../app-shell/workflow-artifacts/presets/index.js";
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";

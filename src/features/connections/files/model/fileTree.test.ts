@@ -1,14 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { FsEntry } from "../../../../platform/tauri/fs";
-import {
-  forgetDir,
-  listCachedDir,
-  notifyDirsChanged,
-  peekDir,
-  refreshCachedDirs,
-  refreshDir,
-  subscribeDirsChanged,
-} from "./fileTree";
+import type { FsEntry } from "../../../../contracts/workspace";
+import { forgetDir, listCachedDir, notifyDirsChanged, peekDir, refreshCachedDirs, refreshDir, subscribeDirsChanged } from "./fileTree";
 
 const root = "/tmp/empty-project";
 

@@ -1,80 +1,35 @@
-import type { SessionExecutionState } from "../model/session";
+import { TranscriptCardsContext, type WorkflowRunParent } from "../model/sessionPresentation";
+import type { SessionExecutionState, QuestionAnswer, WorktreeCreation, Block, HarnessId, ModelTarget, PlanBuildTarget } from "../../../contracts/session";
 import "./AgentTranscript.css";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import type { QuestionAnswer } from "../model/userQuestion";
+
 import { reducedMotionQuery } from "../../../shared/lib/reducedMotion";
-import {
-  memo,
-  createElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { memo, createElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { OrchestrationPreview } from "../../orchestration/ui/OrchestrationPreview";
-import { WorkflowRunCard, type WorkflowRunParent } from "../../workflows/ui/WorkflowRunCard";
 import { WorktreeCreationCard } from "./WorktreeCreationCard";
-import {
-  worktreeCreationFromRecord,
-  type WorktreeCreation,
-} from "../../source-control/model/worktreeCreation";
+import { worktreeCreationFromRecord } from "../../../domain/worktreeCreation";
+
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import {
-  SurfaceVisibilityContext,
-  useSurfaceVisibility,
-} from "../../../shared/ui/SurfaceVisibility";
-import type { ApprovalDecision } from "../../../integrations/harness";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
-import {
-  AfterTextReveal,
-  useTranscriptRenderingPlatform,
-} from "./useTranscriptRenderingPlatform";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
+import type { ApprovalDecision } from "../../../contracts/harness";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
+import { AfterTextReveal, useTranscriptRenderingPlatform } from "../../../shared/ui/markdown/useTranscriptRenderingPlatform";
 import { TranscriptContentMotion, useMessageArrivals } from "./TranscriptContentMotion";
-import { resolveModel } from "../model/models";
-import { harnessForTurn } from "../model/secondOpinion";
+import { resolveModel } from "../../../integrations/harness/core/modelCatalog";
+import { harnessForTurn } from "../../../domain/secondOpinion";
 import { TranscriptTurnCache } from "../model/transcriptTurnCache";
-import { userTurnStartTimes } from "../model/turnTiming";
-import {
-  hasPendingApproval,
-  type Block,
-  type HarnessId,
-  type ModelTarget,
-  type PlanBuildTarget,
-} from "../model/session";
-import {
-  useLockOverscroll,
-} from "../../../shared/hooks/useLockOverscroll";
+import { userTurnStartTimes } from "../../../domain/turnTiming";
+import { hasPendingApproval } from "../../../domain/session";
+
+import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useTranscriptLayout } from "../hooks/useTranscriptLayout";
 import { useTranscriptAnchor } from "../hooks/useTranscriptAnchor";
 import { useTranscriptSelection } from "../hooks/useTranscriptSelection";
 import { TranscriptSelectionMenu } from "./TranscriptSelectionMenu";
-import {
-  activityStillRunning,
-  firstFoldableIndex,
-  foldableWork,
-  foldedBlocks,
-  initialThinkingIndex,
-  lastActivityIndex,
-  isProseBlock,
-  turnCopyText,
-  workDiffStats,
-  workKind,
-  workSummaryLine,
-  type TurnItem,
-} from "../model/transcriptActivity";
+import { activityStillRunning, firstFoldableIndex, foldableWork, foldedBlocks, initialThinkingIndex, lastActivityIndex, isProseBlock, turnCopyText, workDiffStats, workKind, workSummaryLine, type TurnItem } from "../model/transcriptActivity";
 import { lastUserTurnBlock } from "../model/editLastTurn";
-import {
-  clearTranscriptHighlights,
-  paintTranscriptHighlights,
-  transcriptMutationNeedsRepaint,
-  transcriptWordRanges,
-} from "../model/transcriptHighlights";
-import { confirmPrompt } from "./promptLaunch";
+import { clearTranscriptHighlights, paintTranscriptHighlights, transcriptMutationNeedsRepaint, transcriptWordRanges } from "../model/transcriptHighlights";
+import { confirmPrompt } from "../../../shared/motion/promptLaunch";
 import { measureLastTurn, type PriorTurn, promptParts, type PromptRise, promptRow, riseIntoAnchor, syncTranscriptViewport, turnUserBlock } from "./transcript/scrollAnchor";
 import { type PrependScrollAnchor, useTurnScrollAnchor } from "./transcript/useTurnScrollAnchor";
 import { InitialThinking, LiveFoldTitle, LiveTurnFooter } from "./transcript/LiveTurn";
@@ -202,6 +157,7 @@ function AgentTranscriptComponent({
   animateFrom,
   promptMotion,
 }: Props) {
+  const { OrchestrationPreview, WorkflowRunCard } = useContext(TranscriptCardsContext);
   const basePlatform = useTranscriptRenderingPlatform(sourceBlocks, {
     animateFrom,
     historyEntries,

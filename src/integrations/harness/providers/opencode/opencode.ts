@@ -1,79 +1,17 @@
-import {
-  resetGenerationMetrics,
-  measureGenerationTurn,
-  observeGenerationDelta,
-  reportObservedGenerationUsage,
-  invalidateObservedGeneration,
-} from "../../core/generationMetrics";
+import { resetGenerationMetrics, measureGenerationTurn, observeGenerationDelta, reportObservedGenerationUsage, invalidateObservedGeneration } from "../../core/generationMetrics";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
-import { modelContextWindow, nativeModelId } from "../../../../features/sessions/model/models";
-import type { RuntimeMode, TurnMetrics } from "../../../../features/sessions/model/session";
-import { taskListFromToolInput } from "../../../../features/sessions/model/taskList";
-import {
-  closeHarnessSse,
-  execChild,
-  freeHarnessPort,
-  killChild,
-  resolveOpenCodeBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import {
-  OpenCodeClient,
-  OpenCodeHttpError,
-  type OpenCodeMessage,
-} from "./opencodeClient";
-import {
-  appendOpenCodeAssistantTextDelta,
-  asRecord,
-  buildOpenCodePermissionRules,
-  compareSemver,
-  contextUsedFromMessageInfo,
-  turnMetricsFromMessageInfo,
-  detailFromToolPart,
-  eventSessionId,
-  isOpenCodeNotFound,
-  openCodeChildSessionId,
-  mergeOpenCodeAssistantText,
-  MINIMUM_OPENCODE_VERSION,
-  KNOWN_HIDDEN_AGENTS,
-  parseOpenCodeModelSlug,
-  parseOpenCodeVersion,
-  parseServerUrlFromOutput,
-  permissionTitle,
-  previewFromToolPart,
-  sessionErrorMessage,
-  stringField,
-  textDeltaEvent,
-  toOpenCodePromptParts,
-  toOpenCodePermissionReply,
-  toolKindFromName,
-  type OpenCodePart,
-} from "./opencodeProtocol";
-import {
-  composeToolTitle,
-  extractShellCommand,
-  extractSkillName,
-} from "../../core/preview";
-import { streamTextDelta } from "../../core/streamText";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  HarnessEvent,
-  HarnessSessionInput,
-  RewindLastTurnInput,
-  RewindLastTurnResult,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
-import {
-  questionPromptTitle,
-  questionsFromUnknown,
-  selectedAnswerLabels,
-  type UserQuestion,
-  type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
+import { modelContextWindow, nativeModelId } from "../../core/modelCatalog";
+import type { RuntimeMode, TurnMetrics, UserQuestion, UserQuestionReply } from "../../../../contracts/session";
+import { taskListFromToolInput } from "../../../../domain/taskList";
+import { closeHarnessSse, execChild, freeHarnessPort, killChild, resolveOpenCodeBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { OpenCodeClient, OpenCodeHttpError, type OpenCodeMessage } from "./opencodeClient";
+import { appendOpenCodeAssistantTextDelta, asRecord, buildOpenCodePermissionRules, compareSemver, contextUsedFromMessageInfo, turnMetricsFromMessageInfo, detailFromToolPart, eventSessionId, isOpenCodeNotFound, openCodeChildSessionId, mergeOpenCodeAssistantText, MINIMUM_OPENCODE_VERSION, KNOWN_HIDDEN_AGENTS, parseOpenCodeModelSlug, parseOpenCodeVersion, parseServerUrlFromOutput, permissionTitle, previewFromToolPart, sessionErrorMessage, stringField, textDeltaEvent, toOpenCodePromptParts, toOpenCodePermissionReply, toolKindFromName, type OpenCodePart } from "./opencodeProtocol";
+import { composeToolTitle, extractShellCommand, extractSkillName } from "../../../../domain/preview";
+import { streamTextDelta } from "../../../../domain/streamText";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import type { CompactContextInput, HarnessSessionInput, RewindLastTurnInput, RewindLastTurnResult, SendTurnInput, SteerTurnInput } from "../../core/types";
+import { questionPromptTitle, questionsFromUnknown, selectedAnswerLabels } from "../../../../domain/userQuestion";
+
 
 type PendingApproval = {
   id: string;
@@ -356,7 +294,7 @@ export function bindOpenCodeSession(
   providerSessionId: string,
   cwd: string,
   _providerAccountId?: string,
-  nativeSession?: import("../../../../features/sessions/model/session").NativeSessionLink,
+  nativeSession?: import("../../../../contracts/session").NativeSessionLink,
 ): void {
   const sessionId = providerSessionId.trim();
   if (!threadId || !sessionId || !cwd.trim()) return;

@@ -1,8 +1,4 @@
-import {
-  createCodeTokenizer,
-  type CodeTokenizeRequest,
-  type CodeTokenizeResponse,
-} from "./codeTokenizer";
+import { createCodeTokenizer, type CodeTokenizeRequest, type CodeTokenizeResponse } from "./codeTokenizer";
 
 // Shiki's JavaScript regex engine compiles and runs grammars synchronously;
 // a few code blocks could hold the window for seconds on the main thread.

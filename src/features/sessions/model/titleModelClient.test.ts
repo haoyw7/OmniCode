@@ -1,13 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { generateConfiguredSessionTitle, generateConfiguredWorktreeName } from "./titleModelClient";
-import {
-  remoteMachineFor,
-  remoteRequest,
-} from "../../connections/model/connections";
-import {
-  remoteProjectFor,
-  sharedHostMachineId,
-} from "../../connections/model/remoteProjects";
+import { remoteMachineFor, remoteRequest } from "../../connections/model/connections";
+import { remoteProjectFor, sharedHostMachineId } from "../../connections/model/remoteProjects";
 
 vi.mock("../../connections/model/connections", () => ({
   remoteMachineFor: vi.fn(),

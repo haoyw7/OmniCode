@@ -1,4 +1,4 @@
-import type { Session } from "../model/session";
+import type { Session } from "../../../contracts/session";
 
 /** Closed chats stay here so clicking a session card can paint without disk. */
 export const SESSION_LOAD_CACHE_LIMIT = 12;

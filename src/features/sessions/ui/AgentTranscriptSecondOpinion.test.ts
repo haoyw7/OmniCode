@@ -1,11 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import type { Block } from "../model/session";
+import type { Block } from "../../../contracts/session";
 
 // Only "claude" is an installed/available harness in this test, the same
 // shape as a user who only enabled one harness in Settings.
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("../../providers/model/harnessAvailability", () => ({
   getHarnessAvailabilitySnapshot: () => 0,
   hasProbedHarnessAvailability: () => true,
   isHarnessAvailable: (harness: string) => harness === "claude",
@@ -13,8 +13,8 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
   subscribeHarnessAvailability: () => () => undefined,
 }));
 
-vi.mock("../../../integrations/harness/core/registry", () => ({
-  refreshHarnessCatalogs: () => Promise.resolve(),
+vi.mock("../../providers/model/hostModelCatalog", () => ({
+  refreshHostModelCatalogs: () => Promise.resolve(),
 }));
 
 import { AgentTranscript } from "./AgentTranscript";

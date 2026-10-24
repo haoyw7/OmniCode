@@ -1,14 +1,6 @@
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { flushSync } from "react-dom";
-import { type Block } from "../../model/session";
+import { type Block } from "../../../../contracts/session";
 import { syncTranscriptViewport } from "./scrollAnchor";
 import { type PrependScrollAnchor } from "./useTurnScrollAnchor";
 

@@ -25,6 +25,8 @@ export type HostWorktree = {
   head: string;
   isMain: boolean;
   missing: boolean;
+  locked?: boolean;
+  prunable?: boolean;
   /** Git's own output while a new worktree was created, one line per entry. */
   log?: string[];
 };
@@ -101,12 +103,18 @@ function parse(text: string): HostWorktree[] {
         head: "",
         isMain: trees.length === 0,
         missing: false,
+        locked: false,
+        prunable: false,
       };
       trees.push(tree);
     } else if (tree && field.startsWith("HEAD ")) {
       tree.head = field.slice(5);
     } else if (tree && field.startsWith("branch refs/heads/")) {
       tree.branch = field.slice("branch refs/heads/".length);
+    } else if (tree && (field === "locked" || field.startsWith("locked "))) {
+      tree.locked = true;
+    } else if (tree && (field === "prunable" || field.startsWith("prunable "))) {
+      tree.prunable = true;
     }
   }
   return trees;
@@ -214,6 +222,7 @@ export async function createHostWorktree(
   base: unknown,
   existing: unknown,
   sourceCwd = cwd,
+  onLine?: (line: string) => void,
 ): Promise<HostWorktree> {
   if (
     typeof branch !== "string" ||
@@ -267,13 +276,20 @@ export async function createHostWorktree(
   ).stdout.trim();
   await machineFs.mkdir(listed.defaultRoot, { recursive: true });
   // Git writes its progress to stderr even when the command succeeds.
+  let partial = "";
+  const onStderr = onLine && ((text: string) => {
+    const parts = (partial + text).split(/[\r\n]/);
+    partial = parts.pop() ?? "";
+    for (const line of parts) if (line.trim()) onLine(line.trim());
+  });
   const added = existing
-    ? await exec("git", ["worktree", "add", "--", path, branch], options(cwd))
+    ? await exec("git", ["worktree", "add", "--", path, branch], { ...options(cwd), timeout: 10 * 60_000, onStderr })
     : await exec(
         "git",
         ["worktree", "add", "--no-track", "-b", branch, "--", path, commit],
-        options(cwd),
+        { ...options(cwd), timeout: 10 * 60_000, onStderr },
       );
+  if (onLine && partial.trim()) onLine(partial.trim());
   const created = (await hostWorktrees(cwd)).worktrees.find(
     (tree) => tree.path === path,
   );

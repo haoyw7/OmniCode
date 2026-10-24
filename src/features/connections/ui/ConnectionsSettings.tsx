@@ -1,6 +1,6 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
-import { invoke } from "@tauri-apps/api/core";
+import { beginDesktopSshConnection, reconnectDesktopSsh, pollDesktopSshConnection, cancelDesktopSshConnection, answerDesktopSshPrompt } from "../../../platform/tauri/connections";
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { reducedMotionQuery } from "../../../shared/lib/reducedMotion";
@@ -9,19 +9,9 @@ import { ConnectionStatusIcon, type ConnectionState } from "./ConnectionStatusDo
 import { SshTargetInput } from "./SshTargetInput";
 import { isSharedHostMachine } from "../model/remoteProjects";
 import { publishHostConnection, removeHostConnection, useHostConnections } from "../model/hostConnections";
-import {
-  connectMachine,
-  disconnectMachine,
-  refreshRemoteMachines,
-  remoteRequest,
-  useRemoteMachines,
-} from "../model/connections";
-import {
-  REMOTE_PROVIDERS,
-  type HostDescriptor,
-  type RemoteMachine,
-  type SshSetup,
-} from "../model/protocol";
+import { connectMachine, disconnectMachine, refreshRemoteMachines, remoteRequest, useRemoteMachines } from "../model/connections";
+import { REMOTE_PROVIDERS } from "../../../contracts/provider";
+import { type HostDescriptor, type RemoteMachine, type SshSetup } from "../../../contracts/protocol";
 
 const input =
   "w-full rounded-lg border border-border bg-transparent px-3 py-2 text-ui-base outline-none focus:border-content/35";
@@ -69,7 +59,7 @@ export function ConnectionsSettings() {
     return () => {
       alive.current = false;
       if (currentJob.current)
-        void invoke("remote_ssh_cancel", { jobId: currentJob.current }).catch(
+        void cancelDesktopSshConnection(currentJob.current).catch(
           () => {},
         );
     };
@@ -80,7 +70,7 @@ export function ConnectionsSettings() {
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       try {
-        const next = await invoke<SshSetup>("remote_ssh_poll", { jobId });
+        const next = await pollDesktopSshConnection(jobId);
         if (disposed) return;
         setJob(next);
         if (next.done) {
@@ -113,7 +103,7 @@ export function ConnectionsSettings() {
       } catch (reason) {
         if (disposed) return;
         setError(String(reason));
-        void invoke("remote_ssh_cancel", { jobId }).catch(() => {});
+        void cancelDesktopSshConnection(jobId).catch(() => {});
         currentJob.current = undefined;
         submitting.current = false;
         setBusy(false);
@@ -190,17 +180,10 @@ export function ConnectionsSettings() {
     setUpdatingMachine(upgrade ? machine?.id : undefined);
     try {
       const id = machine
-        ? await invoke<string>("remote_ssh_reconnect", {
-            machineId: machine.id,
-            ...(upgrade ? { upgrade: true } : {}),
-          })
-        : await invoke<string>("remote_ssh_begin", {
-            target: target.trim(),
-            name: name.trim(),
-            port: port ? Number(port) : null,
-          });
+        ? await reconnectDesktopSsh(machine.id, upgrade)
+        : await beginDesktopSshConnection(target.trim(), name.trim(), port ? Number(port) : null);
       if (!alive.current) {
-        await invoke("remote_ssh_cancel", { jobId: id });
+        await cancelDesktopSshConnection(id);
         return;
       }
       currentJob.current = id;
@@ -218,11 +201,7 @@ export function ConnectionsSettings() {
     setAnswering(true);
     setError("");
     try {
-      await invoke("remote_ssh_answer", {
-        jobId,
-        promptId: job.prompt.id,
-        answer: value,
-      });
+      await answerDesktopSshPrompt(jobId, job.prompt.id, value);
       setAnswer("");
     } catch (reason) {
       setError(String(reason));
@@ -633,7 +612,7 @@ export function ConnectionsSettings() {
             className={`${quietButton} self-start`}
             onClick={() => {
               if (jobId)
-                void invoke("remote_ssh_cancel", { jobId }).catch((reason) =>
+                void cancelDesktopSshConnection(jobId).catch((reason) =>
                   setError(String(reason)),
                 );
             }}

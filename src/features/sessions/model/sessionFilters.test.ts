@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  DEFAULT_SESSION_SIDEBAR_FILTERS,
-  filterSessionsByHarness,
-  filterSessionsByStatus,
-  filterSessionsByTime,
-  hasActiveSessionFilters,
-  timeFilterStart,
-} from "./sessionFilters";
+import { DEFAULT_SESSION_SIDEBAR_FILTERS, filterSessionsByHarness, filterSessionsByStatus, filterSessionsByTime, hasActiveSessionFilters, timeFilterStart } from "./sessionFilters";
 import type { SessionSummary } from "../data/sessionStore";
 
 function summary(

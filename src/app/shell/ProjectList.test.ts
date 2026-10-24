@@ -4,32 +4,13 @@ import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ProjectList } from "./ProjectList";
-import {
-  configureSharedHost,
-  rememberRemoteProject,
-  remoteProjectFor,
-  sessionUsesHost,
-} from "../../features/connections/model/remoteProjects";
-import {
-  useRemoteMachineOnline,
-  useRemoteMachines,
-} from "../../features/connections/model/connections";
+import { configureSharedHost, rememberRemoteProject, remoteProjectFor, sessionUsesHost } from "../../features/connections/model/remoteProjects";
+import { useRemoteMachineOnline, useRemoteMachines } from "../../features/connections/model/connections";
 import { useProjectDiffStats } from "../../features/source-control/hooks/useProjectDiffStats";
-import {
-  saveProjectGroups,
-  setProjectGroupAssignment,
-} from "../../features/projects/model/projectGroups";
-import {
-  loadPinnedProjects,
-  loadProjectRailOrder,
-  savePinnedProjects,
-  saveProjectRailOrder,
-} from "../../features/projects/model/recents";
+import { saveProjectGroups, setProjectGroupAssignment } from "../../features/projects/model/projectGroups";
+import { loadPinnedProjects, loadProjectRailOrder, savePinnedProjects, saveProjectRailOrder } from "../../features/projects/model/recents";
 import { useAnimatedReorder } from "../../shared/hooks/useAnimatedReorder";
-import {
-  loadSidebarSectionOrder,
-  saveSidebarSectionOrder,
-} from "../../features/settings/model/sidebarSectionOrder";
+import { loadSidebarSectionOrder, saveSidebarSectionOrder } from "../../features/settings/model/sidebarSectionOrder";
 
 const { reorderPointerDown, reorderState } = vi.hoisted(() => ({
   reorderPointerDown: vi.fn(),

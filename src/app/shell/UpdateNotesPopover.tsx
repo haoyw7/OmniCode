@@ -1,14 +1,10 @@
-import { AgentMarkdown } from "../../features/sessions/ui/AgentMarkdown";
+import { AgentMarkdown } from "../../shared/ui/markdown/AgentMarkdown";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { formatBuildVersion } from "../../shared/lib/buildVersion";
 import type { PopoverSide } from "../../shared/lib/popover";
 import type { useHoverSummary } from "../../shared/ui/HoverSummary";
 import { Popover } from "../../shared/ui/Popover";
-import {
-  formatUpdateReleaseDate,
-  localizedReleaseNotes,
-  presentReleaseNotes,
-} from "../model/releaseNotes";
+import { formatUpdateReleaseDate, localizedReleaseNotes, presentReleaseNotes } from "../../shared/lib/releaseNotes";
 
 export function UpdateNotesPopover({
   hover,

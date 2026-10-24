@@ -1,3 +1,4 @@
+import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
 // @vitest-environment happy-dom
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -10,6 +11,16 @@ const invoke = vi.fn();
 const ask = vi.fn(async () => true);
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: (...args: unknown[]) => invoke(...args),
+}));
+vi.mock("../model/mcpHost", () => ({
+  discoverMcpServers: (cwd: string) => invoke("discover", { cwd }),
+  claudeMcpList: (cwd: string) => invoke("claudeList", { cwd }),
+  piMcpList: (cwd: string) => invoke("piList", { cwd }),
+  addMcpServer: (cwd: string, input: object) => invoke("add", { cwd, ...input }),
+  loginMcpServer: (cwd: string, input: object) => invoke("login", { cwd, ...input }),
+  removeClaudeMcpServer: (cwd: string, input: object) => invoke("remove", { cwd, ...input }),
+  inspectHostMcpServer: (cwd: string, server: { provider: string; scope: string; configPath: string; name: string }) =>
+    invoke("inspect", { cwd, provider: server.provider, scope: server.scope, configPath: server.configPath, name: server.name }),
 }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({
   ask: (...args: unknown[]) => ask(...args),
@@ -33,7 +44,7 @@ beforeEach(() => {
   root = createRoot(container);
   invoke.mockReset();
   invoke.mockImplementation(async (command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? [
           {
             provider: "claude",
@@ -50,7 +61,7 @@ beforeEach(() => {
             transport: "http",
           },
         ]
-      : command === "claude_mcp_list"
+      : command === "claudeList"
         ? "sentry: https://mcp.example.com - ! Needs authentication"
         : undefined,
   );
@@ -83,7 +94,7 @@ async function selectProject(path: string) {
 
 it("lists servers and routes sign in through Claude MCP", async () => {
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/repo" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
   );
   expect(container.textContent).toContain("sentry");
   expect(container.textContent).toContain("Needs authentication");
@@ -92,7 +103,7 @@ it("lists servers and routes sign in through Claude MCP", async () => {
     (button) => button.textContent === "Sign in",
   )!;
   await act(async () => signIn.click());
-  expect(invoke).toHaveBeenCalledWith("mcp_provider_login", {
+  expect(invoke).toHaveBeenCalledWith("login", {
     cwd: "/repo",
     provider: "claude",
     name: "sentry",
@@ -101,7 +112,7 @@ it("lists servers and routes sign in through Claude MCP", async () => {
 
 it("filters connections by provider", async () => {
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/repo" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
   );
   const codex = [...container.querySelectorAll("button")].find((button) =>
     button.textContent?.startsWith("Codex"),
@@ -113,7 +124,7 @@ it("filters connections by provider", async () => {
     (button) => button.textContent === "Sign in",
   )!;
   await act(async () => signIn.click());
-  expect(invoke).toHaveBeenCalledWith("mcp_provider_login", {
+  expect(invoke).toHaveBeenCalledWith("login", {
     cwd: "/repo",
     provider: "codex",
     name: "docs",
@@ -124,14 +135,14 @@ it("shows configured rows while Claude health is still pending", async () => {
   let resolveHealth!: (output: string) => void;
   const discovery = invoke.getMockImplementation()!;
   invoke.mockImplementation((command: string, args: unknown) =>
-    command === "claude_mcp_list"
+    command === "claudeList"
       ? new Promise((resolve) => {
           resolveHealth = resolve;
         })
       : discovery(command, args),
   );
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/repo" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
   );
   expect(container.textContent).toContain("docs");
   expect(container.textContent).toContain("sentry");
@@ -145,7 +156,7 @@ it("shows configured rows while Claude health is still pending", async () => {
 it("adds a standard mcpServers entry to the selected provider and project", async () => {
   await act(async () =>
     root.render(
-      createElement(McpSettings, {
+      createElement(McpSettings, { ProjectPicker: SearchableProjectPicker,
         cwd: "/repo",
         recents: [{ path: "/other", openedAt: 1 }],
       }),
@@ -181,19 +192,19 @@ it("adds a standard mcpServers entry to the selected provider and project", asyn
       .querySelector("form")!
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
   );
-  expect(invoke).toHaveBeenCalledWith("mcp_add", {
+  expect(invoke).toHaveBeenCalledWith("add", {
     cwd: "/other",
     provider: "cursor",
     name: "",
     config: json,
     scope: "project",
   });
-  expect(invoke).toHaveBeenLastCalledWith("claude_mcp_list", { cwd: "/other" });
+  expect(invoke).toHaveBeenLastCalledWith("claudeList", { cwd: "/other" });
 });
 
 it("navigates provider choices with arrow keys", async () => {
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/repo" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
   );
   await act(async () =>
     container
@@ -225,7 +236,7 @@ it("navigates provider choices with arrow keys", async () => {
 
 it("hides Sign in when a server has no known transport", async () => {
   invoke.mockImplementation(async (command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? [
           {
             provider: "claude",
@@ -238,7 +249,7 @@ it("hides Sign in when a server has no known transport", async () => {
       : "",
   );
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/repo" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
   );
   expect(container.textContent).toContain("unknown");
   expect(
@@ -250,7 +261,7 @@ it("hides Sign in when a server has no known transport", async () => {
 
 it("shows only configured provider chips until the filter button reveals all", async () => {
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/repo" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
   );
   const chips = container.querySelector(
     '[aria-label="Filter MCP servers by provider"]',
@@ -281,7 +292,7 @@ it.each(["connected", "needs-auth", "failed"])(
   async (state) => {
     const discovery = invoke.getMockImplementation()!;
     invoke.mockImplementation(async (command: string, args: unknown) => {
-      if (command === "pi_mcp_list")
+      if (command === "piList")
         return {
           servers: [
             {
@@ -299,7 +310,7 @@ it.each(["connected", "needs-auth", "failed"])(
           errors: [],
         };
       const result = await discovery(command, args);
-      return command === "mcp_discover"
+      return command === "discover"
         ? [
             ...result,
             {
@@ -313,7 +324,7 @@ it.each(["connected", "needs-auth", "failed"])(
         : result;
     });
     await act(async () =>
-      root.render(createElement(McpSettings, { cwd: "/repo" })),
+      root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
     );
     const chips = container.querySelector(
       '[aria-label="Filter MCP servers by provider"]',
@@ -332,13 +343,13 @@ it.each(["connected", "needs-auth", "failed"])(
       expect(container.textContent).toContain("Needs authentication");
       expect(signIn).toBeDefined();
       await act(async () => signIn!.click());
-      expect(invoke).toHaveBeenCalledWith("mcp_provider_login", {
+      expect(invoke).toHaveBeenCalledWith("login", {
         cwd: "/repo",
         provider: "pi",
         name: "pi-docs",
       });
       expect(
-        invoke.mock.calls.filter(([cmd]) => cmd === "pi_mcp_list"),
+        invoke.mock.calls.filter(([cmd]) => cmd === "piList"),
       ).toHaveLength(2);
     } else {
       expect(signIn).toBeUndefined();
@@ -356,7 +367,7 @@ it.each(["project", "user"])(
   "adds native Pi configuration at %s scope",
   async (scope) => {
     await act(async () =>
-      root.render(createElement(McpSettings, { cwd: "/repo" })),
+      root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
     );
     await act(async () =>
       container
@@ -407,7 +418,7 @@ it.each(["project", "user"])(
           new Event("submit", { bubbles: true, cancelable: true }),
         ),
     );
-    expect(invoke).toHaveBeenCalledWith("mcp_add", {
+    expect(invoke).toHaveBeenCalledWith("add", {
       cwd: "/repo",
       provider: "pi",
       scope,
@@ -420,7 +431,7 @@ it.each(["project", "user"])(
 it("ignores discovery from a previous project after cwd changes", async () => {
   let resolveOld!: (connections: unknown[]) => void;
   invoke.mockImplementation((command: string, args: { cwd: string }) => {
-    if (command === "claude_mcp_list") return Promise.resolve("");
+    if (command === "claudeList") return Promise.resolve("");
     if (args.cwd === "/old")
       return new Promise((resolve) => {
         resolveOld = resolve;
@@ -436,10 +447,10 @@ it("ignores discovery from a previous project after cwd changes", async () => {
     ]);
   });
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/old" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/old" })),
   );
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/new" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/new" })),
   );
   expect(container.textContent).toContain("new-project");
   await act(async () =>
@@ -459,17 +470,17 @@ it("ignores discovery from a previous project after cwd changes", async () => {
 
 it("reuses the loaded list when returning to the page and reloads on Refresh", async () => {
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/repo" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
   );
   expect(invoke).toHaveBeenCalledTimes(2);
   await act(async () => root.render(null));
-  await act(() => root.render(createElement(McpSettings, { cwd: "/repo" })));
+  await act(() => root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })));
   expect(container.textContent).toContain("sentry");
   expect(container.textContent).not.toContain("Checking servers…");
   expect(invoke).toHaveBeenCalledTimes(2);
 
   invoke.mockImplementation(async (command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? [
           {
             provider: "cursor",
@@ -490,7 +501,7 @@ it("reuses the loaded list when returning to the page and reloads on Refresh", a
   expect(container.textContent).not.toContain("sentry");
 
   await act(async () => root.render(null));
-  await act(() => root.render(createElement(McpSettings, { cwd: "/repo" })));
+  await act(() => root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })));
   expect(container.textContent).toContain("updated");
   expect(container.textContent).not.toContain("Checking servers…");
   expect(invoke).toHaveBeenCalledTimes(4);
@@ -500,7 +511,7 @@ it("shares the first request across StrictMode and navigation while loading", as
   let resolveDiscovery!: (connections: unknown[]) => void;
   let resolveHealth!: (output: string) => void;
   invoke.mockImplementation((command: string) =>
-    command === "mcp_discover"
+    command === "discover"
       ? new Promise((resolve) => {
           resolveDiscovery = resolve;
         })
@@ -512,7 +523,7 @@ it("shares the first request across StrictMode and navigation while loading", as
     createElement(
       StrictMode,
       null,
-      createElement(McpSettings, { cwd: "/repo" }),
+      createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" }),
     );
   await act(async () => root.render(page()));
   expect(invoke).toHaveBeenCalledTimes(1);
@@ -534,13 +545,13 @@ it("shares the first request across StrictMode and navigation while loading", as
 
 it("caches an empty list until manually refreshed", async () => {
   invoke.mockImplementation(async (command: string) =>
-    command === "mcp_discover" ? [] : "",
+    command === "discover" ? [] : "",
   );
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/repo" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
   );
   await act(async () => root.render(null));
-  await act(() => root.render(createElement(McpSettings, { cwd: "/repo" })));
+  await act(() => root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })));
   expect(container.textContent).toContain("No MCP servers configured");
   expect(container.textContent).not.toContain("Checking servers…");
   expect(invoke).toHaveBeenCalledTimes(2);
@@ -549,10 +560,10 @@ it("caches an empty list until manually refreshed", async () => {
 it("caches discovery failures and lets Refresh retry", async () => {
   invoke.mockRejectedValueOnce(new Error("Discovery failed"));
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/repo" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })),
   );
   await act(async () => root.render(null));
-  await act(() => root.render(createElement(McpSettings, { cwd: "/repo" })));
+  await act(() => root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/repo" })));
   expect(container.textContent).toContain("Discovery failed");
   expect(invoke).toHaveBeenCalledTimes(1);
   const refresh = [...container.querySelectorAll("button")].find(
@@ -566,7 +577,7 @@ it("caches discovery failures and lets Refresh retry", async () => {
 
 it("uses the shared project picker and caches each project's list", async () => {
   invoke.mockImplementation(async (command: string, args: { cwd: string }) =>
-    command === "mcp_discover"
+    command === "discover"
       ? [
           {
             provider: "cursor",
@@ -580,7 +591,7 @@ it("uses the shared project picker and caches each project's list", async () => 
   );
   await act(async () =>
     root.render(
-      createElement(McpSettings, {
+      createElement(McpSettings, { ProjectPicker: SearchableProjectPicker,
         cwd: "/repo",
         recents: [{ path: "/other", openedAt: 1 }],
       }),
@@ -590,8 +601,8 @@ it("uses the shared project picker and caches each project's list", async () => 
   await selectProject("/other");
   expect(container.textContent).toContain("other-server");
   expect(container.textContent).not.toContain("repo-server");
-  expect(invoke).toHaveBeenCalledWith("mcp_discover", { cwd: "/other" });
-  expect(invoke).toHaveBeenCalledWith("claude_mcp_list", { cwd: "/other" });
+  expect(invoke).toHaveBeenCalledWith("discover", { cwd: "/other" });
+  expect(invoke).toHaveBeenCalledWith("claudeList", { cwd: "/other" });
   expect(invoke).toHaveBeenCalledTimes(4);
   await selectProject("/repo");
   expect(container.textContent).toContain("repo-server");
@@ -603,7 +614,7 @@ it("uses the shared project picker and caches each project's list", async () => 
   )!;
   await act(async () => refresh.click());
   expect(invoke).toHaveBeenCalledTimes(6);
-  expect(invoke).toHaveBeenLastCalledWith("claude_mcp_list", { cwd: "/other" });
+  expect(invoke).toHaveBeenLastCalledWith("claudeList", { cwd: "/other" });
 });
 
 it("expands a configured server to list its tools", async () => {
@@ -630,10 +641,10 @@ it("expands a configured server to list its tools", async () => {
   }));
   const discover = invoke.getMockImplementation()!;
   invoke.mockImplementation(async (command: string, args: unknown) =>
-    command === "mcp_inspect" ? inspect(args) : discover(command, args),
+    command === "inspect" ? inspect(args) : discover(command, args),
   );
   await act(async () =>
-    root.render(createElement(McpSettings, { cwd: "/project" })),
+    root.render(createElement(McpSettings, { ProjectPicker: SearchableProjectPicker, cwd: "/project" })),
   );
   const toggle = [
     ...container.querySelectorAll<HTMLButtonElement>("button[aria-expanded]"),

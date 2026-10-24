@@ -1,15 +1,9 @@
-import type { PromptContentBlock } from "../../../../features/sessions/model/attachments";
-import type { AgentModel, ModelSetting, ModelSettingChoice } from "../../../../features/sessions/model/models";
-import type { RuntimeMode, ToolPreview } from "../../../../features/sessions/model/session";
-import { normalizeTaskListStatus } from "../../../../features/sessions/model/taskList";
-import type { ApprovalDecision, HarnessEvent } from "../../core/types";
-import {
-  composeToolTitle,
-  extractSearchQuery,
-  extractShellCommand,
-  extractSkillName,
-  extractToolPreview,
-} from "../../core/preview";
+import type { PromptContentBlock } from "../../../../domain/attachmentPrompt";
+import type { AgentModel, ModelSetting, ModelSettingChoice, RuntimeMode, ToolPreview } from "../../../../contracts/session";
+
+import { normalizeTaskListStatus } from "../../../../domain/taskList";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import { composeToolTitle, extractSearchQuery, extractShellCommand, extractSkillName, extractToolPreview } from "../../../../domain/preview";
 import { fxToolInfo, fxToolVerb } from "./fxTool";
 import { acpAgentInfo } from "../../core/acpSubagents";
 

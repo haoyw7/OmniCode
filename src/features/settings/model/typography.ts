@@ -1,28 +1,6 @@
 import { preferenceStorage } from "./sharedPreferences";
-import {
-  applyReducedMotion,
-  type ReducedMotionPreference,
-} from "../../../shared/lib/reducedMotion";
-import {
-  applyAccentColor,
-  applyThemeTint,
-  isLightScheme,
-  loadAccentColor,
-  loadThemeHue,
-  loadThemeSaturation,
-  saveAccentColor,
-  saveThemeHue,
-  saveThemeSaturation,
-  SCHEME_CHANGE_EVENT,
-  THEME_HUE_DEFAULT,
-  THEME_HUE_MAX,
-  THEME_HUE_MIN,
-  THEME_SATURATION_DEFAULT,
-  THEME_SATURATION_MAX,
-  THEME_SATURATION_MIN,
-  ACCENT_COLOR_DEFAULT,
-  type ColorScheme,
-} from "./appearance";
+import { applyReducedMotion, type ReducedMotionPreference } from "../../../shared/lib/reducedMotion";
+import { applyAccentColor, applyThemeTint, isLightScheme, loadAccentColor, loadThemeHue, loadThemeSaturation, saveAccentColor, saveThemeHue, saveThemeSaturation, SCHEME_CHANGE_EVENT, THEME_HUE_DEFAULT, THEME_HUE_MAX, THEME_HUE_MIN, THEME_SATURATION_DEFAULT, THEME_SATURATION_MAX, THEME_SATURATION_MIN, ACCENT_COLOR_DEFAULT, type ColorScheme } from "./appearance";
 import { readFlag, writeFlag } from "./storageFlags";
 import { isHexColor } from "../../../shared/lib/colorUtils";
 
@@ -77,8 +55,8 @@ let systemFontsRequest: Promise<SystemFonts> | null = null;
 
 /** Installed font families from the desktop backend; presets elsewhere. */
 export function loadSystemFonts(): Promise<SystemFonts> {
-  systemFontsRequest ??= import("@tauri-apps/api/core")
-    .then(({ invoke }) => invoke<SystemFonts>("list_system_fonts"))
+  systemFontsRequest ??= import("../../../platform/tauri/appearanceAssets")
+    .then(({ listNativeFonts }) => listNativeFonts())
     .then((fonts) => ({
       all: Array.isArray(fonts?.all) ? fonts.all : [],
       monospace: Array.isArray(fonts?.monospace) ? fonts.monospace : [],

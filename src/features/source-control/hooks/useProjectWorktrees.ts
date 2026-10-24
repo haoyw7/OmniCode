@@ -1,7 +1,8 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { subscribeGitChanged } from "../../../platform/tauri/fs";
 import { pathKey } from "../../../shared/lib/paths";
-import { listWorktrees, type Worktrees } from "../model/worktrees";
+import type { Worktrees } from "../../../contracts/worktree";
+import { listWorktrees } from "../model/worktrees";
 
 type Snapshot = { data?: Worktrees; error?: string };
 type Entry = {

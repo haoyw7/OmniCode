@@ -2,17 +2,7 @@ import { motion } from "motion/react";
 import { immediateTransition, popTransition } from "../motion/tokens";
 import { useMotionPreference } from "../motion/useMotionPreference";
 import { useTranslation } from "../i18n/useTranslation";
-import {
-  useEffect,
-  Fragment,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, Fragment, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { Check, ChevronDown, ChevronRight, Search } from "./icons";
 import { LAYER } from "../lib/layers";
 import type { PopoverAlign, PopoverSide } from "../lib/popover";

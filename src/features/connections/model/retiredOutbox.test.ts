@@ -2,7 +2,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { clearRetiredHostOutbox } from "./sharedHost";
 import { forgetDeletedRemoteBindings, remoteSessionFor, rememberRemoteSession } from "./connections";
-import { loadRemoteOutbox, outboxEntry } from "./remoteOutbox";
+import { loadRemoteOutbox, outboxEntry } from "../../../platform/tauri/remoteOutbox";
 const native = vi.hoisted(() => new Map<string, string>());
 vi.mock("@tauri-apps/api/event", () => ({
   emit: vi.fn(async () => undefined),

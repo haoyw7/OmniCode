@@ -1,17 +1,19 @@
 import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motionTestClock";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { HostSession, HostSessionSummary, HostModelCatalog } from "../features/connections/model/protocol";
+import type { HostSession, HostSessionSummary, HostModelCatalog } from "../contracts/protocol";
 import { MobileApp } from "./MobileApp";
 // These tests cover navigation, not chunk loading. Keep cold page compilation
 // outside the interaction timeout and its pending React act scope.
 import "./MobileBots";
 import { setUiLanguage } from "../shared/i18n/language";
-import { NATIVE_SESSION_PROVIDERS, type NativeSessionAccess, type NativeSessionProvider } from "../integrations/harness/core/nativeSessions";
+import { NATIVE_SESSION_PROVIDERS } from "../integrations/harness/core/nativeSessions";
+import type { NativeSessionAccess, NativeSessionProvider, Attachment } from "../contracts/session";
 import * as attachmentFiles from "./attachments";
-import type { Attachment } from "../features/sessions/model/session";
+
 import { fullBotPolicy } from "../features/bots/model/botView";
 
 const host = vi.hoisted(() => ({

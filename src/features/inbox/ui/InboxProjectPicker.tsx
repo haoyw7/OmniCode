@@ -1,20 +1,16 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../projects/model/projectMascots";
+import { useProjectLogoSource } from "../../projects/model/useProjectLogoSource";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronDown } from "../../../shared/ui/icons";
 import { useEffect, useRef, useState } from "react";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
+
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import { projectKey, projectName } from "../../../shared/lib/paths";
 import { sameProjectPath, type RecentProject } from "../../projects/model/recents";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLogo, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
 
 
 
@@ -56,20 +52,21 @@ function InboxProjectMark({
     "name" | "logoPath" | "mascotName" | "mascotColor"
   >;
 }) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   if (project.logoPath) {
     return (
       <ProjectLogoIcon
-        path={project.logoPath}
+        src={resolveProjectLogoSrc(project.logoPath)}
         className="size-3.5 shrink-0 rounded-sm"
         imageClassName="size-3.5"
       />
     );
   }
   return (
-    <ProjectMascot
-      project={project.name}
-      color={project.mascotColor}
-      name={project.mascotName}
+    <Omi compact
+      expression={projectMascot(project.name, project.mascotName).name}
+      style={{ color: project.mascotColor || undefined }}
+      
       className="size-3 shrink-0"
     />
   );

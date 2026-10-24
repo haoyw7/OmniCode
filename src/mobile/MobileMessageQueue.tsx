@@ -1,20 +1,9 @@
 import { motion } from "motion/react";
 import { memo, useEffect, useRef, useState, type ComponentProps } from "react";
-import {
-  MessageQueue,
-  type MessageQueueView,
-} from "../features/sessions/ui/MessageQueue";
-import type { QueuedMessage } from "../features/sessions/model/session";
+import { MessageQueue, type MessageQueueView } from "../shared/ui/messaging/MessageQueue";
+import type { QueuedMessage } from "../contracts/session";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import {
-  CornerDownRight,
-  ListEnd,
-  MoreHorizontal,
-  Pause,
-  Pencil,
-  Play,
-  Trash2,
-} from "../shared/ui/icons";
+import { CornerDownRight, ListEnd, MoreHorizontal, Pause, Pencil, Play, Trash2 } from "../shared/ui/icons";
 import { MobileSheet, SHEET_WIDTH } from "./MobileSheet";
 import { useQueueDrag } from "./useQueueDrag";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";

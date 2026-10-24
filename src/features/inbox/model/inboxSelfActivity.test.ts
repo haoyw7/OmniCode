@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  clearPendingInboxSelfActivity,
-  consumeInboxSelfActivity,
-  recordInboxSelfActivity,
-  subscribeInboxSelfActivity,
-} from "./inboxSelfActivity";
+import { clearPendingInboxSelfActivity, consumeInboxSelfActivity, recordInboxSelfActivity, subscribeInboxSelfActivity } from "./inboxSelfActivity";
 
 const githubPr = {
   provider: "github" as const,

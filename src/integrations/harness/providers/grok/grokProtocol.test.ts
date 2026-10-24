@@ -1,25 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  askQuestionResponse,
-  askQuestionsFromAcp,
-  eventsFromAcpUpdate,
-  fallbackGrokModels,
-  grokAuthMethodId,
-  grokEffort,
-  grokPromptBlocks,
-  grokSessionNewParams,
-  grokSpawnArgs,
-  grokTextSpawnArgs,
-  modelsFromGrokModelsOutput,
-  modelsFromInitialize,
-  modelsFromSessionNew,
-  permissionOptionId,
-  permissionRequestFromAcp,
-  pickAutoOption,
-  planFromExitPlan,
-  sessionIdFromResult,
-} from "./grokProtocol";
-import { harnessSupportsAttachments } from "../../../../features/sessions/model/session";
+import { askQuestionResponse, askQuestionsFromAcp, eventsFromAcpUpdate, fallbackGrokModels, grokAuthMethodId, grokEffort, grokPromptBlocks, grokSessionNewParams, grokSpawnArgs, grokTextSpawnArgs, modelsFromGrokModelsOutput, modelsFromInitialize, modelsFromSessionNew, permissionOptionId, permissionRequestFromAcp, pickAutoOption, planFromExitPlan, sessionIdFromResult } from "./grokProtocol";
+import { harnessSupportsAttachments } from "../../../../domain/session";
 
 describe("grok protocol", () => {
   it("supports attachments despite Grok's stale advertised capability", () => {

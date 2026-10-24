@@ -6,7 +6,7 @@ import { expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ read: vi.fn() }));
 vi.mock("../../../platform/tauri/fs", () => ({ readBinaryFile: mocks.read }));
 import { GeneratedImage } from "./GeneratedImage";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
 
 it("uses the client platform reader for existing generated images", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

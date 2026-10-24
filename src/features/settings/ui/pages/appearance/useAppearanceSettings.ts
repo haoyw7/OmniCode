@@ -2,125 +2,15 @@ import { activePreferenceStore } from "../../../model/sharedPreferences";
 import { uploadPreferenceBackground } from "../../../model/preferenceAssets";
 import { usePreferenceState } from "../../../model/usePreferenceState";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  activeScheme,
-  activeScope,
-  applyFontSize,
-  applyProfile,
-  applyReducedMotion,
-  defaultAppearanceProfile,
-  enableSeparateSchemes,
-  FONT_SIZE_LIMITS,
-  loadFontSize,
-  loadProfile,
-  loadReducedMotion,
-  loadSeparateSchemes,
-  REDUCED_MOTION_DEFAULT,
-  saveFontSize,
-  saveProfile,
-  saveReducedMotion,
-  saveSeparateSchemes,
-  type AppearanceProfile,
-  type FontSizeKind,
-  type ReducedMotionPreference,
-} from "../../../model/typography";
+import { activeScheme, activeScope, applyFontSize, applyProfile, applyReducedMotion, defaultAppearanceProfile, enableSeparateSchemes, FONT_SIZE_LIMITS, loadFontSize, loadProfile, loadReducedMotion, loadSeparateSchemes, REDUCED_MOTION_DEFAULT, saveFontSize, saveProfile, saveReducedMotion, saveSeparateSchemes, type AppearanceProfile, type FontSizeKind, type ReducedMotionPreference } from "../../../model/typography";
 import { useColorScheme } from "../../../../../shared/hooks/useColorScheme";
 import { DEFAULT_CODE_THEMES } from "../../../../../shared/theme/codeThemes";
 import { saveCodeTheme } from "../../../model/codeAppearance";
-import {
-  applyChatBackground,
-  applyChatBackgroundOpacity,
-  applyChatBackgroundArea,
-  applyWindowOpacity,
-  applyPanelOpacity,
-  applyAccentColor,
-  applyBodyGlass,
-  applyCompactSidebar,
-  applyIndentSidebarSessions,
-  applyPopoverOpacity,
-  applySidebarBlur,
-  applySidebarOpacity,
-  applyThemeDarkLightness,
-  applyThemePreference,
-  applyThemeTint,
-  BODY_GLASS_DEFAULT,
-  COMPACT_SIDEBAR_DEFAULT,
-  INDENT_SIDEBAR_SESSIONS_DEFAULT,
-  ACCENT_COLOR_DEFAULT,
-  CHAT_BACKGROUND_OPACITY_DEFAULT,
-  CHAT_BACKGROUND_AREA_DEFAULT,
-  THEME_PREFERENCE_DEFAULT,
-  loadBodyGlass,
-  loadCompactSidebar,
-  loadIndentSidebarSessions,
-  loadPopoverOpacity,
-  loadWindowOpacity,
-  loadPanelOpacity,
-  loadAccentColor,
-  loadChatBackgroundOpacity,
-  loadChatBackgroundPath,
-  loadChatBackgroundArea,
-  loadNewThreadBackgroundEffect,
-  loadThemeDarkLightness,
-  loadThemePreference,
-  loadSidebarBlur,
-  loadSidebarOpacity,
-  loadThemeHue,
-  loadThemeSaturation,
-  saveBodyGlass,
-  saveCompactSidebar,
-  saveIndentSidebarSessions,
-  savePopoverOpacity,
-  saveWindowOpacity,
-  savePanelOpacity,
-  saveAccentColor,
-  saveChatBackgroundOpacity,
-  saveChatBackgroundPath,
-  saveChatBackgroundArea,
-  setNewThreadBackgroundEffect,
-  saveThemeDarkLightness,
-  saveThemePreference,
-  saveSidebarBlur,
-  saveSidebarOpacity,
-  saveThemeHue,
-  saveThemeSaturation,
-  isLightScheme,
-  syncNativeGlass,
-  loadShowExcludedFiles,
-  saveShowExcludedFiles,
-  SHOW_EXCLUDED_FILES_DEFAULT,
-  SIDEBAR_BLUR_DEFAULT,
-  SIDEBAR_OPACITY_DEFAULT,
-  POPOVER_OPACITY_DEFAULT,
-  WINDOW_OPACITY_DEFAULT,
-  PANEL_OPACITY_DEFAULT,
-  THEME_DARK_LIGHTNESS_DEFAULT,
-  THEME_HUE_DEFAULT,
-  THEME_SATURATION_DEFAULT,
-  type ThemePreference,
-  type ChatBackgroundArea,
-  NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
-  type NewThreadBackgroundEffect,
-  type ColorScheme,
-} from "../../../model/appearance";
-import {
-  pickAndSaveChatBackground,
-  removeChatBackground,
-} from "../../../../projects/model/chatBackground";
-import {
-  applyUiScale,
-  loadUiScale,
-  saveUiScale,
-  subscribeUiScale,
-  UI_SCALE_DEFAULT,
-} from "../../../model/uiScale";
+import { applyChatBackground, applyChatBackgroundOpacity, applyChatBackgroundArea, applyWindowOpacity, applyPanelOpacity, applyAccentColor, applyBodyGlass, applyCompactSidebar, applyIndentSidebarSessions, applyPopoverOpacity, applySidebarBlur, applySidebarOpacity, applyThemeDarkLightness, applyThemePreference, applyThemeTint, BODY_GLASS_DEFAULT, COMPACT_SIDEBAR_DEFAULT, INDENT_SIDEBAR_SESSIONS_DEFAULT, ACCENT_COLOR_DEFAULT, CHAT_BACKGROUND_OPACITY_DEFAULT, CHAT_BACKGROUND_AREA_DEFAULT, THEME_PREFERENCE_DEFAULT, loadBodyGlass, loadCompactSidebar, loadIndentSidebarSessions, loadPopoverOpacity, loadWindowOpacity, loadPanelOpacity, loadAccentColor, loadChatBackgroundOpacity, loadChatBackgroundPath, loadChatBackgroundArea, loadNewThreadBackgroundEffect, loadThemeDarkLightness, loadThemePreference, loadSidebarBlur, loadSidebarOpacity, loadThemeHue, loadThemeSaturation, saveBodyGlass, saveCompactSidebar, saveIndentSidebarSessions, savePopoverOpacity, saveWindowOpacity, savePanelOpacity, saveAccentColor, saveChatBackgroundOpacity, saveChatBackgroundPath, saveChatBackgroundArea, setNewThreadBackgroundEffect, saveThemeDarkLightness, saveThemePreference, saveSidebarBlur, saveSidebarOpacity, saveThemeHue, saveThemeSaturation, isLightScheme, syncNativeGlass, loadShowExcludedFiles, saveShowExcludedFiles, SHOW_EXCLUDED_FILES_DEFAULT, SIDEBAR_BLUR_DEFAULT, SIDEBAR_OPACITY_DEFAULT, POPOVER_OPACITY_DEFAULT, WINDOW_OPACITY_DEFAULT, PANEL_OPACITY_DEFAULT, THEME_DARK_LIGHTNESS_DEFAULT, THEME_HUE_DEFAULT, THEME_SATURATION_DEFAULT, type ThemePreference, type ChatBackgroundArea, NEW_THREAD_BACKGROUND_EFFECT_DEFAULT, type NewThreadBackgroundEffect, type ColorScheme } from "../../../model/appearance";
+import { pickAndSaveChatBackground, removeChatBackground } from "../../../../projects/model/chatBackground";
+import { applyUiScale, loadUiScale, saveUiScale, subscribeUiScale, UI_SCALE_DEFAULT } from "../../../model/uiScale";
 import { IS_LINUX } from "../../../../../platform/tauri/platform";
-import {
-  DESKTOP_SKIN_DEFAULT,
-  loadDesktopSkin,
-  normalizeDesktopSkin,
-  saveDesktopSkin,
-} from "../../../../../shared/theme/desktopSkin";
+import { DESKTOP_SKIN_DEFAULT, loadDesktopSkin, normalizeDesktopSkin, saveDesktopSkin } from "../../../../../shared/theme/desktopSkin";
 
 
 

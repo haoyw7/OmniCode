@@ -2,14 +2,8 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  keepSessionChanges,
-  notifyReviewChanged,
-  sessionCheckpointStatus,
-  undoSessionChanges,
-  type CheckpointFile,
-  type CheckpointStatus,
-} from "../model/checkpoint";
+import type { CheckpointFile, CheckpointStatus } from "../../../contracts/checkpoint";
+import { keepSessionChanges, notifyReviewChanged, sessionCheckpointStatus, undoSessionChanges } from "../model/checkpoint";
 import { SessionReview } from "./SessionReview";
 import { notifyGitChanged } from "../../../platform/tauri/fs";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
@@ -37,7 +31,7 @@ vi.mock("../../connections/files/model/fileIndex", () => ({
 vi.mock("../../connections/files/model/fileWatch", () => ({
   invalidateWatchedFiles: vi.fn(),
 }));
-vi.mock("../../connections/files/ui/FileTypeIcon", () => ({ FileTypeIcon: () => null }));
+vi.mock("../../../shared/ui/FileTypeIcon", () => ({ FileTypeIcon: () => null }));
 
 let root: Root;
 let container: HTMLDivElement;
@@ -414,4 +408,53 @@ it("keeps a legacy current turn visible using the recording identity returned by
   expect(sessionCheckpointStatus).toHaveBeenLastCalledWith("s1", "/repo", undefined, "legacy");
   await act(async () => button("Review")!.click());
   expect(onOpenDiff).toHaveBeenLastCalledWith(undefined, { sessionId: "s1", cwd: "/repo", turnId: "legacy" });
+});
+
+it("disables Undo with the Host's reason when the turn cannot be restored", async () => {
+  const reason = "This provider cannot safely roll back conversation history. Workspace files were not changed.";
+  vi.mocked(sessionCheckpointStatus).mockResolvedValue({
+    files, wholeTurnUndoOnly: true, undoUnavailableReason: reason, undoLocked: true,
+  });
+  await render();
+  expect(button("Undo")!.disabled).toBe(true);
+  expect(button("Undo")!.title).toBe(reason);
+  expect(container.querySelector("[data-session-review-unavailable]")!.textContent).toBe(reason);
+  expect(button("Keep")!.disabled).toBe(false);
+});
+
+it("offers only a retry while a rolled-back turn still has files to restore", async () => {
+  const message = "Conversation history was rolled back. Retry Undo to finish restoring workspace files.";
+  vi.mocked(sessionCheckpointStatus).mockResolvedValue({
+    files: [{ ...files[0], undoable: false }], wholeTurnUndoOnly: true, restorePending: true, restoreMessage: message,
+  });
+  await render();
+  expect(container.querySelector("[data-session-review-restore]")!.textContent).toBe(message);
+  expect(button("Keep")!.disabled).toBe(true);
+  const retry = deferred<CheckpointStatus>();
+  vi.mocked(undoSessionChanges).mockReturnValueOnce(retry.promise);
+  await act(async () => button("Retry Undo")!.click());
+  expect(undoSessionChanges).toHaveBeenCalledExactlyOnceWith("s1", "/repo");
+  // A second tap while the first retry runs does not restore twice.
+  expect(button("Retry Undo")!.disabled).toBe(true);
+  await act(async () => button("Retry Undo")!.click());
+  expect(undoSessionChanges).toHaveBeenCalledTimes(1);
+  await act(async () => retry.resolve({ files: [], wholeTurnUndoOnly: true }));
+  expect(container.querySelector("[data-session-review]")).toBeNull();
+});
+
+it("keeps a pending restore visible with no remaining file differences and reports a failed retry", async () => {
+  vi.mocked(sessionCheckpointStatus).mockResolvedValue({ files: [], restorePending: true });
+  await render();
+  expect(button("Retry Undo")!.disabled).toBe(false);
+  vi.mocked(undoSessionChanges).mockRejectedValueOnce(new Error("Conversation history was rolled back. Retry Undo to finish restoring workspace files."));
+  await act(async () => button("Retry Undo")!.click());
+  expect(container.textContent).toContain("Retry Undo to finish restoring workspace files.");
+  expect(button("Retry Undo")).toBeDefined();
+});
+
+it("does not retry a pending restore while another session holds the checkout", async () => {
+  vi.mocked(sessionCheckpointStatus).mockResolvedValue({ files, restorePending: true, undoLocked: true });
+  await render();
+  expect(button("Retry Undo")!.disabled).toBe(true);
+  expect(button("Retry Undo")!.title).toBe("Undo is unavailable while another session is running in this project");
 });

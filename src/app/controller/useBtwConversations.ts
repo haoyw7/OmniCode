@@ -1,657 +1,79 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
-import { useCallback, useEffect, useRef } from "react";
-import {
-  applyBtwHarnessEvent,
-  btwTurnHarness,
-  buildBtwPrompt,
-  replaceBtwThread,
-  sealBtwResponseBlocks,
-  supportsBtwHarness,
-} from "../../features/sessions/model/btw";
-import {
-  nativeModelId,
-  preferredModelSettings,
-  resolveModel,
-} from "../../features/sessions/model/models";
-import { harnessForTurn } from "../../features/sessions/model/secondOpinion";
-import {
-  HARNESS_TITLE,
-  sessionExecutionCwd,
-  type Block,
-  type BtwThread,
-  type HarnessId,
-  type Session,
-} from "../../features/sessions/model/session";
-import {
-  runHarnessTextPrompt,
-  stopHarnessTextPrompts,
-} from "../../integrations/harness";
+import { useCallback, useMemo } from "react";
+import { btwTurnHarness, supportsBtwHarness } from "../../domain/btw";
+import { harnessForTurn } from "../../domain/secondOpinion";
+import type { HostSession } from "../../contracts/protocol";
+import type { BtwAction } from "../../contracts/submission";
+import type { Block, Session } from "../../contracts/session";
+import { mutateHostSession } from "../../features/connections/model/hostSessionSubmission";
+import { projectPath, remoteProjectFor } from "../../features/connections/model/remoteProjects";
+import { showStatusToast } from "../../shared/ui/StatusToast";
+import { translate } from "../../shared/i18n/language";
 
 type Options = {
-  sessions: Session[];
   sessionsRef: RefObject<Session[]>;
   setSessions: Dispatch<SetStateAction<Session[]>>;
-  persistSession: (session: Session | undefined) => void;
 };
 
-export function useBtwConversations({
-  sessions,
-  sessionsRef,
-  setSessions,
-  persistSession,
-}: Options) {
-  const btwRequestsRef = useRef(
-    new Map<string, { sessionId: string; controller: AbortController }>(),
-  );
+/** Side conversations run on the Host; the open pane's sync streams their blocks. */
+export function useBtwConversations({ sessionsRef, setSessions }: Options) {
+  const dispatch = useCallback((session: Session, action: BtwAction) => {
+    void mutateHostSession(session, (snapshot: HostSession, commandId) => ({
+      ...action, commandId, sessionId: snapshot.session.id,
+    }), "sessions.btw.v1").then(snapshot => {
+      const project = remoteProjectFor(session.cwd);
+      setSessions(current => current.map(entry => entry.id === session.id
+        ? { ...snapshot.session, id: session.id, cwd: session.cwd,
+          executionCwd: snapshot.session.executionCwd && project
+            ? projectPath(project, snapshot.session.executionCwd) : entry.executionCwd } : entry));
+    }).catch(error => showStatusToast(translate(error instanceof Error ? error.message : String(error)), "error"));
+  }, [setSessions]);
 
-  useEffect(() => {
-    const liveSessionIds = new Set(sessions.map((session) => session.id));
-    for (const [key, request] of btwRequestsRef.current) {
-      if (liveSessionIds.has(request.sessionId)) continue;
-      request.controller.abort();
-      btwRequestsRef.current.delete(key);
-    }
-  }, [sessions]);
+  /** Resolves the anchor turn the same way the Host validates it. */
+  const target = useCallback((sessionId: string, turn: Block[], threadId: string) => {
+    const source = sessionsRef.current.find(session => session.id === sessionId);
+    const userBlockId = turn.find(block => block.role === "user")?.id;
+    if (!source || source.worktreeRemoved || !userBlockId) return undefined;
+    const thread = source.blocks.find(block => block.id === userBlockId && block.role === "user")
+      ?.btwThreads?.find(entry => entry.id === threadId);
+    const harness = thread?.harness ?? btwTurnHarness(source.blocks, turn, source.harness)
+      ?? harnessForTurn(source.blocks, turn, source.harness);
+    if (!supportsBtwHarness(harness)) return undefined;
+    return { source, userBlockId, thread };
+  }, [sessionsRef]);
 
-  useEffect(
-    () => () => {
-      for (const request of btwRequestsRef.current.values()) {
-        request.controller.abort();
-      }
-      btwRequestsRef.current.clear();
-      void stopHarnessTextPrompts();
-    },
-    [],
-  );
+  const onBtwSubmit = useCallback((sessionId: string, turn: Block[], threadId: string, messageId: string,
+    text: string, model?: string, modelSettings?: Record<string, string>) => {
+    const found = target(sessionId, turn, threadId);
+    const sourceEndBlockId = turn[turn.length - 1]?.id;
+    if (!found || !sourceEndBlockId || found.thread?.status === "running") return false;
+    if (found.thread && found.thread.sourceEndBlockId !== sourceEndBlockId) return false;
+    dispatch(found.source, { type: "btw", action: "send", userBlockId: found.userBlockId, threadId,
+      sourceEndBlockId, messageId, text, ...(model?.trim() ? { model: model.trim() } : {}),
+      ...(modelSettings ? { modelSettings } : {}) });
+    return true;
+  }, [dispatch, target]);
 
-  const updateBtwThread = useCallback(
-    (
-      sessionId: string,
-      userBlockId: string,
-      threadId: string,
-      update: (thread: BtwThread | undefined) => BtwThread | undefined,
-    ): Session | undefined => {
-      const previous = sessionsRef.current;
-      let updatedSession: Session | undefined;
-      const next = previous.map((session) => {
-        if (session.id !== sessionId) return session;
-        const blockIndex = session.blocks.findIndex(
-          (block) => block.id === userBlockId && block.role === "user",
-        );
-        if (blockIndex < 0) return session;
-        const block = session.blocks[blockIndex];
-        const current = block.btwThreads?.find(
-          (thread) => thread.id === threadId,
-        );
-        const nextThread = update(current);
-        if (!nextThread) return session;
-        const nextBlock = current
-          ? replaceBtwThread(block, nextThread)
-          : {
-              ...block,
-              btwThreads: [...(block.btwThreads ?? []), nextThread],
-            };
-        const blocks = session.blocks.slice();
-        blocks[blockIndex] = nextBlock;
-        updatedSession = { ...session, blocks };
-        return updatedSession;
-      });
-      if (!updatedSession) return undefined;
-      sessionsRef.current = next;
-      setSessions(next);
-      persistSession(updatedSession);
-      return updatedSession;
-    },
-    [persistSession],
-  );
+  const onBtwModelChange = useCallback((sessionId: string, turn: Block[], threadId: string,
+    model: string, modelSettings: Record<string, string>) => {
+    const found = target(sessionId, turn, threadId);
+    // A thread that has not been sent yet keeps its choice in the composer.
+    if (!found?.thread || !model.trim() || found.thread.status === "running") return;
+    dispatch(found.source, { type: "btw", action: "configure", userBlockId: found.userBlockId, threadId,
+      model: model.trim(), modelSettings });
+  }, [dispatch, target]);
 
-  const removeBtwThread = useCallback(
-    (
-      sessionId: string,
-      userBlockId: string,
-      threadId: string,
-    ): Session | undefined => {
-      const previous = sessionsRef.current;
-      let updatedSession: Session | undefined;
-      const next = previous.map((session) => {
-        if (session.id !== sessionId) return session;
-        const blockIndex = session.blocks.findIndex(
-          (block) => block.id === userBlockId && block.role === "user",
-        );
-        if (blockIndex < 0) return session;
-        const block = session.blocks[blockIndex];
-        const threads = block.btwThreads ?? [];
-        if (!threads.some((thread) => thread.id === threadId)) return session;
-        const nextThreads = threads.filter((thread) => thread.id !== threadId);
-        const nextBlock = {
-          ...block,
-          btwThreads: nextThreads.length > 0 ? nextThreads : undefined,
-        };
-        const blocks = session.blocks.slice();
-        blocks[blockIndex] = nextBlock;
-        updatedSession = { ...session, blocks };
-        return updatedSession;
-      });
-      if (!updatedSession) return undefined;
-      sessionsRef.current = next;
-      setSessions(next);
-      persistSession(updatedSession);
-      return updatedSession;
-    },
-    [persistSession],
-  );
-
-  const runBtwRequest = useCallback(
-    (input: {
-      sessionId: string;
-      userBlockId: string;
-      source: Session;
-      thread: BtwThread;
-      harness: HarnessId;
-    }) => {
-      const harness = input.harness;
-      if (!supportsBtwHarness(harness)) return;
-      const cwd = sessionExecutionCwd(input.source);
-      const model = nativeModelId(
-        input.thread.model ?? input.source.model,
-      ).trim();
-      if (!cwd || cwd === "~") {
-        updateBtwThread(
-          input.sessionId,
-          input.userBlockId,
-          input.thread.id,
-          (thread) =>
-            thread
-              ? {
-                  ...thread,
-                  status: "error",
-                  updatedAt: Date.now(),
-                  error:
-                    "A project working directory is required for this question.",
-                }
-              : undefined,
-        );
-        return;
-      }
-      if (!model && harness === "codex") {
-        updateBtwThread(
-          input.sessionId,
-          input.userBlockId,
-          input.thread.id,
-          (thread) =>
-            thread
-              ? {
-                  ...thread,
-                  status: "error",
-                  updatedAt: Date.now(),
-                  error: "The selected Codex model is unavailable.",
-                }
-              : undefined,
-        );
-        return;
-      }
-
-      let prompt: string;
-      try {
-        prompt = buildBtwPrompt({
-          blocks: input.source.blocks,
-          thread: input.thread,
-          cwd,
-        });
-      } catch (error) {
-        updateBtwThread(
-          input.sessionId,
-          input.userBlockId,
-          input.thread.id,
-          (thread) =>
-            thread
-              ? {
-                  ...thread,
-                  status: "error",
-                  updatedAt: Date.now(),
-                  error:
-                    error instanceof Error
-                      ? error.message
-                      : "The completed turn is no longer available.",
-                }
-              : undefined,
-        );
-        return;
-      }
-
-      const key = `${input.sessionId}:${input.thread.id}`;
-      btwRequestsRef.current.get(key)?.controller.abort();
-      const controller = new AbortController();
-      btwRequestsRef.current.set(key, {
-        sessionId: input.sessionId,
-        controller,
-      });
-
-      const userMessageId =
-        input.thread.messages[input.thread.messages.length - 1]?.id ??
-        input.thread.id;
-      const responseModel = model || input.source.model;
-
-      void runHarnessTextPrompt({
-        harness,
-        cwd,
-        providerAccountId: input.source.providerAccountId,
-        model: model || undefined,
-        modelSettings: input.thread.modelSettings ?? input.source.modelSettings,
-        ephemeral: false,
-        threadId: input.thread.providerThreadId,
-        onThreadId: (providerThreadId) => {
-          if (controller.signal.aborted) return;
-          updateBtwThread(
-            input.sessionId,
-            input.userBlockId,
-            input.thread.id,
-            (thread) =>
-              thread && thread.providerThreadId !== providerThreadId
-                ? {
-                    ...thread,
-                    providerThreadId,
-                    updatedAt: Date.now(),
-                  }
-                : thread,
-          );
-        },
-        onEvent: (event) => {
-          if (controller.signal.aborted) return;
-          updateBtwThread(
-            input.sessionId,
-            input.userBlockId,
-            input.thread.id,
-            (thread) =>
-              thread?.status === "running"
-                ? {
-                    ...thread,
-                    updatedAt: Date.now(),
-                    pendingBlocks: applyBtwHarnessEvent(
-                      thread.pendingBlocks ?? [],
-                      event,
-                      harness,
-                      responseModel,
-                      userMessageId,
-                    ),
-                  }
-                : undefined,
-          );
-        },
-        intent: "plan",
-        prompt,
-        signal: controller.signal,
-      })
-        .then((output) => {
-          if (controller.signal.aborted) return;
-          const text = output.trim();
-          if (!text) {
-            throw new Error(
-              `${HARNESS_TITLE[harness]} returned an empty side answer.`,
-            );
-          }
-          updateBtwThread(
-            input.sessionId,
-            input.userBlockId,
-            input.thread.id,
-            (thread) => {
-              if (!thread) return undefined;
-              const pendingBlocks = thread.pendingBlocks ?? [];
-              const blocks =
-                pendingBlocks.length > 0
-                  ? sealBtwResponseBlocks(
-                      pendingBlocks,
-                      harness,
-                      responseModel,
-                      userMessageId,
-                    )
-                  : undefined;
-              return {
-                ...thread,
-                status: "ready",
-                updatedAt: Date.now(),
-                pendingBlocks: undefined,
-                messages: [
-                  ...thread.messages,
-                  {
-                    id: crypto.randomUUID(),
-                    role: "assistant",
-                    text,
-                    createdAt: Date.now(),
-                    ...(blocks?.length ? { blocks } : {}),
-                  },
-                ],
-                error: undefined,
-              };
-            },
-          );
-        })
-        .catch((error: unknown) => {
-          if (controller.signal.aborted) return;
-          const message =
-            error instanceof Error
-              ? error.message
-              : `${HARNESS_TITLE[harness]} could not answer this side question.`;
-          updateBtwThread(
-            input.sessionId,
-            input.userBlockId,
-            input.thread.id,
-            (thread) =>
-              thread
-                ? {
-                    ...thread,
-                    status: "error",
-                    updatedAt: Date.now(),
-                    pendingBlocks: undefined,
-                    error: message,
-                  }
-                : undefined,
-          );
-        })
-        .finally(() => {
-          if (btwRequestsRef.current.get(key)?.controller === controller) {
-            btwRequestsRef.current.delete(key);
-          }
-        });
-    },
-    [updateBtwThread],
-  );
-
-  const onBtwSubmit = useCallback(
-    (
-      sessionId: string,
-      turn: Block[],
-      threadId: string,
-      messageId: string,
-      text: string,
-      model?: string,
-      modelSettings?: Record<string, string>,
-    ) => {
-      const source = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      const sourceUserId = turn.find((block) => block.role === "user")?.id;
-      const sourceEndBlockId = turn[turn.length - 1]?.id;
-      const turnHarness = source
-        ? harnessForTurn(source.blocks, turn, source.harness)
-        : undefined;
-      const turnModel = turn.find((block) => block.role === "user")?.turnModel
-        ?.id;
-      const sourceBlockEarly = source?.blocks.find(
-        (block) => block.id === sourceUserId && block.role === "user",
-      );
-      const existingEarly = sourceBlockEarly?.btwThreads?.find(
-        (thread) => thread.id === threadId,
-      );
-      const requestHarness = source
-        ? supportsBtwHarness(turnHarness)
-          ? turnHarness
-          : (existingEarly?.harness ??
-            btwTurnHarness(source.blocks, turn, source.harness))
-        : undefined;
-      if (
-        !source ||
-        !supportsBtwHarness(requestHarness) ||
-        source.worktreeRemoved ||
-        !sourceUserId ||
-        !sourceEndBlockId
-      ) {
-        return false;
-      }
-      const sourceBlock = sourceBlockEarly;
-      if (!sourceBlock) return false;
-      const existing = existingEarly;
-      const selectedModel =
-        model?.trim() ||
-        existing?.model ||
-        turnModel ||
-        nativeModelId(source.model).trim();
-      const selectedModelSettings =
-        modelSettings ??
-        existing?.modelSettings ??
-        preferredModelSettings(
-          resolveModel(requestHarness!, selectedModel || source.model),
-          source.modelSettings,
-        );
-      if (existing?.status === "running") return false;
-      if (existing && existing.sourceEndBlockId !== sourceEndBlockId) {
-        return false;
-      }
-      const now = Date.now();
-      const thread: BtwThread = existing
-        ? {
-            ...existing,
-            harness: existing.harness ?? turnHarness,
-            model: selectedModel || undefined,
-            modelSettings: selectedModelSettings,
-            status: "running",
-            updatedAt: now,
-            error: undefined,
-            pendingBlocks: [],
-            messages: [
-              ...existing.messages,
-              { id: messageId, role: "user", text, createdAt: now },
-            ],
-          }
-        : {
-            id: threadId,
-            sourceEndBlockId,
-            createdAt: now,
-            updatedAt: now,
-            status: "running",
-            pendingBlocks: [],
-            harness: requestHarness,
-            ...(selectedModel ? { model: selectedModel } : {}),
-            modelSettings: selectedModelSettings,
-            messages: [{ id: messageId, role: "user", text, createdAt: now }],
-          };
-      const updated = updateBtwThread(
-        sessionId,
-        sourceUserId,
-        threadId,
-        () => thread,
-      );
-      if (!updated) return false;
-      runBtwRequest({
-        sessionId,
-        userBlockId: sourceUserId,
-        source,
-        thread,
-        harness: thread.harness ?? requestHarness!,
-      });
-      return true;
-    },
-    [runBtwRequest, updateBtwThread],
-  );
-
-  const onBtwModelChange = useCallback(
-    (
-      sessionId: string,
-      turn: Block[],
-      threadId: string,
-      model: string,
-      modelSettings: Record<string, string>,
-    ) => {
-      const source = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      const sourceUserId = turn.find((block) => block.role === "user")?.id;
-      const turnHarness = source
-        ? harnessForTurn(source.blocks, turn, source.harness)
-        : undefined;
-      const nextModel = model.trim();
-      const sourceBlock = source?.blocks.find(
-        (block) => block.id === sourceUserId && block.role === "user",
-      );
-      const threadHarness = source
-        ? (sourceBlock?.btwThreads?.find((thread) => thread.id === threadId)
-            ?.harness ??
-          btwTurnHarness(source.blocks, turn, source.harness) ??
-          turnHarness)
-        : undefined;
-      if (
-        !source ||
-        !supportsBtwHarness(threadHarness) ||
-        source.worktreeRemoved ||
-        !sourceUserId ||
-        !nextModel
-      ) {
-        return;
-      }
-      updateBtwThread(sessionId, sourceUserId, threadId, (thread) =>
-        thread
-          ? {
-              ...thread,
-              model: nextModel,
-              modelSettings,
-              updatedAt: Date.now(),
-            }
-          : undefined,
-      );
-    },
-    [updateBtwThread],
-  );
-
-  const onBtwDelete = useCallback(
+  const simple = useCallback((action: "retry" | "stop" | "delete") =>
     (sessionId: string, turn: Block[], threadId: string) => {
-      const source = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      const sourceUserId = turn.find((block) => block.role === "user")?.id;
-      const turnHarness = source
-        ? harnessForTurn(source.blocks, turn, source.harness)
-        : undefined;
-      const sourceBlock = source?.blocks.find(
-        (block) => block.id === sourceUserId && block.role === "user",
-      );
-      const threadHarness = source
-        ? (sourceBlock?.btwThreads?.find((thread) => thread.id === threadId)
-            ?.harness ??
-          btwTurnHarness(source.blocks, turn, source.harness) ??
-          turnHarness)
-        : undefined;
-      if (
-        !source ||
-        !supportsBtwHarness(threadHarness) ||
-        source.worktreeRemoved ||
-        !sourceUserId
-      ) {
-        return;
-      }
-      const requestKey = `${sessionId}:${threadId}`;
-      btwRequestsRef.current.get(requestKey)?.controller.abort();
-      btwRequestsRef.current.delete(requestKey);
-      removeBtwThread(sessionId, sourceUserId, threadId);
-    },
-    [removeBtwThread],
-  );
+      const found = target(sessionId, turn, threadId);
+      if (!found?.thread) return;
+      if (action === "retry" && found.thread.status !== "error") return;
+      if (action === "stop" && found.thread.status !== "running") return;
+      dispatch(found.source, { type: "btw", action, userBlockId: found.userBlockId, threadId });
+    }, [dispatch, target]);
 
-  // Stopping keeps whatever the side answer had streamed, like stopping a
-  // main turn, and leaves the thread ready for the next question.
-  const onBtwStop = useCallback(
-    (sessionId: string, turn: Block[], threadId: string) => {
-      const sourceUserId = turn.find((block) => block.role === "user")?.id;
-      if (!sourceUserId) return;
-      const key = `${sessionId}:${threadId}`;
-      btwRequestsRef.current.get(key)?.controller.abort();
-      btwRequestsRef.current.delete(key);
-      updateBtwThread(sessionId, sourceUserId, threadId, (thread) => {
-        if (!thread || thread.status !== "running") return thread;
-        const harness = thread.harness;
-        const userMessageId =
-          thread.messages[thread.messages.length - 1]?.id ?? thread.id;
-        const pending = thread.pendingBlocks ?? [];
-        const blocks =
-          pending.length > 0 && harness
-            ? sealBtwResponseBlocks(
-                pending,
-                harness,
-                thread.model ?? "",
-                userMessageId,
-              )
-            : [];
-        const text = blocks
-          .filter((block) => block.role === "assistant")
-          .map((block) => block.text)
-          .join("\n\n")
-          .trim();
-        const now = Date.now();
-        return {
-          ...thread,
-          status: "ready",
-          updatedAt: now,
-          pendingBlocks: undefined,
-          error: undefined,
-          messages: blocks.length
-            ? [
-                ...thread.messages,
-                {
-                  id: crypto.randomUUID(),
-                  role: "assistant",
-                  text,
-                  createdAt: now,
-                  blocks,
-                },
-              ]
-            : thread.messages,
-        };
-      });
-    },
-    [updateBtwThread],
-  );
-
-  const onBtwRetry = useCallback(
-    (sessionId: string, turn: Block[], threadId: string) => {
-      const source = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      const sourceUserId = turn.find((block) => block.role === "user")?.id;
-      const turnHarness = source
-        ? harnessForTurn(source.blocks, turn, source.harness)
-        : undefined;
-      const sourceBlock = source?.blocks.find(
-        (block) => block.id === sourceUserId && block.role === "user",
-      );
-      const existing = sourceBlock?.btwThreads?.find(
-        (thread) => thread.id === threadId,
-      );
-      const threadHarness = source
-        ? (existing?.harness ??
-          btwTurnHarness(source.blocks, turn, source.harness) ??
-          turnHarness)
-        : undefined;
-      if (
-        !source ||
-        !supportsBtwHarness(threadHarness) ||
-        source.worktreeRemoved ||
-        !sourceUserId
-      ) {
-        return;
-      }
-      if (!sourceBlock || !existing || existing.status !== "error") return;
-      const thread: BtwThread = {
-        ...existing,
-        status: "running",
-        updatedAt: Date.now(),
-        error: undefined,
-        pendingBlocks: [],
-      };
-      const updated = updateBtwThread(
-        sessionId,
-        sourceUserId,
-        threadId,
-        () => thread,
-      );
-      if (!updated) return;
-      runBtwRequest({
-        sessionId,
-        userBlockId: sourceUserId,
-        source: updated,
-        thread,
-        harness: thread.harness ?? threadHarness!,
-      });
-    },
-    [runBtwRequest, updateBtwThread],
-  );
-  return { onBtwSubmit, onBtwRetry, onBtwDelete, onBtwStop, onBtwModelChange };
+  const actions = useMemo(() => ({
+    onBtwRetry: simple("retry"), onBtwDelete: simple("delete"), onBtwStop: simple("stop"),
+  }), [simple]);
+  return { onBtwSubmit, onBtwModelChange, ...actions };
 }

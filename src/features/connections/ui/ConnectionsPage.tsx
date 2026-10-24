@@ -3,7 +3,7 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Computer, Copy, Loader, RefreshCw, Smartphone } from "../../../shared/ui/icons";
-import type { HostDeviceInfo } from "../model/protocol";
+import type { HostDeviceInfo } from "../../../contracts/protocol";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { remoteRequest } from "../model/connections";

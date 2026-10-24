@@ -1,24 +1,12 @@
-import {
-  rememberProject,
-  type RecentProject,
-} from "../../features/projects/model/recents";
+import { rememberProject, type RecentProject } from "../../features/projects/model/recents";
 import type { QuickLaunch } from "../../features/quick-composer/model/quickComposer";
 import { applyQuickWorkspace } from "../../features/quick-composer/model/quickWorkspace";
 import { prepareAttachments } from "../../features/sessions/model/attachments";
-import {
-  mergeModelSettings,
-  resolveModel,
-} from "../../features/sessions/model/models";
-import {
-  newSession,
-  type Session,
-  type Attachment,
-} from "../../features/sessions/model/session";
-import {
-  newTab,
-  type SplitDir,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { mergeModelSettings } from "../../features/sessions/model/models";
+import { resolveModel } from "../../integrations/harness/core/modelCatalog";
+import { newSession } from "../../features/sessions/model/session";
+import { type Session, type Attachment } from "../../contracts/session";
+import { newTab, type SplitDir, type WorkspaceTab } from "../../features/workspace/model/layout";
 import type { SubmissionAcceptance } from "./submissionAcceptance";
 
 /** Complete the workspace handoff before the receiver acknowledges the launch. */

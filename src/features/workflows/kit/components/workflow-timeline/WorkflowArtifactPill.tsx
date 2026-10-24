@@ -3,12 +3,7 @@ import { workflowEntry } from "./workflow-motion.js";
 import type { ReactNode } from "react";
 import { ArrowUpRight as ArrowUpRightIcon } from "../../../../../shared/ui/icons";
 import type { WorkflowRunArtifactKind } from "../../_shims/protocol.js";
-import {
-  ArtifactKindIcon,
-  artifactDisplayTitle,
-  artifactKindMessageId,
-  truncateArtifactChipTitle,
-} from "../../app-shell/workflow-artifacts/artifactPresentation.js";
+import { ArtifactKindIcon, artifactDisplayTitle, artifactKindMessageId, truncateArtifactChipTitle } from "../../app-shell/workflow-artifacts/artifactPresentation.js";
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 

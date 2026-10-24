@@ -1,27 +1,15 @@
-import type {
-  Block,
-  HarnessId,
-  NativeSessionLink,
-  TaskListMeta,
-  TurnIntent,
-} from "../../../features/sessions/model/session";
-import { invoke, isTauri } from "@tauri-apps/api/core";
-import type { PrContent } from "../../../features/source-control/model/gitText";
-import { beginCatalogLoad, hasFreshCatalog, setHarnessModels, type AgentModel } from "../../../features/sessions/model/models";
+import type { NativeCommandProvider } from "../../../contracts/nativeCommands";
+import type { Block, HarnessId, NativeSessionLink, TaskListMeta, TurnIntent, AgentModel, UserQuestionReply } from "../../../contracts/session";
+import type { PrContent } from "../../../domain/gitText";
+import { setHarnessModels } from "./modelCatalog";
+
 import type { HarnessCatalogModel } from "./catalog";
-import type { UserQuestionReply } from "../../../features/sessions/model/userQuestion";
+
 import { translate } from "../../../shared/i18n/language";
 import { generateTextBranchName } from "./branchName";
-import type { NativeCommandProvider } from "./nativeCommands";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  HarnessEvent,
-  RewindLastTurnInput,
-  RewindLastTurnResult,
-  SendTurnInput,
-  SteerTurnInput,
-} from "./types";
+
+import type { ApprovalDecision, HarnessEvent } from "../../../contracts/harness";
+import type { CompactContextInput, RewindLastTurnInput, RewindLastTurnResult, SendTurnInput, SteerTurnInput } from "./types";
 
 /** One-shot text generation for side questions and other provider helpers. */
 export type TextPromptInput = {
@@ -221,21 +209,12 @@ export function sendHarnessTurn(input: SendTurnInput & { harness: HarnessId }) {
       throw new Error(`${input.harness} is not connected yet`);
     }
     cancelIdlePark(input.sessionId);
-    const controlled = typeof isTauri === "function" && isTauri();
-    if (controlled)
-      await invoke("control_authorize_turn", {
-        sessionId: input.sessionId,
-        cwd: input.cwd,
-        appAccess: input.appAccess === true,
-      });
     activeTurnSessions.add(input.sessionId);
     try {
       assertHostNative(input);
       await adapter.sendTurn(input);
     } finally {
       activeTurnSessions.delete(input.sessionId);
-      if (controlled)
-        await invoke("control_turn_finished", { sessionId: input.sessionId });
       scheduleIdlePark(input.harness, input.sessionId);
     }
   });
@@ -409,41 +388,7 @@ export function bindHarnessSession(
   if (lists.length > 0) adapter.restoreTaskLists(threadId, lists);
 }
 
-/**
- * Probe model lists only for the harnesses the caller actually needs.
- * Boot used to refresh every adapter; that spawned unused CLIs (Pi with
- * extensions can sit at ~1GB) even when the workspace never touched them.
- */
-/**
- * A catalog cached by an earlier run is shown at once but still re-read once
- * per run. `force` re-reads a catalog that already loaded, e.g. after a CLI
- * update.
- */
-export async function refreshHarnessCatalogs(
-  ids: Iterable<HarnessId>,
-  options?: { force?: boolean },
-): Promise<void> {
-  const wanted = new Set(ids);
-  if (wanted.size === 0) return;
-  await Promise.all(
-    [...adapters.values()]
-      .filter((adapter) => wanted.has(adapter.id))
-      .map(async (adapter) => {
-        if (!adapter.refreshCatalog) return;
-        if (!options?.force && hasFreshCatalog(adapter.id)) return;
-        const done = beginCatalogLoad(adapter.id);
-        await adapter
-          .refreshCatalog()
-          .then((models) => { if (models) setHarnessModels(adapter.id, models.map(model => ({ ...model, harness: adapter.id }))); })
-          .catch((error: unknown) => {
-            console.debug(`[omnicode] ${adapter.id} catalog`, error);
-          })
-          .finally(done);
-      }),
-  );
-}
-
-export async function readHarnessSessionTitle(session: import("../../../features/sessions/model/session").Session): Promise<string | null> {
+export async function readHarnessSessionTitle(session: import("../../../contracts/session").Session): Promise<string | null> {
   if (!session.providerSessionId) return null;
   const adapter = getHarness(session.harness);
   return adapter?.readSessionTitle?.({ sessionId: session.id, providerSessionId: session.providerSessionId, cwd: session.executionCwd ?? session.cwd, providerAccountId: session.providerAccountId }) ?? null;

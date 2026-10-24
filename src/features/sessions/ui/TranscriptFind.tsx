@@ -1,13 +1,7 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { ChevronDown, ChevronUp, Search, X } from "../../../shared/ui/icons";
-import type { Block } from "../model/session";
+import type { Block } from "../../../contracts/session";
 import { findTranscriptBlocks } from "../model/transcriptFind";
 import { keybindingPressed } from "../../settings/model/settings";
 

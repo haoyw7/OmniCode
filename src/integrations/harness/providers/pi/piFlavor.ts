@@ -1,4 +1,4 @@
-import type { HarnessId } from "../../../../features/sessions/model/session";
+import type { HarnessId } from "../../../../contracts/session";
 import { resolveOmpBinary, resolvePiBinary } from "../../core/child";
 
 /**

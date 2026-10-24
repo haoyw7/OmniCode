@@ -1,14 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { newFileTab, newTerminalFile } from "../../workspace/model/layout";
-import { newSession, sessionExecutionCwd } from "../../sessions/model/session";
-import {
-  sessionInWorktree,
-  detachSessionWorktree,
-  assertWorktreeFilesClosed,
-  worktreeSessionIds,
-  registeredWorktreeAt,
-  type Worktree,
-} from "./worktrees";
+import { newSession } from "../../sessions/model/session";
+import { sessionExecutionCwd } from "../../../domain/session";
+import type { Worktree } from "../../../contracts/worktree";
+import { sessionInWorktree, detachSessionWorktree, assertWorktreeFilesClosed, worktreeSessionIds, registeredWorktreeAt } from "./worktrees";
 
 const tree: Worktree = {
   path: "/repo-worktrees/feature",

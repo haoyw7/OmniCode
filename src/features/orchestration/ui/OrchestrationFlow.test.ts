@@ -1,6 +1,8 @@
+vi.mock("../../providers/model/hostModelCatalog", () => ({ refreshHostModelCatalogs: async () => {} }));
 // @vitest-environment happy-dom
-import { act, createElement, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act, createElement, useState, type ReactNode } from "react";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -17,7 +19,7 @@ vi.mock("@tauri-apps/api/webview", () => ({
 vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: () => ({ onFocusChanged: async () => () => {} }),
 }));
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("../../providers/model/harnessAvailability", () => ({
   getHarnessAvailabilitySnapshot: () => 0,
   hasProbedHarnessAvailability: () => true,
   isHarnessAvailable: () => true,
@@ -27,7 +29,6 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
 }));
 vi.mock("../../../integrations/harness/core/registry", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../integrations/harness/core/registry")>()),
-  refreshHarnessCatalogs: async () => {},
   isLiveHarness: () => true,
 }));
 vi.mock("../../sessions/ui/ModelPicker", () => ({ ModelPicker: () => null, ModelControlPills: () => null }));
@@ -35,16 +36,42 @@ vi.mock("../../sessions/ui/SessionReview", () => ({
   SessionReview: ({ undoLocked }: { undoLocked: boolean }) =>
     createElement("div", { "data-review-undo-locked": String(undoLocked) }),
 }));
-vi.mock("../model/orchestration", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../model/orchestration")>()),
-  orchestrator: {
+// Keep Host ownership and the actual pane/Composer/Transcript. This boundary
+// supplies the synchronized projection and commands for presentation tests.
+const hostPresentation = vi.hoisted(() => ({ submit: vi.fn() }));
+vi.mock("../../connections/ui/RemoteSession", () => ({
+  RemoteSession: ({ shell, render }: {
+    shell: import("../../../contracts/session").Session;
+    render: (props: import("../../connections/model/remoteSessionPresentation").RemoteSessionOverrides) => ReactNode;
+  }) => createElement(OrchestrationRuntimeContext.Provider, {
+    value: {
+      subscribe: () => () => {}, snapshot: () => emptyRuns,
+      hydrate: async () => {}, resumeBlocker: () => undefined,
+      resumeLeadBusy: () => false, resume: async () => {},
+      stop: async () => {}, cancelTask: async () => {},
+    },
+  }, render({
+    session: shell,
+    hostManaged: true,
+    remoteSession: false,
+    hostFeatures: { attachments: true, plan: true, draft: true, orchestration: true, checkpoint: true },
+    hostSessionLoading: false,
+    hostSessionStarted: shell.blocks.some(block => block.role === "user"),
+    allowedModelHarnesses: [shell.harness],
+    onSubmit: hostPresentation.submit,
+  })),
+}));
+vi.mock("../model/hostOrchestrationRuntime", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../model/hostOrchestrationRuntime")>()),
+  hostOrchestrationRuntime: {
     subscribe: () => () => {},
     snapshot: () => emptyRuns,
     hydrate: async () => {},
     waitingFor: () => undefined,
     resumeBlocker: vi.fn(() => undefined),
     resumeLeadBusy: vi.fn(() => false),
-    start: vi.fn(async () => {}),
+    resume: vi.fn(async () => {}),
+    stop: vi.fn(async () => {}),
     cancelTask: vi.fn(async () => {}),
   },
 }));
@@ -52,24 +79,14 @@ vi.mock("../model/orchestration", async (importOriginal) => ({
 import { Composer } from "../../sessions/ui/Composer";
 import { AgentTranscript } from "../../sessions/ui/AgentTranscript";
 import { SessionPane } from "../../sessions/ui/SessionPane";
-import {
-  OrchestrationActions,
-  OrchestrationWorkers,
-} from "./OrchestrationActions";
+import { OrchestrationActions, OrchestrationWorkers, OrchestrationRuntimeContext } from "../model/OrchestrationActions";
 import { newSession } from "../../sessions/model/session";
-import {
-  orchestrator,
-  type OrchestrationRun,
-  type OrchestrationTask,
-} from "../model/orchestration";
+import { hostOrchestrationRuntime } from "../model/hostOrchestrationRuntime";
+import { type OrchestrationRun, type OrchestrationTask } from "../../../contracts/session";
 import type { OrchestrationSummary } from "../model/orchestrationSummary";
 import { OrchestrationSidebarAgents } from "./OrchestrationSidebarAgents";
-import {
-  modelsFor,
-  setHarnessModels,
-  resetHarnessModelOverlays,
-} from "../../sessions/model/models";
-import type { OrchestrationProposal } from "../model/orchestrationPlan";
+import { modelsFor, setHarnessModels, resetHarnessModelOverlays } from "../../../integrations/harness/core/modelCatalog";
+import type { OrchestrationProposal } from "../../../contracts/session";
 import { invoke } from "@tauri-apps/api/core";
 
 const emptyRuns: OrchestrationRun[] = [];
@@ -78,8 +95,8 @@ let root: Root;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
-  vi.mocked(orchestrator.resumeBlocker).mockReturnValue(undefined);
-  vi.mocked(orchestrator.resumeLeadBusy).mockReturnValue(false);
+  vi.mocked(hostOrchestrationRuntime.resumeBlocker).mockReturnValue(undefined);
+  vi.mocked(hostOrchestrationRuntime.resumeLeadBusy).mockReturnValue(false);
   setHarnessModels("codex", [
     {
       id: "codex:one",
@@ -234,6 +251,7 @@ describe("orchestration composer and card", () => {
     );
     expect(submit).toHaveBeenCalledWith("Build settings", [], {
       intent: "orchestrate",
+      onSubmissionRejected: expect.any(Function),
     });
     expect(
       document.querySelector('[aria-label="Turn off Orchestrator mode"]'),
@@ -639,6 +657,7 @@ describe("orchestration composer and card", () => {
     const reply = vi.fn();
     const open = vi.fn();
     const noop = () => {};
+    hostPresentation.submit.mockImplementation(submit);
     function LeadPane({ id = lead.id, undoLocked = false } = {}) {
       const [selectedId, inspect] = useState<string | null>(null);
       return createElement(
@@ -696,7 +715,7 @@ describe("orchestration composer and card", () => {
       "lead",
       "Ask the UI worker to check keyboard navigation.",
       [],
-      { intent: "default" },
+      { intent: "default", onSubmissionRejected: expect.any(Function) },
     );
     for (const status of ["active", "paused", "finished", "stopped"] as const) {
       emptyRuns[0] = { ...emptyRuns[0], status };
@@ -881,7 +900,7 @@ describe("orchestration composer and card", () => {
       continuations: 0,
       requests: {},
     });
-    vi.mocked(orchestrator.resumeBlocker).mockReturnValue({
+    vi.mocked(hostOrchestrationRuntime.resumeBlocker).mockReturnValue({
       ...newSession("codex", "/repo"),
       id: "investigation",
       title: "Investigating the failure",

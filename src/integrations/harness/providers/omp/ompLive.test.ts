@@ -28,22 +28,17 @@ vi.mock("../../core/child", () => ({
   writeChild: transport.writeChild,
 }));
 
-import {
-  bindOmpSession,
-  cancelOmpTurn,
-  compactOmpContext,
-  rewindOmpLastTurn,
-  sendOmpTurn,
-  steerOmpTurn,
-  forgetOmpSession,
-} from "./omp";
+import { bindOmpSession, cancelOmpTurn, compactOmpContext, rewindOmpLastTurn, sendOmpTurn, steerOmpTurn, forgetOmpSession } from "./omp";
 import { sendPiTurn, steerPiTurn, forgetPiSession } from "../pi/pi";
 import { ompCommandProvider, respondQuestion } from "../pi/piFamily";
 import { OMP_FLAVOR } from "../pi/piFlavor";
-import type { HarnessEvent, SendTurnInput } from "../../core/types";
-import { applyHarnessEvent } from "../../core/apply";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput } from "../../core/types";
+import { createSessionProjection } from "../../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { newSession } from "../../../../features/sessions/model/session";
-import { ATTACHMENT_ONLY_PROMPT } from "../../../../features/sessions/model/attachments";
+import { ATTACHMENT_ONLY_PROMPT } from "../../../../domain/attachmentPrompt";
 
 function frame(sessionId: string, value: Record<string, unknown>) {
   transport.watchers.get(sessionId)?.(JSON.stringify(value));

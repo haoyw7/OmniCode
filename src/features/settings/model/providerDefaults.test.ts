@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  effectiveDefaultHarness,
-  providerScopeState,
-  type ProviderDefaultsScope,
-} from "./providerDefaults";
+import { effectiveDefaultHarness, providerScopeState, type ProviderDefaultsScope } from "./providerDefaults";
 
 vi.mock("../../sessions/model/models", () => ({
   defaultModelId: (harness: string) => `${harness}:builtin`,

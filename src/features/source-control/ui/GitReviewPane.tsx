@@ -1,70 +1,25 @@
+import type { GitFileDiffKind } from "../../../contracts/workspace";
 // Adapted from ZCode (Apache-2.0).
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  measureElement as measureRow,
-  useVirtualizer,
-  type Virtualizer,
-} from "@tanstack/react-virtual";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { measureElement as measureRow, useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
 import { motion } from "motion/react";
 import { Virtualizer as DiffVirtualizer } from "@pierre/diffs";
 import { VirtualizerContext as DiffVirtualizerContext } from "@pierre/diffs/react";
-import {
-  basename,
-  gitDiscardFile,
-  gitStageContents,
-  gitStageFile,
-  gitUnstageFile,
-  notifyGitChanged,
-  type GitFileDiffKind,
-  type GitHistoryCommit,
-} from "../../../platform/tauri/fs";
+import { basename, gitDiscardFile, gitStageContents, gitStageFile, gitUnstageFile, notifyGitChanged, type GitHistoryCommit } from "../../../platform/tauri/fs";
 import { useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
 import { duration, immediateTransition } from "../../../shared/motion/tokens";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { isEqualOrInside } from "../../../shared/lib/paths";
-import {
-  AlertCircle,
-  Check,
-  FileDiff,
-  FolderTree,
-  ListBullet,
-  Loader,
-  MoreVertical,
-  Search,
-  X,
-} from "../../../shared/ui/icons";
+import { AlertCircle, Check, FileDiff, FolderTree, ListBullet, Loader, MoreVertical, Search, X } from "../../../shared/ui/icons";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../../shared/ui/primitives/DropdownMenu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../../../shared/ui/primitives/DropdownMenu";
 import { usePreferenceState } from "../../settings/model/usePreferenceState";
-import {
-  loadReviewViewOptions,
-  saveReviewViewOptions,
-  type ReviewViewOptions,
-} from "../model/reviewViewOptions";
+import { loadReviewViewOptions, saveReviewViewOptions, type ReviewViewOptions } from "../model/reviewViewOptions";
 import { ReviewViewOptionsContext } from "./ReviewViewOptionsContext";
 import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
 import { useReviewSource } from "../model/useReviewSource";
-import {
-  estimateReviewBodyHeight,
-  reviewCommit,
-  type ReviewDiffState,
-  type ReviewFile,
-  type ReviewSource,
-} from "../model/reviewDiff";
+import { estimateReviewBodyHeight, reviewCommit, type ReviewDiffState, type ReviewFile, type ReviewSource } from "../model/reviewDiff";
 import { stageChunkText } from "../../connections/files/editor/editorGit";
 import { LINE_DIFF_CONFIG } from "../model/lineDiff";
 import { BranchPicker } from "./BranchPicker";

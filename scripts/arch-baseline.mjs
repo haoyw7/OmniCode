@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 // Architecture dependency ratchet. Existing violations are recorded in the
 // baseline; new ones fail, and fixed ones tighten the baseline.
@@ -13,10 +14,35 @@ const BASELINE = "docs/architecture-baseline.json";
 const SCAN_ROOTS = ["src", "host"];
 const SKIP_DIRS = new Set(["node_modules", "dist", "build"]);
 const SKIP_PATHS = new Set(["host/bots/eval"]);
+const LOCAL_PROVIDER_RULE = {
+  id: "ui-local-provider-execution",
+  title: "features/app 新增本地 provider 进程引用（spawnChild / harness_spawn）",
+};
 
 const featureOf = (p) => p.match(/^src\/features\/([^/]+)\//)?.[1];
 
 export const RULES = [
+  {
+    id: "contracts-upward",
+    title: "contracts 必须保持独立的线上契约",
+    test: (i) => i.from.startsWith("src/contracts/") && (i.bare
+      ? /^(react(?:\/|$)|@tauri-apps\/)/.test(i.to)
+      : !i.to.startsWith("src/contracts/")),
+  },
+  {
+    id: "domain-upward",
+    title: "domain 只能依赖自身与 contracts",
+    test: (i) => i.from.startsWith("src/domain/") && (i.bare
+      ? /^(react(?:\/|$)|@tauri-apps\/|node:)/.test(i.to)
+      : !/^src\/(contracts|domain)\//.test(i.to)),
+  },
+  {
+    id: "client-upward",
+    title: "client 不得依赖业务、UI、平台或具体 provider",
+    test: (i) => i.from.startsWith("src/client/") && (i.bare
+      ? /^(react(?:\/|$)|@tauri-apps\/|@capacitor\/|node:)/.test(i.to)
+      : !/^src\/(contracts|domain|client)\//.test(i.to) && !/^src\/shared\/(lib|types)\//.test(i.to)),
+  },
   {
     id: "shared-upward",
     title: "src/shared 依赖上层（features/app/mobile/integrations/platform）",
@@ -143,6 +169,96 @@ export function collectImports(root = ROOT) {
   return imports;
 }
 
+// This transitional rule checks source references, not dependency edges: adding a
+// second call in a file that already imports spawnChild must still be a regression.
+// Parse syntax so comments do not become exceptions in the migration baseline.
+export function collectLocalProviderReferences(root = ROOT) {
+  const hits = [];
+  for (const file of sourceFiles(root)) {
+    const from = slash(relative(root, file));
+    if (!/^src\/(features|app)\//.test(from)) continue;
+    const source = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
+    const names = new Set(["spawnChild", "harness_spawn"]);
+    const literalValue = (node) => {
+      if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+      if (ts.isParenthesizedExpression(node)) return literalValue(node.expression);
+      if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+        const left = literalValue(node.left);
+        const right = literalValue(node.right);
+        if (left !== undefined && right !== undefined) return left + right;
+      }
+      return undefined;
+    };
+    let hasReference = false;
+    const findReference = (node) => {
+      if ((ts.isIdentifier(node) && names.has(node.text)) || names.has(literalValue(node))) hasReference = true;
+      if (!hasReference) ts.forEachChild(node, findReference);
+    };
+    findReference(source);
+    if (!hasReference) continue;
+    // Resolve aliases by their local symbol, not spelling: a parameter named
+    // `launch` in another scope is not the imported provider launcher. Only
+    // bind files with a reference, and never resolve their dependency graph.
+    const compilerHost = ts.createCompilerHost({ noLib: true, noResolve: true });
+    compilerHost.getSourceFile = (name) => resolve(name) === resolve(file) ? source : undefined;
+    const checker = ts.createProgram([file], { noLib: true, noResolve: true }, compilerHost).getTypeChecker();
+    const aliases = new Map();
+    const referenceName = (node) => {
+      if (ts.isIdentifier(node)) return names.has(node.text) ? node.text : aliases.get(checker.getSymbolAtLocation(node));
+      const value = literalValue(node);
+      return names.has(value) ? value : undefined;
+    };
+    const setAlias = (node, name) => {
+      const symbol = checker.getSymbolAtLocation(node);
+      if (symbol && name) aliases.set(symbol, name);
+    };
+    const findAliases = (node) => {
+      if (ts.isImportSpecifier(node) && node.propertyName && names.has(node.propertyName.text))
+        setAlias(node.name, node.propertyName.text);
+      if (ts.isBindingElement(node) && node.propertyName && ts.isIdentifier(node.name)
+        && (ts.isIdentifier(node.propertyName) || ts.isStringLiteral(node.propertyName))
+        && names.has(node.propertyName.text))
+        setAlias(node.name, node.propertyName.text);
+      if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+        const value = node.initializer;
+        const target = ts.isPropertyAccessExpression(value) ? value.name
+          : ts.isElementAccessExpression(value) ? value.argumentExpression : value;
+        setAlias(node.name, referenceName(target));
+      }
+      ts.forEachChild(node, findAliases);
+    };
+    // Imports may occur below an alias declaration; allow alias chains without
+    // treating unrelated identifiers with the same spelling as references.
+    let previousSize;
+    do {
+      previousSize = aliases.size;
+      findAliases(source);
+    } while (aliases.size !== previousSize);
+    const counts = new Map();
+    const visit = (node) => {
+      if (ts.isIdentifier(node) || ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)
+        || ts.isBinaryExpression(node)) {
+        const name = referenceName(node);
+        if (name) {
+          const count = (counts.get(name) ?? 0) + 1;
+          counts.set(name, count);
+          hits.push({
+            from,
+            // Ordinals preserve the number of allowed references without making
+            // unrelated line shifts change the baseline.
+            to: `${name} [reference ${count}]`,
+            line: source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1,
+            typeOnly: false,
+          });
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+  }
+  return hits;
+}
+
 function cycles(imports) {
   const graph = new Map();
   for (const { from, to, bare } of imports) {
@@ -188,6 +304,7 @@ export function analyze(root = ROOT) {
     title: rule.title,
     hits: imports.filter(rule.test).sort((a, b) => a.from.localeCompare(b.from) || a.line - b.line),
   }));
+  rules.push({ ...LOCAL_PROVIDER_RULE, hits: collectLocalProviderReferences(root) });
   return { fileCount: new Set(imports.map((i) => i.from)).size, importCount: imports.length, rules, cycles: cycles(imports) };
 }
 

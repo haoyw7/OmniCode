@@ -6,7 +6,7 @@ import { afterEach, expect, it } from "vitest";
 import { HostStore } from "./store";
 import { BotThreadStore } from "./bots/thread/store";
 import { attachmentPath, readAttachmentChunk, writeAttachmentChunk } from "./attachments";
-import type { RemoteAttachment } from "../src/features/connections/model/protocol";
+import type { RemoteAttachment } from "../src/contracts/protocol";
 
 const cleanup: (() => void)[] = [];
 afterEach(() => cleanup.splice(0).forEach(fn => fn()));

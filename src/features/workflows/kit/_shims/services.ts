@@ -1,12 +1,7 @@
 // OmniCode stand-in for ZCode's agent/file-watcher services: saved workflows are
 // read and changed by the Host workflow service of the project's machine.
 import { workflowGlobalRequest, workflowRequest } from "../../model/workflowClient";
-import type {
-  OmniCodeSavedWorkflowMeta,
-  OmniCodeSavedWorkflowRun,
-  OmniCodeSavedWorkflowScope,
-  OmniCodeWorkflowsGetResult,
-} from "./shared.js";
+import type { OmniCodeSavedWorkflowMeta, OmniCodeSavedWorkflowRun, OmniCodeSavedWorkflowScope, OmniCodeWorkflowsGetResult } from "./shared.js";
 import type { SavedWorkflowEntry, SavedWorkflowInvalidEntry } from "../../../../integrations/workflow/savedWorkflow";
 
 export interface OmniCodeAgentWorkspaceTarget {

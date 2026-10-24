@@ -1,4 +1,5 @@
-import type { GitFileDiffKind } from "../../../platform/tauri/fs";
+import type { GitFileDiffKind } from "../../../contracts/workspace";
+
 import { GitReviewPane } from "./GitReviewPane";
 
 type Props = {

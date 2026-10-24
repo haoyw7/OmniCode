@@ -1,28 +1,8 @@
-import { readClaudeSessionTitle } from "./claude";
-import {
-  bindClaudeSession,
-  cancelClaudeTurn,
-  compactClaudeContext,
-  forgetClaudeSession,
-  respondClaudeApproval,
-  respondClaudeQuestion,
-  restoreClaudeTaskLists,
-  sendClaudeTurn,
-  steerClaudeTurn,
-  stopClaudeSession,
-  stopClaudeBackgroundTask,
-} from "./claude";
+import { readClaudeSessionTitle, bindClaudeSession, cancelClaudeTurn, compactClaudeContext, forgetClaudeSession, respondClaudeApproval, respondClaudeQuestion, restoreClaudeTaskLists, sendClaudeTurn, steerClaudeTurn, stopClaudeSession, stopClaudeBackgroundTask } from "./claude";
+
 import { refreshClaudeCatalog } from "./claudeCatalog";
-import {
-  generateClaudeBranchName,
-  generateClaudeCommitMessage,
-  generateClaudePrContent,
-} from "./claudeGit";
-import {
-  runClaudeTextPrompt,
-  stopClaudeTextPrompt,
-  warmupClaudeText,
-} from "./claudeText";
+import { generateClaudeBranchName, generateClaudeCommitMessage, generateClaudePrContent } from "./claudeGit";
+import { runClaudeTextPrompt, stopClaudeTextPrompt, warmupClaudeText } from "./claudeText";
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const claudeAdapter: HarnessAdapter = {

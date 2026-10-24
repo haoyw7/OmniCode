@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Popover } from "../../../shared/ui/Popover";
-import { useSessionHeaderActions } from "./SessionHeaderActions";
+import { useSessionHeaderActions } from "../model/SessionHeaderActions";
 
 /** The existing rename flow, shared by the overflow menu and title double-click. */
 export function SessionRenamePopover({

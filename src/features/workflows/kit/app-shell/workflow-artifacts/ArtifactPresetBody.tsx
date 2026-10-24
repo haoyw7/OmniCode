@@ -1,17 +1,6 @@
-import {
-  ArtifactBoard,
-  ArtifactChart,
-  ArtifactMetrics,
-  ArtifactTable,
-  parseArtifactPresetSpec,
-  type ArtifactItem,
-  type BoardSpec,
-  type ChartSpec,
-  type MetricsSpec,
-  type TableSpec,
-} from "./presets/index.js";
+import { ArtifactBoard, ArtifactChart, ArtifactMetrics, ArtifactTable, parseArtifactPresetSpec, type ArtifactItem, type BoardSpec, type ChartSpec, type MetricsSpec, type TableSpec, type PresetLabels } from "./presets/index.js";
 import { isArtifactPresetKind } from "./artifactPresentation.js";
-import type { PresetLabels } from "./presets/index.js";
+
 import type { WorkflowRunArtifactView } from "../../hooks/useWorkflowRunArtifacts.js";
 
 /**

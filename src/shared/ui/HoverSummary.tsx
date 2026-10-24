@@ -1,14 +1,5 @@
 import { PresenceBoundary } from "./PresenceBoundary";
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type FocusEvent,
-  type KeyboardEvent,
-  type PointerEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { Popover } from "./Popover";
 import { useSurfaceVisibility } from "./SurfaceVisibility";
 

@@ -5,11 +5,7 @@
 // `concurrency-changed` 的规则住在这里。与主归约同一条纪律：纯函数、无时钟——事件上的
 // `cooldownMs` 是相对量，deadline 由 UI 按收到状态的时刻推算。
 
-import {
-  WORKFLOW_RUNS_LIMITS,
-  type WorkflowRunConcurrency,
-  type WorkflowRunState,
-} from "./workflow-runs.js";
+import { WORKFLOW_RUNS_LIMITS, type WorkflowRunConcurrency, type WorkflowRunState } from "./workflow-runs.js";
 
 /** 事件里的 `reason` 值：桶空闲重置回天花板——它不是冷却，收到即清掉旧的 cooldown。 */
 const CONCURRENCY_IDLE_RESET_REASON = "idle_reset";

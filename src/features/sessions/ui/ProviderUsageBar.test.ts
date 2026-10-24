@@ -1,3 +1,4 @@
+vi.mock("../../providers/model/useProviderSignInSupport", () => ({ useProviderSignInSupport: () => true }));
 // @vitest-environment happy-dom
 // Keep this as .ts because the project test glob intentionally excludes .test.tsx.
 import { act, createElement } from "react";
@@ -13,9 +14,9 @@ const rateLimitsFetch = vi.hoisted(() => ({
   fetchCodexRateLimits: vi.fn(),
 }));
 
-vi.mock("../../../integrations/harness/core/auth", async (importOriginal) => ({
+vi.mock("../../providers/model/providerLogin", async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import("../../../integrations/harness/core/auth")
+    typeof import("../../providers/model/providerLogin")
   >()),
   loginHarness: auth.loginHarness,
 }));
@@ -24,10 +25,7 @@ vi.mock(
   () => rateLimitsFetch,
 );
 
-import type {
-  ProviderRateLimits,
-  RateLimitProvider,
-} from "../../providers/model/rateLimits";
+import type { ProviderRateLimits, RateLimitProvider } from "../../../contracts/session";
 import { clearCachedRateLimits } from "../../providers/model/rateLimitsCache";
 import { ProviderUsageBar } from "./ProviderUsageBar";
 

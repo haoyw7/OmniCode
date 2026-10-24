@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  consumeOperatorCommand,
-  isOperatorUserTurn,
-  operatorEnabledInThread,
-  operatorUserPrompt,
-  OPERATOR_COMMAND,
-} from "./operatorCommand";
+import { consumeOperatorCommand, isOperatorUserTurn, operatorEnabledInThread, operatorUserPrompt, OPERATOR_COMMAND } from "../../../domain/operatorCommand";
 
 describe("Operator composer command", () => {
   it("exposes a local slash command", () => {

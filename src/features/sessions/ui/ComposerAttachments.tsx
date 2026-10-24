@@ -1,8 +1,8 @@
 import { useLayoutEffect, useState } from "react";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { COMPOSER_MOTION_MS } from "../model/composerResize";
-import type { Attachment } from "../model/session";
-import { AttachmentList } from "./AttachmentList";
+import type { Attachment } from "../../../contracts/session";
+import { AttachmentList } from "../../../shared/ui/attachments/AttachmentList";
 
 /** Composer attachment row: the row folds open/closed and chips grow in place. */
 export function ComposerAttachments({ attachments, onRemove, className }: {

@@ -1,4 +1,4 @@
-import type { HostSessionSummary } from "../../connections/model/protocol";
+import type { HostSessionSummary } from "../../../contracts/protocol";
 
 type Entry = {
   revision: number;

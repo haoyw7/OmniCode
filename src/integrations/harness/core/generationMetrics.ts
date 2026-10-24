@@ -1,5 +1,5 @@
-import type { GenerationSample } from "../../../features/sessions/model/generationSample";
-import type { HarnessEvent } from "./types";
+import type { GenerationSample } from "../../../contracts/session";
+import type { HarnessEvent } from "../../../contracts/harness";
 
 type Emit = (event: HarnessEvent) => void;
 type Usage = {

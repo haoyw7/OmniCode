@@ -2,8 +2,8 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { HostSession } from "../features/connections/model/protocol";
-import type { Block } from "../features/sessions/model/session";
+import type { HostSession } from "../contracts/protocol";
+import type { Block } from "../contracts/session";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
 import { MobileSessionTranscript } from "./MobileSessionViews";
 import { createSessionSnapshotStore } from "./sessionSnapshotStore";

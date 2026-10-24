@@ -1,28 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  collectInboxResults,
-  composeInboxMessage,
-  dedupeInboxItems,
-  detailsCacheKey,
-  filterInboxItems,
-  formatGithubQuery,
-  formatRelativeTime,
-  githubAvatarUrl,
-  githubReviewDecisionLabel,
-  githubReviewStateLabel,
-  gitlabAttentionLabel,
-  groupProjectsByRepo,
-  inboxComposerCard,
-  inboxItemKey,
-  inboxListCacheKey,
-  inboxPersonAvatarUrl,
-  inboxProjectsForRail,
-  inboxStartDraft,
-  prDiffCacheKey,
-  sortInboxItems,
-  uniqueInboxProjects,
-  type InboxItem,
-} from "./githubTasks";
+import { collectInboxResults, composeInboxMessage, dedupeInboxItems, detailsCacheKey, filterInboxItems, formatGithubQuery, formatRelativeTime, githubAvatarUrl, githubReviewDecisionLabel, githubReviewStateLabel, gitlabAttentionLabel, groupProjectsByRepo, inboxComposerCard, inboxItemKey, inboxListCacheKey, inboxPersonAvatarUrl, inboxProjectsForRail, prDiffCacheKey, sortInboxItems, uniqueInboxProjects } from "./githubTasks";
+import { inboxStartDraft } from "../../../domain/automationInbox";
+import { type InboxItem } from "../../../contracts/session";
 
 function item(
   overrides: Partial<InboxItem> & Pick<InboxItem, "number" | "updatedAt">,

@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
-import { piMcpHealth, type PiMcpList } from "./piMcp";
-import type { McpConnection } from "../../../../features/settings/model/mcp";
+import { piMcpHealth } from "./piMcp";
+import type { PiMcpList } from "../../../../contracts/mcp";
+import type { McpConnection } from "../../../../contracts/mcp";
 
 const server: McpConnection = {
   provider: "pi",

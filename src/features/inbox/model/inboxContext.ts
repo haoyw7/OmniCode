@@ -1,4 +1,4 @@
-import type { InboxItem } from "./githubTasks";
+import type { InboxItem } from "../../../contracts/session";
 import { jiraIssueDetails, peekJiraIssueDetails } from "./jira";
 import { linearIssueDetails, peekLinearIssueDetails } from "./linear";
 

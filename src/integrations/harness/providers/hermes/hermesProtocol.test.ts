@@ -1,14 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  hermesCurrentModelId,
-  hermesBackgroundDispatch,
-  hermesModeId,
-  hermesPromptBlocks,
-  hermesSessionId,
-  hermesStderrAuthError,
-  hermesStartupError,
-  modelsFromHermesSession,
-} from "./hermesProtocol";
+import { hermesCurrentModelId, hermesBackgroundDispatch, hermesModeId, hermesPromptBlocks, hermesSessionId, hermesStderrAuthError, hermesStartupError, modelsFromHermesSession } from "./hermesProtocol";
 
 describe("Hermes ACP protocol", () => {
   it("maps access modes onto Hermes edit approval modes", () => {

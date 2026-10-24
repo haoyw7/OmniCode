@@ -1,10 +1,6 @@
-import {
-  questionsFromUnknown,
-  selectedAnswerLabels,
-  type UserQuestion,
-  type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
-import { asRecord } from "./codexProtocol";
+import { questionsFromUnknown, selectedAnswerLabels } from "../../../../domain/userQuestion";
+import { type UserQuestion, type UserQuestionReply } from "../../../../contracts/session";
+import { asRecord } from "../../../../domain/records";
 
 /** Async questions arrive on agentMessage items rather than server requests. */
 export function codexAsyncQuestions(item: unknown): UserQuestion[] {

@@ -1,3 +1,4 @@
+import { TranscriptServices } from "../../src/app/ui/TranscriptServices";
 // Offline RPC data with the real desktop shell, file tree, editor, review and xterm UI.
 import { useEffect, useState, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
@@ -14,12 +15,13 @@ import { WindowMenuButton } from "../../src/app/shell/WindowMenuButton";
 import { SessionHeaderActionsContext, type SessionHeaderActions } from "../../src/features/workspace/ui/SessionHeaderActions";
 import type { SidebarProps } from "../../src/app/shell/Sidebar.types";
 import { PaneTree } from "../../src/features/workspace/ui/PaneTree";
-import { newSession } from "../../src/features/sessions/model/session";
+import { newSession } from "../../src/contracts/session";
 import { TranscriptPool, TranscriptPoolOutlet } from "../../src/features/sessions/ui/TranscriptPool";
 import type { EditorPane, FilePaneTab, LayoutNode, PaneEdge } from "../../src/features/workspace/model/layout";
 import { moveTabPane, newTab, setSplitRatio } from "../../src/features/workspace/model/layout";
 import type { ProjectTerminalDock } from "../../src/features/projects/model/projectTerminal";
-import type { FsEntry, GitDiffIndex, GitFileDiff, GitHistory } from "../../src/platform/tauri/fs";
+import type { GitHistory } from "../../src/platform/tauri/fs";
+import type { FsEntry, GitDiffIndex, GitFileDiff } from "../../src/contracts/workspace";
 import { SurfaceVisibilityContext } from "../../src/shared/ui/SurfaceVisibility";
 import { setUiLanguage } from "../../src/shared/i18n/language";
 import { applyDesktopSkin } from "../../src/shared/theme/desktopSkin";
@@ -227,4 +229,4 @@ function DesktopToolsFixture() {
   </div></SessionHeaderActionsContext.Provider></MotionConfig>;
 }
 
-createRoot(document.getElementById("root")!).render(<DesktopToolsFixture />);
+createRoot(document.getElementById("root")!).render(<TranscriptServices>{<DesktopToolsFixture />}</TranscriptServices>);

@@ -1,17 +1,8 @@
-import {
-  titleFromPrompt,
-  type Block,
-  type Session,
-} from "../../../features/sessions/model/session";
-import {
-  applyNativeTitle,
-  type SessionTitleState,
-} from "../../../features/sessions/model/titlePolicy";
-import type {
-  NativeSessionFile,
-  NativeSessionProvider,
-  NativeTranscript,
-} from "./nativeSessions";
+import { titleFromPrompt } from "../../../domain/session";
+import type { Block, Session, SessionTitleState, NativeSessionFile, NativeSessionProvider, NativeTranscript } from "../../../contracts/session";
+import { applyNativeTitle } from "../../../domain/titlePolicy";
+
+
 
 /** Claude and Codex sessions belong to the account profile whose directory stores them. */
 export const accountScoped = (provider: NativeSessionProvider) =>

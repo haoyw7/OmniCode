@@ -1,5 +1,5 @@
 import { useLayoutEffect, type RefObject } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { fitQuickComposerWindow } from "../../../platform/tauri/quickComposer";
 
 
 /** Animate the card itself so native vibrancy and its shadow follow its height. */
@@ -19,7 +19,7 @@ export function useQuickPickerMotion(
       const rounded = Math.ceil(height);
       if (rounded === sentHeight) return;
       sentHeight = rounded;
-      void invoke("quick_composer_fit", { height: rounded }).catch(
+      void fitQuickComposerWindow(rounded).catch(
         () => undefined,
       );
     };

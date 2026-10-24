@@ -1,27 +1,9 @@
 import ts from "typescript";
 import { callbackSemanticsOf, DEFAULT_CALLBACK_SEMANTICS } from "./callbacks.js";
-import {
-  functionName,
-  resolveCallDeclaration,
-  type ScriptFunction,
-} from "./causality-order-functions.js";
-import {
-  applicationsAt,
-  innermost,
-  issue,
-  issuesSince,
-  jump,
-  locOf,
-  openRegion,
-  type TraceState,
-} from "./causality-order-state.js";
+import { functionName, resolveCallDeclaration, type ScriptFunction } from "./causality-order-functions.js";
+import { applicationsAt, innermost, issue, issuesSince, jump, locOf, openRegion, type TraceState } from "./causality-order-state.js";
 import { barrier, settlesAt } from "./causality-order-settle.js";
-import {
-  closeStrand,
-  isAsyncFunction,
-  openStrand,
-  type StrandRecord,
-} from "./causality-order-strands.js";
+import { closeStrand, isAsyncFunction, openStrand, type StrandRecord } from "./causality-order-strands.js";
 
 // causality-order.ts 顶到 oxlint max-lines 上限（400 行），把调用这一组（调用表达式
 // 的访问器、通用调用规则 applyAt、函数体内联 inlineBody）拆到本文件；公开面仍从

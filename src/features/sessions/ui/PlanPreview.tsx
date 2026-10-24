@@ -1,25 +1,13 @@
 import { Button } from "../../../shared/ui/forms/Button";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  Check,
-  Copy,
-  Download,
-  ChevronDown,
-  ListChecks,
-  PanelRight,
-  Play,
-} from "../../../shared/ui/icons";
-import { planTitle } from "../model/plan";
+import { Check, Copy, Download, ChevronDown, ListChecks, PanelRight, Play } from "../../../shared/ui/icons";
+import { planTitle } from "../../../domain/plan";
 import { planBuildable } from "../model/planDecision";
-import type {
-  HarnessId,
-  PlanBlockMeta,
-  PlanBuildTarget,
-} from "../model/session";
-import { AgentMarkdown } from "./AgentMarkdown";
+import type { HarnessId, PlanBlockMeta, PlanBuildTarget } from "../../../contracts/session";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
 import { BuildTargetButton } from "./SecondOpinionButton";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
 
 type Props = {
   text: string;

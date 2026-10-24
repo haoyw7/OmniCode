@@ -1,17 +1,11 @@
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  ChevronDown,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestClosed,
-  GitPullRequestDraft,
-  LoaderCircle,
-} from "../../../shared/ui/icons";
+import { ChevronDown, GitMerge, GitPullRequest, GitPullRequestClosed, GitPullRequestDraft, LoaderCircle } from "../../../shared/ui/icons";
 import { useRef, useState } from "react";
 import { Popover } from "../../../shared/ui/Popover";
-import { githubPrAction, type GithubPrAction, type InboxItem } from "../model/githubTasks";
+import { githubPrAction } from "../model/githubTasks";
+import { type GithubPrAction, type InboxItem } from "../../../contracts/session";
 import { ACTION_OUTLINE } from "./inboxActions";
 
 

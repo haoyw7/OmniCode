@@ -3,18 +3,12 @@ import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { ExternalLink, Pencil, RefreshCw } from "../../../../../shared/ui/icons";
-import {
-  inspectHarnessBinary,
-  type HarnessBinaryInspection,
-} from "../../../../../integrations/harness/core/child";
+import { inspectHarnessBinary } from "../../../../providers/model/hostProviderRuntime";
+import { type HarnessBinaryInspection } from "../../../../../contracts/providerRuntime";
 import { revealPath } from "../../../../../platform/tauri/fs";
-import {
-  loadProviderBinaryPath,
-  providerBinaryPathChangePending,
-  saveProviderBinaryPath,
-  type ConfigurableBinaryProvider,
-} from "../../../../providers/model/providerBinaryPaths";
-import { HARNESS_TITLE } from "../../../../sessions/model/session";
+import { loadProviderBinaryPath, providerBinaryPathChangePending, saveProviderBinaryPath } from "../../../../providers/model/providerBinaryPaths";
+import { type ConfigurableBinaryProvider } from "../../../../../integrations/harness/core/runtimeBinaryPaths";
+import { HARNESS_TITLE } from "../../../../../contracts/session";
 import { Row } from "../../settingsLayout";
 import { binaryInspectionError } from "./providerBinaryValidation";
 

@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SessionSummary } from "../../features/sessions/data/sessionStore";
-import {
-  newSession,
-  type Session,
-} from "../../features/sessions/model/session";
+import { newSession } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
 import { WorkspaceSessionData } from "./workspaceSessionData";
 
 function deferred<T>() {

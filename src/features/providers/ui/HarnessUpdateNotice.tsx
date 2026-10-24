@@ -1,40 +1,19 @@
+import { runHarnessUpdate, type HarnessUpdateState } from "../model/runHarnessUpdate";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { GlassBackdrop } from "../../../shared/ui/GlassBackdrop";
-import {
-  isHarnessAvailable,
-  probeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
-import {
-  inspectHarnessBinary,
-  updateHarnessCli,
-} from "../../../integrations/harness/core/child";
-import {
-  compareSemver,
-  parseOpenCodeVersion,
-} from "../../../integrations/harness/providers/opencode/opencodeProtocol";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
+import { isHarnessAvailable, probeHarnessAvailability } from "../model/harnessAvailability";
+import { inspectHarnessBinary } from "../model/hostProviderRuntime";
 import { LAYER } from "../../../shared/lib/layers";
 import { Check, Loader, X } from "../../../shared/ui/icons";
 import { isPickerProviderVisible } from "../../sessions/model/models";
-import {
-  HARNESS_TITLE,
-  HARNESSES,
-  type HarnessId,
-} from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import {
-  announceHarnessUpdated,
-  claimLaunchHarnessUpdateCheck,
-  fetchHarnessInstall,
-  fetchLatestHarnessVersion,
-  findHarnessUpdates,
-  UPDATABLE_HARNESSES,
-  type HarnessUpdate,
-} from "../model/harnessUpdates";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { HARNESSES, type HarnessId } from "../../../contracts/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { findHarnessUpdates, UPDATABLE_HARNESSES, type HarnessUpdate } from "../model/harnessUpdates";
+import { claimHostHarnessUpdateCheck, fetchHostHarnessInstall, latestHostHarnessVersion } from "../model/hostProviderRuntime";
 import { useHarnessRefreshSync } from "../model/harnessRefreshSync";
-import { harnessUpdateError } from "../model/harnessUpdateErrors";
 
 /**
  * Shared by every mount in this window: a StrictMode remount must reuse the
@@ -48,7 +27,7 @@ function checkForHarnessUpdates(): Promise<HarnessUpdate[]> {
 }
 
 async function runLaunchCheck(): Promise<HarnessUpdate[]> {
-  if (!(await claimLaunchHarnessUpdateCheck())) return [];
+  if (!(await claimHostHarnessUpdateCheck())) return [];
   await probeHarnessAvailability();
   const updates = await findHarnessUpdates({
     harnesses: HARNESSES.filter(
@@ -58,53 +37,18 @@ async function runLaunchCheck(): Promise<HarnessUpdate[]> {
         isPickerProviderVisible(id),
     ),
     installedVersion: async (id) => (await inspectHarnessBinary(id)).version,
-    latestVersion: fetchLatestHarnessVersion,
+    latestVersion: latestHostHarnessVersion,
   });
   // A copy bundled inside another app only updates with that app, so its
   // Update button could never succeed; Settings explains it instead.
   const updatable = await Promise.all(
     updates.map((update) =>
-      fetchHarnessInstall(update.harness)
+      fetchHostHarnessInstall(update.harness)
         .then((install) => install?.source !== "bundled")
         .catch(() => true),
     ),
   );
   return updates.filter((_, index) => updatable[index]);
-}
-
-export type HarnessUpdateState =
-  | { status: "idle" }
-  | { status: "updating" }
-  | { status: "updated"; version: string }
-  | { status: "failed"; error: string };
-
-/**
- * Some updaters exit cleanly without installing anything, so success is the
- * version the CLI reports afterwards, not the exit code. Its models are
- * reloaded before the row says so, so the picker is current by then.
- */
-export async function runHarnessUpdate(
-  update: HarnessUpdate,
-): Promise<HarnessUpdateState> {
-  try {
-    await updateHarnessCli(update.harness);
-    const after = await inspectHarnessBinary(update.harness);
-    const version = parseOpenCodeVersion(after.version ?? "");
-    if (version && compareSemver(version, update.latest) >= 0) {
-      await refreshHarnessCatalogs([update.harness], { force: true });
-      void announceHarnessUpdated(update.harness).catch(() => undefined);
-      return { status: "updated", version };
-    }
-    return {
-      status: "failed",
-      error: `Still on ${version ?? update.installed} after updating.`,
-    };
-  } catch (error) {
-    return {
-      status: "failed",
-      error: harnessUpdateError(error),
-    };
-  }
 }
 
 /** Checked once per app launch, in whichever window asks first. */

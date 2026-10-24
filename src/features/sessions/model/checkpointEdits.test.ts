@@ -1,6 +1,9 @@
 import { expect, it } from "vitest";
-import { applyHarnessEvent } from "../../../integrations/harness/core/apply";
-import { newSession, type Block } from "./session";
+import { createSessionProjection } from "../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../../integrations/harness/core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
+import { newSession } from "./session";
+import { type Block } from "../../../contracts/session";
 import { sessionEditPaths } from "./checkpointEdits";
 
 it("recovers successful edits from before a continuation, excluding reads and failed edits", () => {

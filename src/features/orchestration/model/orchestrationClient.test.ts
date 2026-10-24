@@ -1,10 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from "vitest";
-import {
-  OrchestrationClient,
-  type OrchestrationSource,
-} from "./orchestrationClient";
-import type { HostSession } from "../../connections/model/protocol";
+import { OrchestrationClient, type OrchestrationSource } from "./orchestrationClient";
+import type { HostSession } from "../../../contracts/protocol";
 
 vi.mock("../../connections/model/connections", () => ({
   rememberRemoteSession: vi.fn(),

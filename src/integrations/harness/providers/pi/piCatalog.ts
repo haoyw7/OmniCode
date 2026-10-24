@@ -1,14 +1,7 @@
 import { homeDir } from "../../../../platform/tauri/fs";
-import {
-  setHarnessModels,
-  type AgentModel,
-} from "../../../../features/sessions/model/models";
-import {
-  killChild,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
+import { setHarnessModels } from "../../core/modelCatalog";
+import { type AgentModel } from "../../../../contracts/session";
+import { killChild, spawnChild, unwatchChild, watchChild } from "../../core/child";
 import { PiRpc } from "./piClient";
 import { OMP_FLAVOR, PI_FLAVOR, type PiFlavor } from "./piFlavor";
 import { buildPiSpawnArgs, modelsFromRpcData } from "./piProtocol";

@@ -2,11 +2,7 @@ import { motion as motionElement } from "motion/react";
 import { workflowEntry } from "./workflow-motion.js";
 import type { ReactNode } from "react";
 import { ArrowUpRight as ArrowUpRightIcon } from "../../../../../shared/ui/icons";
-import {
-  ArtifactKindIcon,
-  artifactDisplayTitle,
-  artifactKindMessageId,
-} from "../../app-shell/workflow-artifacts/artifactPresentation.js";
+import { ArtifactKindIcon, artifactDisplayTitle, artifactKindMessageId } from "../../app-shell/workflow-artifacts/artifactPresentation.js";
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import type { ArtifactPillData } from "./WorkflowArtifactPill.js";

@@ -1,63 +1,27 @@
+import { DeviceMetadata } from "../client/deviceMetadata";
+import { HostRequestError, nativeTransport, type RpcTransport } from "./hostTransport";
+import { SessionSyncClient } from "../client/sessionSync";
+import { flushCommandOutbox, isDefinitiveCommandRejection, StoredCommandJournal } from "../client/commandOutbox";
 import { readMobileDeviceInfo } from "./deviceInfo";
-import { ModelCatalogLoad } from "../features/connections/model/modelCatalogLoad";
+import { ModelCatalogLoad } from "../client/modelCatalogLoad";
 import { readMobileInstallationId } from "./deviceIdentity";
-import { walkTranscript } from "../features/sessions/model/agentTranscript";
-import type { Note, NoteUpsert } from "../features/notes/notesText";
-import type { NoteImageAsset } from "../features/notes/noteImagesText";
-import { Capacitor, CapacitorHttp } from "@capacitor/core";
-import { sessionMessageActivityAt } from "../features/sessions/model/sessionActivity";
-import {
-  HOST_PROTOCOL_VERSION,
-  REMOTE_PROVIDERS,
-  applySessionSync,
-  migrateSavedHostCommand,
-  sessionClockOffset,
-  requireHostDescriptor,
-  type HostDescriptor,
-  type HostDeviceInfo,
-  type HostDirectory,
-  type HostProject,
-  type HostSession,
-  type HostSessionSummary,
-  type HostSessionActivity,
-  type HostModelCatalog,
-  type HostProviderAccounts,
-  type HostProviderUsage,
-  type HostProviderUsageRequest,
-  type HostSkillCatalog,
-  type HostWorktree,
-  type HostCommand,
-  type CommandReceipt,
-  type SessionSync,
-  type SessionSyncResponse,
-  type SessionSyncChunk,
-  type RemoteAttachment,
-} from "../features/connections/model/protocol";
-import type {
-  Attachment,
-  LinkedWorkItem,
-} from "../features/sessions/model/session";
-import {
-  MOBILE_ATTACHMENT_BYTES,
-  MOBILE_ATTACHMENT_LIMIT,
-} from "./attachments";
-import {
-  reuseRemoteAttachmentPreviews,
-  withRemoteAttachmentPreviews,
-} from "../features/connections/model/remoteAttachmentPreviews";
+import { walkTranscript } from "../domain/agentTranscript";
+import type { Note, NoteUpsert, Attachment, LinkedWorkItem, NativeSessionAccess } from "../contracts/session";
+import type { NoteImageAsset } from "../contracts/notes";
+import { sessionMessageActivityAt } from "../domain/sessionActivity";
+import { HOST_PROTOCOL_VERSION, type HostDescriptor, type HostDirectory, type HostProject, type HostSession, type HostSessionSummary, type HostSessionActivity, type HostModelCatalog, type HostProviderAccounts, type HostProviderUsage, type HostProviderUsageRequest, type HostSkillCatalog, type HostWorktree, type HostCommand, type CommandReceipt, type RemoteAttachment } from "../contracts/protocol";
+import { REMOTE_PROVIDERS } from "../contracts/provider";
+import { migrateSavedHostCommand, requireHostDescriptor } from "../client/hostProtocol";
+
+import { MOBILE_ATTACHMENT_BYTES, MOBILE_ATTACHMENT_LIMIT } from "./attachments";
+import { reuseRemoteAttachmentPreviews, withRemoteAttachmentPreviews } from "../features/connections/model/remoteAttachmentPreviews";
 import { withoutSessionPreviewData } from "./sessionPreviewCache";
 import { mobileOfflineCache, OFFLINE_SESSION_LIMIT, type MobileOfflineCache, type OfflineCacheWrite } from "./offlineCache";
 import { isOfflineModels, isOfflineProjects, isOfflineSession } from "./offlineCacheData";
 import type { MobileStorage } from "./storage";
 import { translate } from "../shared/i18n/language";
-import type { NativeSessionAccess } from "../integrations/harness/core/nativeSessions";
-import {
-  readSessionCache,
-  cachedSessionSummary,
-  removeSessionCache,
-  saveSessionCache,
-  SESSION_CACHE_PROJECT_LIMIT,
-} from "./sessionCache";
+
+import { readSessionCache, cachedSessionSummary, removeSessionCache, saveSessionCache, SESSION_CACHE_PROJECT_LIMIT } from "./sessionCache";
 
 export type Connection = {
   endpoint: string;
@@ -83,12 +47,6 @@ export type MobileFirstMessage = Pick<
   Extract<HostCommand, { type: "send" }>,
   "text" | "attachments" | "intent" | "worktreeCreation"
 >;
-export type RpcTransport = (
-  endpoint: string,
-  token: string,
-  request: object,
-  options?: { timeoutMs?: number },
-) => Promise<unknown>;
 export type MobileBranches = {
   current: string | null;
   branches: string[];
@@ -98,7 +56,6 @@ export type MobileWorktrees = {
   worktrees: HostWorktree[];
   defaultRoot: string;
 };
-const RPC_TIMEOUT_MS = 20_000;
 // Naming can try the configured title model, then ask the agent itself.
 const WORKTREE_NAME_TIMEOUT_MS = 150_000;
 // Checking out a large working copy can outlast an ordinary request.
@@ -121,70 +78,10 @@ export function normalizeHostUrl(input: string): string {
   return url.origin;
 }
 
-export class HostRequestError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-  }
-}
-
 export type HostConnectionStatus = {
   state: "disconnected" | "connected" | "reconnecting" | "failed";
   reason?: "authentication" | "timeout" | "identity";
   detail?: string;
-};
-
-export const nativeTransport: RpcTransport = async (
-  endpoint,
-  token,
-  request,
-  { timeoutMs = RPC_TIMEOUT_MS } = {},
-) => {
-  let status: number;
-  let data: unknown;
-  if (Capacitor.isNativePlatform()) {
-    const response = await CapacitorHttp.post({
-      url: `${endpoint}/rpc`,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      data: request,
-      connectTimeout: 10_000,
-      readTimeout: timeoutMs,
-      disableRedirects: true,
-      responseType: "json",
-    });
-    status = response.status;
-    data = response.data;
-  } else if (import.meta.env.DEV) {
-    const response = await fetch("/__mobile/rpc", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ endpoint, request, timeoutMs }),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    status = response.status;
-    data = await response.json();
-  } else {
-    throw new Error("Open OmniCode on iOS or Android to connect to a Host.");
-  }
-  if (typeof data === "string") data = JSON.parse(data);
-  if (status < 200 || status >= 300) {
-    const message = (data as { error?: string })?.error;
-    throw new HostRequestError(
-      message || `Host request failed (${status})`,
-      status,
-    );
-  }
-  if (!data || typeof data !== "object" || !("result" in data))
-    throw new Error("Invalid Host response.");
-  return (data as { result: unknown }).result;
 };
 
 // Summary metadata can change without a transcript revision. Compare the full
@@ -200,7 +97,7 @@ function sameCachedValue(left: unknown, right: unknown): boolean {
 }
 
 export class MobileClient {
-  private deviceInfo?: Promise<HostDeviceInfo | undefined>;
+  private readonly deviceMetadata: DeviceMetadata;
   connection?: Connection;
   private capabilities: string[] = [];
   hasCapability(capability: string): boolean {
@@ -429,7 +326,17 @@ export class MobileClient {
     private readonly storage: MobileStorage,
     private readonly transport: RpcTransport = nativeTransport,
     private readonly offline: MobileOfflineCache = mobileOfflineCache,
-  ) {}
+  ) {
+    this.deviceMetadata = new DeviceMetadata({ read: async () => {
+      const deviceInfo = await readMobileDeviceInfo();
+      const installationId = await readMobileInstallationId(storage);
+      return deviceInfo || installationId ? { ...deviceInfo, ...(installationId ? { installationId } : {}) } : undefined;
+    } });
+    this.pendingJournal = new StoredCommandJournal<PendingCommand, "pending">(storage, "pending", (value) => {
+      const pending = JSON.parse(value) as PendingCommand;
+      return { ...pending, command: migrateSavedHostCommand(pending.command) };
+    });
+  }
 
   /** Every Host paired on this device, the active one included. */
   async savedConnections(): Promise<Connection[]> {
@@ -512,7 +419,7 @@ export class MobileClient {
 
   async restore(): Promise<boolean> {
     // Starting over reads the journal from storage again.
-    this.pendingValue = undefined;
+    this.pendingJournal.invalidate();
     const saved = await this.storage.get("connection");
     if (!saved) return false;
     const connection = JSON.parse(saved) as Connection;
@@ -665,7 +572,7 @@ export class MobileClient {
       await this.offline.removeHost(forgotten.environmentId).catch(() => {});
   }
   async disconnect(): Promise<void> {
-    this.pendingValue = undefined;
+    this.pendingJournal.invalidate();
     const endpoint = this.connection?.endpoint;
     const host = this.connection?.environmentId;
     const remaining = (await this.savedConnections())
@@ -686,13 +593,8 @@ export class MobileClient {
     options?: { timeoutMs?: number },
   ): Promise<T> {
     try {
-      if (method === "environment.describe" || method === "devices.pair") {
-        const deviceInfo = await (this.deviceInfo ??= readMobileDeviceInfo());
-        const installationId = await readMobileInstallationId(this.storage);
-        if (deviceInfo || installationId) params = {
-          ...params, deviceInfo: { ...deviceInfo, ...(installationId ? { installationId } : {}) },
-        };
-      }
+      if (method === "environment.describe" || method === "devices.pair")
+        params = await this.deviceMetadata.params(method, params);
       const result = await this.transport(
         connection.endpoint,
         connection.token,
@@ -980,7 +882,7 @@ export class MobileClient {
       this.queueOffline({ kind: "models", id: key, value });
       if (this.catalogs.size > 8)
         this.catalogs.delete(this.catalogs.keys().next().value!);
-    });
+    }, () => translate("Model discovery timed out"));
     const clear = () => { if (this.modelLoads.get(key) === load) this.modelLoads.delete(key); };
     void load.promise.then(clear, clear);
     this.modelLoads.set(key, load);
@@ -1029,37 +931,10 @@ export class MobileClient {
     );
   }
 
-  private async sync(
-    connection: Connection,
-    sessionId: string,
-    revision?: number,
-  ): Promise<SessionSync> {
-    const sentAt = Date.now();
-    const result = await this.requestWith<SessionSyncResponse>(connection, "sessions.sync", {
-      sessionId,
-      revision,
-    });
-    const clockOffsetMs = sessionClockOffset(result, sentAt, Date.now());
-    if (result.kind !== "chunked") return { ...result, clockOffsetMs };
-    if (
-      !Number.isSafeInteger(result.length) ||
-      result.length < 0 ||
-      result.length > 64 * 1024 * 1024
-    )
-      throw new Error("Conversation is too large to load on this device.");
-    let serialized = "";
-    while (serialized.length < result.length) {
-      const chunk = await this.requestWith<SessionSyncChunk>(connection, "sessions.syncChunk", {
-        sessionId,
-        transfer: result.transfer,
-        offset: serialized.length,
-      });
-      if (!chunk.data || serialized.length + chunk.data.length > result.length)
-        throw new Error("Incomplete conversation response.");
-      serialized += chunk.data;
-    }
-    return { ...JSON.parse(serialized) as SessionSync, clockOffsetMs };
-  }
+  private readonly sessionSyncClient = new SessionSyncClient<Connection>({
+    key: (connection) => JSON.stringify([connection.endpoint, connection.environmentId, connection.token]),
+    request: (connection, method, params, options) => this.requestWith(connection, method, params, options),
+  });
   /** Whether an imported native conversation may be continued now; null for ordinary sessions. */
   async nativeAccess(sessionId: string): Promise<NativeSessionAccess | null> {
     const connection = this.connection;
@@ -1071,7 +946,7 @@ export class MobileClient {
     return result;
   }
 
-  async session(sessionId: string, minimumRevision?: number): Promise<HostSession> {
+  async session(sessionId: string, minimumRevision?: number, waitMs?: number): Promise<HostSession> {
     this.retainSessionPreviews(sessionId);
     const existing = this.sessionLoads.get(sessionId);
     if (existing) {
@@ -1086,13 +961,8 @@ export class MobileClient {
     const known = this.cachedSession(sessionId);
     let pending!: Promise<HostSession>;
     pending = (async () => {
-      const sync = await this.sync(connection, sessionId, known?.revision);
-      let result: HostSession;
-      try {
-        result = applySessionSync(known, sync);
-      } catch {
-        result = applySessionSync(undefined, await this.sync(connection, sessionId));
-      }
+      const result = await this.sessionSyncClient.load(connection, sessionId, known,
+        this.hasCapability("sessions.sync.wait.v1") ? waitMs : undefined);
       if (epoch !== this.cacheEpoch || this.sessionLoads.get(sessionId) !== pending)
         throw new Error(translate("Conversation request is no longer current."));
       if (result.session.id !== sessionId)
@@ -1129,30 +999,10 @@ export class MobileClient {
     this.previewLoads.set(sessionId, pending);
     return pending;
   }
-  /**
-   * The journal only changes through this client, so one Keystore read serves
-   * every later poll instead of a native decrypt on each 250ms session sync.
-   */
-  private pendingValue: Promise<string | null> | undefined;
-  async pending(): Promise<PendingCommand | undefined> {
-    const read = (this.pendingValue ??= this.storage.get("pending"));
-    let value: string | null;
-    try {
-      value = await read;
-    } catch (error) {
-      if (this.pendingValue === read) this.pendingValue = undefined;
-      throw error;
-    }
-    if (!value) return undefined;
-    const pending = JSON.parse(value) as PendingCommand;
-    return { ...pending, command: migrateSavedHostCommand(pending.command) };
-  }
-  private async writePending(value: string | null) {
-    this.pendingValue = undefined;
-    if (value === null) await this.storage.remove("pending");
-    else await this.storage.set("pending", value);
-    // A failed write leaves the cache empty, so the next read asks storage.
-    this.pendingValue = Promise.resolve(value);
+  private readonly pendingJournal: StoredCommandJournal<PendingCommand, "pending">;
+  pending(): Promise<PendingCommand | undefined> { return this.pendingJournal.read(); }
+  private writePending(value: string | null): Promise<void> {
+    return value === null ? this.pendingJournal.clear() : this.pendingJournal.write(JSON.parse(value) as PendingCommand);
   }
   async uploadAttachments(
     files: Attachment[],
@@ -1263,47 +1113,26 @@ export class MobileClient {
     }
   }
   private async flushPending(): Promise<CommandReceipt> {
-    try {
-      let pending = await this.pending();
-      if (!pending || !this.connection) throw new Error("No pending request.");
-      if (
-        pending.environmentId !== this.connection.environmentId ||
-        pending.endpoint !== this.connection.endpoint
-      )
-        throw new Error("The pending request belongs to another Host.");
-      let receipt = await this.rpc<CommandReceipt>(
-        "commands.dispatch",
-        pending.command,
-      );
-      if (pending.command.type === "create" && pending.followup) {
-        // Persist the receipt-derived send before dispatch. A lost response or
-        // app restart retries the exact command id, including the first turn.
-        pending = {
-          ...pending,
-          followup: undefined,
-          command: {
-            ...(typeof pending.followup === "string"
-              ? { text: pending.followup }
-              : pending.followup),
-            type: "send",
-            commandId: crypto.randomUUID(),
-            sessionId: receipt.sessionId,
-          },
-        };
-        await this.writePending(JSON.stringify(pending));
-        receipt = await this.rpc<CommandReceipt>(
-          "commands.dispatch",
-          pending.command,
-        );
-      }
-      await this.writePending(null);
-      return receipt;
-    } catch (error) {
-      // A Host 400 is a definitive command rejection. Transport failures remain
-      // journaled so a retry can ask for the same receipt instead of resending.
-      if (error instanceof HostRequestError && error.status === 400)
-        await this.writePending(null);
-      throw error;
-    }
+    return flushCommandOutbox<PendingCommand>({
+      journal: this.pendingJournal,
+      validate: (pending) => {
+        if (!this.connection) throw new Error("No pending request.");
+        if (pending.environmentId !== this.connection.environmentId || pending.endpoint !== this.connection.endpoint)
+          throw new Error("The pending request belongs to another Host.");
+      },
+      dispatch: (command) => this.rpc<CommandReceipt>("commands.dispatch", command),
+      next: (pending, receipt) => pending.command.type === "create" && pending.followup ? {
+        ...pending,
+        followup: undefined,
+        command: {
+          ...(typeof pending.followup === "string" ? { text: pending.followup } : pending.followup),
+          type: "send",
+          commandId: crypto.randomUUID(),
+          sessionId: receipt.sessionId,
+        },
+      } : undefined,
+      definitiveRejection: isDefinitiveCommandRejection,
+    });
   }
+
 }

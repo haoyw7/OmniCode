@@ -1,13 +1,4 @@
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "../../../../../shared/lib/cn";
 import { laneDisplayName } from "../workflow-graph/lane-name.js";
 import { phaseDisplayName } from "../workflow-graph/phase-name.js";
@@ -17,35 +8,13 @@ import { ROSTER_PINS_CARD, rosterMore, stationRosterOf } from "./roster-model.js
 import { useTypewriter } from "./use-typewriter.js";
 import { WorkflowAgentPill } from "./WorkflowAgentPill.js";
 import { WorkflowMoreRow } from "./WorkflowMoreRow.js";
-import {
-  PILL_GAP,
-  PILL_HEIGHT,
-  RAIL_ROW,
-  STATION_PITCH,
-  STATION_WIDTH,
-  stationX,
-  timelineLayout,
-  timelineWidth,
-} from "./timeline-geometry.js";
+import { PILL_GAP, PILL_HEIGHT, RAIL_ROW, STATION_PITCH, STATION_WIDTH, stationX, timelineLayout, timelineWidth } from "./timeline-geometry.js";
 import { WorkflowTimelineArcs } from "./WorkflowTimelineArcs.js";
 import { WorkflowStationPlatform, WorkflowStationRow } from "./WorkflowTimelineStation.js";
 import { WorkflowTimelineLamps, WorkflowTimelineTracks } from "./WorkflowTimelineTracks.js";
-import {
-  NO_FOLD,
-  flightAfterScroll,
-  foldStations,
-  ledgeStubWidth,
-  railKey,
-  stationCameraLeft,
-  timelineMaskStyle,
-  type CameraFlight,
-} from "./timeline-ledge.js";
+import { NO_FOLD, flightAfterScroll, foldStations, ledgeStubWidth, railKey, stationCameraLeft, timelineMaskStyle, type CameraFlight } from "./timeline-ledge.js";
 import { useTimelineViewport } from "./use-timeline-viewport.js";
-import {
-  WorkflowLedge,
-  WorkflowTimelineScrollbar,
-  prefersReducedMotion,
-} from "./WorkflowTimelineLedge.js";
+import { WorkflowLedge, WorkflowTimelineScrollbar, prefersReducedMotion } from "./WorkflowTimelineLedge.js";
 
 /**
  * 横向时间线：一根轨道、站在轨道上、

@@ -1,14 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import {
-  gitCommit,
-  gitHeadMessage,
-  isCheckoutBlockedByChanges,
-  listSkills,
-  pickFolders,
-  resolveProjectLocation,
-} from "./fs";
+import { gitCommit, gitHeadMessage, isCheckoutBlockedByChanges, listSkills, pickFolders, resolveProjectLocation } from "./fs";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),

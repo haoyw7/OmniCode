@@ -5,7 +5,8 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import type { HarnessEvent, SendTurnInput } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput } from "../../core/types";
 
 const BIN =
   process.env.AGY_BIN ??

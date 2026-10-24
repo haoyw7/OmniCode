@@ -1,5 +1,5 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { CopyTurnButton } from "../../sessions/ui/CopyTurnButton";
+import { CopyTurnButton } from "../../../shared/ui/messaging/CopyTurnButton";
 
 export function BotMessageTime({
   createdAt,

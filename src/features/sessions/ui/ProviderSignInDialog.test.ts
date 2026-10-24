@@ -1,3 +1,4 @@
+vi.mock("../../providers/model/useProviderSignInSupport", () => ({ useProviderSignInSupport: () => true }));
 // @vitest-environment happy-dom
 // Keep this as .ts because the project test glob intentionally excludes .test.tsx.
 import { act, createElement } from "react";
@@ -8,7 +9,7 @@ const auth = vi.hoisted(() => ({
   loginHarness: vi.fn<(_harness: string) => Promise<void>>(),
 }));
 
-vi.mock("../../../integrations/harness/core/auth", () => ({
+vi.mock("../../providers/model/providerLogin", () => ({
   loginHarness: auth.loginHarness,
 }));
 

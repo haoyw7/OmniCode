@@ -8,60 +8,20 @@ import { usePreferenceState } from "../../settings/model/usePreferenceState";
 import { translate } from "../../../shared/i18n/language";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Gauge,
-  Loader,
-  Search,
-  Star,
-  Zap,
-} from "../../../shared/ui/icons";
-import {
-  Fragment,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from "react";
-import {
-  coerceModelPickerTab,
-  getModelSnapshot,
-  getPickerVisibilitySnapshot,
-  hasLiveCatalog,
-  isEffortSettingId,
-  loadFavoriteModels,
-  loadRecentModelChoices,
-  saveFavoriteModels,
-  showProviderInModelPicker,
-  subscribeModels,
-  subscribePickerVisibility,
-  type AgentModel,
-  type ModelPickerTab,
-  type ModelSetting,
-  type SessionModelSettings,
-  withSessionModelSettings,
-} from "../model/models";
-import {
-  isProviderHidden,
-  projectProvidersRevision,
-  subscribeProjectProviders,
-} from "../model/projectProviders";
-import {
-  harnessUnavailableHint,
-  subscribeHarnessAvailability,
-  getHarnessAvailabilitySnapshot,
-} from "../../../integrations/harness/core/availability";
-import { useModelSource, type ModelSource } from "./modelSource";
+import { Check, ChevronDown, ChevronRight, Gauge, Loader, Search, Star, Zap } from "../../../shared/ui/icons";
+import { Fragment, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { coerceModelPickerTab, getPickerVisibilitySnapshot, loadFavoriteModels, loadRecentModelChoices, saveFavoriteModels, showProviderInModelPicker, subscribePickerVisibility, withSessionModelSettings } from "../model/models";
+import { isEffortSettingId } from "../../../domain/modelSettings";
+import { getModelSnapshot, hasLiveCatalog, subscribeModels } from "../../../integrations/harness/core/modelCatalog";
+import { type AgentModel, type ModelPickerTab, type ModelSetting, type SessionModelSettings, HARNESSES, type HarnessId } from "../../../contracts/session";
+import { isProviderHidden, projectProvidersRevision, subscribeProjectProviders } from "../model/projectProviders";
+import { harnessUnavailableHint, subscribeHarnessAvailability, getHarnessAvailabilitySnapshot } from "../../providers/model/harnessAvailability";
+import { useModelSource, type ModelSource } from "../model/modelSource";
 import { modelGroups } from "../model/modelGroups";
-import { HARNESSES, HARNESS_TITLE, type HarnessId } from "../model/session";
+
+import { HARNESS_TITLE } from "../../../contracts/session";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 import type { PopoverAlign } from "../../../shared/lib/popover";
 import { MOD } from "../../../platform/tauri/platform";
 import { keybindingPressed } from "../../settings/model/settings";

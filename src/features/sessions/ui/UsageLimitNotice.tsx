@@ -1,10 +1,7 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Clock, Gauge, Play } from "../../../shared/ui/icons";
-import {
-  ComposerNotice,
-  ComposerNoticeButton,
-} from "../../../shared/ui/ComposerNotice";
-import type { UsageLimit } from "../model/session";
+import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
+import type { UsageLimit } from "../../../contracts/session";
 import { formatUsageLimitReset } from "../model/usageLimit";
 import { useNow } from "../../../shared/hooks/useNow";
 

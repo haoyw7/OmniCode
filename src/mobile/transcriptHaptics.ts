@@ -1,4 +1,4 @@
-import type { Block } from "../features/sessions/model/session";
+import type { Block } from "../contracts/session";
 
 /** Baselines are reset at navigation/reconnect boundaries, not at every render. */
 export class TranscriptHapticsTracker {

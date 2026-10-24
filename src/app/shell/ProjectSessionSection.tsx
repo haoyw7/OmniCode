@@ -1,99 +1,39 @@
 import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import { usePreferenceState } from "../../features/settings/model/usePreferenceState";
 import { delegateDesktopSession } from "../../features/bots/model/delegateDesktopSession";
-import {
-  sidebarDragPreview,
-} from "./SidebarEntryReorder";
+import { sidebarDragPreview } from "./SidebarEntryReorder";
 import { AnimatedCollapse } from "../../shared/ui/AnimatedCollapse";
 import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
 import { useListReorderMotion } from "../../shared/hooks/useListReorderMotion";
-import { sessionRecencyAt } from "../../features/sessions/model/sessionActivity";
-import {
-  useAnimatedReorder,
-} from "../../shared/hooks/useAnimatedReorder";
+import { sessionRecencyAt } from "../../domain/sessionActivity";
+import { useAnimatedReorder } from "../../shared/hooks/useAnimatedReorder";
 import { mergeOrderedSubset, orderByIds } from "../../shared/lib/reorder";
 import { useTranslation } from "../../shared/i18n/useTranslation";
-import {
-  inWorktreeFocus,
-  useWorktreeFocus,
-} from "../../features/source-control/model/worktreeFocus";
-import {
-  Clock,
-  Pin,
-} from "../../shared/ui/icons";
-import {
-  Fragment,
-  memo,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent as ReactMouseEvent,
-  type RefObject,
-} from "react";
+import { inWorktreeFocus, useWorktreeFocus } from "../../features/source-control/model/worktreeFocus";
+import { Clock, Pin } from "../../shared/ui/icons";
+import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type RefObject } from "react";
 import { copyText } from "../../platform/tauri/clipboard";
-import {
-  sessionDisplayTitle,
-} from "../../features/sessions/model/session";
+import { sessionDisplayTitle } from "../../features/sessions/model/session";
 import { nextUnseenFinishedSessions } from "../../features/sessions/model/sessionDone";
-import {
-  orderedSessionActionIds,
-  pruneSessionSelection,
-  toggleSessionSelection,
-} from "../../features/sessions/model/sessionSelection";
+import { orderedSessionActionIds, pruneSessionSelection, toggleSessionSelection } from "../../features/sessions/model/sessionSelection";
 import type { PaneEdge } from "../../features/workspace/model/layout";
-import {
-  compareSessionSummaries,
-  filterSessionsByArchive,
-  mergeLiveSessionSummaries,
-} from "../../features/sessions/data/sessionHistory";
-import {
-  buildSessionList,
-  loadPinnedSessionsCollapsed,
-  loadReminderSessionsCollapsed,
-  savePinnedSessionsCollapsed,
-  saveReminderSessionsCollapsed,
-  loadSessionSidebarOrder,
-  saveSessionSidebarOrder,
-  sessionSidebarOrder,
-  subscribeSessionSidebarOrder,
-  sessionListNavigationIds,
-  type SessionListEntry,
-} from "../../features/sessions/model/sessionFolders";
+import { compareSessionSummaries, filterSessionsByArchive, mergeLiveSessionSummaries } from "../../features/sessions/data/sessionHistory";
+import { buildSessionList, loadPinnedSessionsCollapsed, loadReminderSessionsCollapsed, savePinnedSessionsCollapsed, saveReminderSessionsCollapsed, loadSessionSidebarOrder, saveSessionSidebarOrder, sessionSidebarOrder, subscribeSessionSidebarOrder, sessionListNavigationIds, type SessionListEntry } from "../../features/sessions/model/sessionFolders";
 import { LIST_PAGE_SIZE, listWindowSize } from "../../shared/lib/listWindow";
-import {
-  filterSessionsByHarness,
-  filterSessionsByStatus,
-  filterSessionsByTime,
-  hasActiveSessionFilters,
-  type SessionSidebarFilters,
-} from "../../features/sessions/model/sessionFilters";
-import type { LinkedWorkItem } from "../../features/sessions/model/session";
+import { filterSessionsByHarness, filterSessionsByStatus, filterSessionsByTime, hasActiveSessionFilters, type SessionSidebarFilters } from "../../features/sessions/model/sessionFilters";
+import type { LinkedWorkItem } from "../../contracts/session";
 import type { SessionSummary } from "../../features/sessions/data/sessionStore";
-import { isRemoteProjectPath } from "../../features/projects/model/recents";
-import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../features/connections/files/ui/ExplorerMenu";
+import { isRemoteProjectPath, sameProjectPath } from "../../features/projects/model/recents";
+import { ExplorerMenu, type ExplorerMenuItem } from "../../shared/ui/primitives/ExplorerMenu";
 import { LinkSessionWorkItemDialog } from "../../features/sessions/ui/LinkSessionWorkItemDialog";
 import { sessionReminderPresets } from "../../features/sessions/ui/sessionReminderPresets";
-import {
-  formatReminderTime,
-  reminderTime,
-} from "../../features/sessions/model/sessionReminders";
+import { formatReminderTime, reminderTime } from "../../features/sessions/model/sessionReminders";
 import { SessionsEmpty } from "../../features/sessions/ui/SessionsEmpty";
-import {
-  refreshRemoteProjectSessions,
-  remoteRequest,
-  remoteSessionFor,
-  remoteSessionResolver,
-  useRemoteProjectSessions,
-} from "../../features/connections/model/connections";
+import { refreshRemoteProjectSessions, remoteRequest, remoteSessionFor, remoteSessionResolver, useRemoteProjectSessions } from "../../features/connections/model/connections";
 import { remoteProjectFor } from "../../features/connections/model/remoteProjects";
 import { prefetchRemoteSession } from "../../features/connections/ui/RemoteSession";
 import type { SidebarProps } from "./Sidebar.types";
-import { sameProjectPath } from "../../features/projects/model/recents";
+
 import { pathKey } from "../../shared/lib/paths";
 import { useNow } from "../../shared/hooks/useNow";
 import { SessionGroupPreview, SessionGroupRow, type SessionInsertMotion, SessionListItem } from "./sessions/SessionGroupRows";

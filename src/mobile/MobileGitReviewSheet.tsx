@@ -1,8 +1,9 @@
+import type { GitChangedFile, GitFileDiff } from "../contracts/workspace";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { motion } from "motion/react";
 import { motionGeometry, panelTransition } from "../shared/motion/tokens";
 import { useEffect, useId, useRef, useState } from "react";
-import type { GitChangedFile, GitFileDiff } from "../platform/tauri/fs";
+
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { pathKey, resolveWorkspacePath } from "../shared/lib/paths";
 import { ChevronRight, LoaderCircle, WrapText } from "../shared/ui/icons";
@@ -55,6 +56,7 @@ export function MobileGitReviewSheet({
   const { t } = useTranslation();
   const sheetTitle = session ? "Session changes" : "Uncommitted changes";
   const [wrap, setWrap] = useState(false);
+  const sessionIndex = session ? state.index as SessionChangesIndex | null : undefined;
   const selectedPath = path ? pathKey(resolveWorkspacePath(path, cwd) ?? path) : undefined;
   const files = selectedPath
     ? state.index?.files.filter((file) =>
@@ -103,11 +105,11 @@ export function MobileGitReviewSheet({
               />
             )}
           </span>
-          {session && !path && !!files?.length && (
+          {session && !path && (!!files?.length || !!sessionIndex?.restorePending) && (
             <SessionChangeButtons
               actions={session}
               enabled={enabled}
-              undoBlocked={(state.index as SessionChangesIndex | null)?.undoBlocked}
+              index={sessionIndex}
               onDone={state.refresh}
             />
           )}
@@ -117,7 +119,15 @@ export function MobileGitReviewSheet({
             {t("Reconnect to refresh changes.")}
           </p>
         )}
-        {session && (state.index as SessionChangesIndex | null)?.workspaceShared && (
+        {sessionIndex?.restorePending && (
+          <p className="mobile-git-note" role="status">
+            {t(sessionIndex.restoreMessage ?? "Conversation history was rolled back. Retry Undo to finish restoring workspace files.")}
+          </p>
+        )}
+        {sessionIndex?.undoUnavailableReason && !sessionIndex.restorePending && (
+          <p className="mobile-git-note">{t(sessionIndex.undoUnavailableReason)}</p>
+        )}
+        {sessionIndex?.workspaceShared && (
           <p className="mobile-git-note">
             {t("Other sessions were active in this workspace. These changes may include their edits; undo is disabled.")}
           </p>
@@ -133,7 +143,7 @@ export function MobileGitReviewSheet({
             {t("Loading changes…")}
           </p>
         )}
-        {files?.length === 0 && (
+        {files?.length === 0 && !sessionIndex?.restorePending && (
           <p className="mobile-git-note">{t("No file changes")}</p>
         )}
         {files?.map((file) => (
@@ -154,14 +164,16 @@ export function MobileGitReviewSheet({
 function SessionChangeButtons({
   actions,
   enabled,
-  undoBlocked,
+  index,
   onDone,
 }: {
   actions: MobileSessionChangeActions;
   enabled: boolean;
-  undoBlocked?: SessionChangesIndex["undoBlocked"];
+  index?: SessionChangesIndex | null;
   onDone: () => void;
 }) {
+  const undoBlocked = index?.undoBlocked;
+  const restoring = !!index?.restorePending;
   const { t } = useTranslation();
   const [acting, setActing] = useState<"keep" | "undo">();
   const [confirming, setConfirming] = useState(false);
@@ -170,6 +182,7 @@ function SessionChangeButtons({
   useEffect(() => () => clearTimeout(timer.current), []);
   const disabled = !enabled || actions.busy || !!acting;
   const run = (action: "keep" | "undo") => {
+    if (acting || (action === "keep" && restoring)) return;
     clearTimeout(timer.current);
     setConfirming(false);
     setActing(action);
@@ -183,6 +196,10 @@ function SessionChangeButtons({
   };
   const undoTitle = actions.busy
     ? t("Keep and undo are unavailable while the session is running")
+    : restoring && !undoBlocked
+      ? t("Retry restoring this turn's workspace files")
+    : undoBlocked === "unavailable" && index?.undoUnavailableReason
+      ? t(index.undoUnavailableReason)
     : undoBlocked === "shared"
       ? t("Other sessions were active in this workspace. These changes may include their edits; undo is disabled.")
       : undoBlocked === "locked"
@@ -210,15 +227,17 @@ function SessionChangeButtons({
             run("undo");
           }}
         >
-          {t(confirming ? "Confirm undo" : "Undo")}
+          {t(confirming ? "Confirm undo" : restoring ? "Retry Undo" : "Undo")}
         </button>
         <button
           type="button"
           className="mobile-git-action"
           title={actions.busy
             ? t("Keep and undo are unavailable while the session is running")
-            : t("Keep all session changes and dismiss this card")}
-          disabled={disabled}
+            : restoring
+              ? t("Finish restoring the conversation checkpoint before keeping changes.")
+              : t("Keep all session changes and dismiss this card")}
+          disabled={disabled || restoring}
           onClick={() => run("keep")}
         >
           {t("Keep")}

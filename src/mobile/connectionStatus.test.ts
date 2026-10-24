@@ -1,8 +1,9 @@
+import { HostRequestError } from "./hostTransport";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MobileClient, HostRequestError } from "./client";
+import { MobileClient } from "./client";
 import { MobileHostStatus } from "./MobileHostStatus";
 import { useHostConnectionStatus } from "./useHostConnectionStatus";
 import { setUiLanguage } from "../shared/i18n/language";

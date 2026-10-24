@@ -1,10 +1,6 @@
-import type { HarnessBinaryInspection } from "../../../../../integrations/harness/core/child";
-import {
-  compareSemver,
-  MINIMUM_OPENCODE_VERSION,
-  parseOpenCodeVersion,
-} from "../../../../../integrations/harness/providers/opencode/opencodeProtocol";
-import type { ConfigurableBinaryProvider } from "../../../../providers/model/providerBinaryPaths";
+import type { HarnessBinaryInspection } from "../../../../../contracts/providerRuntime";
+import { compareSemver, MINIMUM_OPENCODE_VERSION, parseOpenCodeVersion } from "../../../../../integrations/harness/providers/opencode/opencodeProtocol";
+import type { ConfigurableBinaryProvider } from "../../../../../integrations/harness/core/runtimeBinaryPaths";
 
 /** Why a resolved CLI cannot be used, or null when it can. */
 export function binaryInspectionError(

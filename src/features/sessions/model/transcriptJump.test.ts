@@ -1,10 +1,5 @@
 import { expect, it, vi } from "vitest";
-import {
-  clearTranscriptJump,
-  peekTranscriptJump,
-  requestTranscriptJump,
-  subscribeTranscriptJump,
-} from "./transcriptJump";
+import { clearTranscriptJump, peekTranscriptJump, requestTranscriptJump, subscribeTranscriptJump } from "./transcriptJump";
 
 it("keeps the newest requested message until its navigation completes", () => {
   const listener = vi.fn();

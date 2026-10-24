@@ -4,10 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { useWorkerPool } from "@pierre/diffs/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { saveCodeTheme } from "../../settings/model/codeAppearance";
-import {
-  REVIEW_POOL_IDLE_MS,
-  ReviewDiffsWorkerPool,
-} from "./ReviewDiffsWorkerPool";
+import { REVIEW_POOL_IDLE_MS, ReviewDiffsWorkerPool } from "./ReviewDiffsWorkerPool";
 
 const state = vi.hoisted(() => ({
   initialize: () => Promise.resolve(),

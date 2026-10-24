@@ -1,13 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  clearInboxCache,
-  listInboxItems,
-  type GithubTaskKind,
-  type GithubWorkItem,
-} from "./githubTasks";
+import { clearInboxCache, listInboxItems } from "./githubTasks";
+import { type GithubTaskKind, type GithubWorkItem } from "../../../contracts/session";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("../../connections/model/inboxHost", async () => ({ inboxHostCommand: (await import("@tauri-apps/api/core")).invoke }));
 
 function workItem(repo: string, kind: GithubTaskKind) {
   return {

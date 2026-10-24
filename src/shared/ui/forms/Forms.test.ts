@@ -8,10 +8,7 @@ import { Switch } from "./Switch";
 import { Checkbox } from "./Checkbox";
 import { Input } from "./Input";
 import { Radio } from "./Radio";
-import {
-  startMotionClock,
-  stopMotionClock,
-} from "../../../../tests/helpers/sharedMotionClock";
+import { startMotionClock, stopMotionClock } from "../../../../tests/helpers/sharedMotionClock";
 
 let host: HTMLDivElement;
 let root: Root;

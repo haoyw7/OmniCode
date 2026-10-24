@@ -6,10 +6,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 
-import {
-  loadProviderBinaryPath,
-  saveProviderBinaryPath,
-} from "./providerBinaryPaths";
+import { loadProviderBinaryPath, saveProviderBinaryPath } from "./providerBinaryPaths";
 
 const key = "omnicode.providerBinaryPaths.v1";
 
@@ -43,13 +40,14 @@ describe("provider binary paths", () => {
 
     vi.resetModules();
     const providerPaths = await import("./providerBinaryPaths");
+    const providerPathsRuntime = await import("../../../integrations/harness/core/runtimeBinaryPaths");
     await providerPaths.initializeProviderBinaryPaths();
 
     expect(mocks.invoke).toHaveBeenCalledWith("harness_runtime_binary_paths", {
       paths: { codex: "/opt/codex" },
     });
-    expect(providerPaths.runtimeProviderBinaryPath("cursor")).toBeNull();
-    expect(providerPaths.runtimeProviderBinaryPath("codex")).toBe("/opt/codex");
+    expect(providerPathsRuntime.runtimeProviderBinaryPath("cursor")).toBeNull();
+    expect(providerPathsRuntime.runtimeProviderBinaryPath("codex")).toBe("/opt/codex");
   });
 
   it("keeps the active path unchanged across windows until restart", async () => {
@@ -62,24 +60,27 @@ describe("provider binary paths", () => {
 
     vi.resetModules();
     const firstWindow = await import("./providerBinaryPaths");
+    const firstWindowRuntime = await import("../../../integrations/harness/core/runtimeBinaryPaths");
     await firstWindow.initializeProviderBinaryPaths();
-    expect(firstWindow.runtimeProviderBinaryPath("cursor")).toBe("/opt/cursor/old");
+    expect(firstWindowRuntime.runtimeProviderBinaryPath("cursor")).toBe("/opt/cursor/old");
 
     firstWindow.saveProviderBinaryPath("cursor", "/opt/cursor/new");
-    expect(firstWindow.runtimeProviderBinaryPath("cursor")).toBe("/opt/cursor/old");
+    expect(firstWindowRuntime.runtimeProviderBinaryPath("cursor")).toBe("/opt/cursor/old");
     expect(firstWindow.providerBinaryPathChangePending("cursor")).toBe(true);
 
     vi.resetModules();
     const secondWindow = await import("./providerBinaryPaths");
+    const secondWindowRuntime = await import("../../../integrations/harness/core/runtimeBinaryPaths");
     await secondWindow.initializeProviderBinaryPaths();
-    expect(secondWindow.runtimeProviderBinaryPath("cursor")).toBe("/opt/cursor/old");
+    expect(secondWindowRuntime.runtimeProviderBinaryPath("cursor")).toBe("/opt/cursor/old");
     expect(secondWindow.providerBinaryPathChangePending("cursor")).toBe(true);
 
     mocks.invoke.mockResolvedValue({ cursor: "/opt/cursor/new" });
     vi.resetModules();
     const restartedWindow = await import("./providerBinaryPaths");
+    const restartedWindowRuntime = await import("../../../integrations/harness/core/runtimeBinaryPaths");
     await restartedWindow.initializeProviderBinaryPaths();
-    expect(restartedWindow.runtimeProviderBinaryPath("cursor")).toBe("/opt/cursor/new");
+    expect(restartedWindowRuntime.runtimeProviderBinaryPath("cursor")).toBe("/opt/cursor/new");
     expect(restartedWindow.providerBinaryPathChangePending("cursor")).toBe(false);
   });
 

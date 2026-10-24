@@ -1,13 +1,7 @@
+import type { GitChangedFile, GitDiffIndex, GitFileDiff } from "../src/contracts/workspace";
 import { machineExec as exec, machineFs, machinePath, machineEnvironment } from "./machine-io";
-import type {
-  GitChangedFile,
-  GitDiffIndex,
-  GitFileDiff,
-} from "../src/platform/tauri/fs";
-import type {
-  ProjectSearchMatch,
-  ProjectSearchResult,
-} from "../src/features/search/model/search";
+
+import type { ProjectSearchMatch, ProjectSearchResult } from "../src/contracts/search";
 
 const MAX_FILE = 1024 * 1024;
 

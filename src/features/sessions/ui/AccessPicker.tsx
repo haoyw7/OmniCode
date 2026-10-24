@@ -3,18 +3,9 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronDown, IconArtworkContext, type IconProps } from "../../../shared/ui/icons";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { RuntimeModeIcon } from "./RuntimeModeIcon";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
-import {
-  RUNTIME_MODE_HINT,
-  RUNTIME_MODE_LABEL,
-  RUNTIME_MODES,
-  type RuntimeMode,
-} from "../model/session";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { RUNTIME_MODE_HINT, RUNTIME_MODE_LABEL } from "../../../contracts/session";
+import { RUNTIME_MODES, type RuntimeMode } from "../../../contracts/session";
 
 type Props = {
   value: RuntimeMode;

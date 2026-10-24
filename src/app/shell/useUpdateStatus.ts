@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  installPendingUpdate,
-  probeForUpdate,
-  readAppVersion,
-  type UpdaterSnapshot,
-} from "../model/updater";
-import {
-  loadUpdatePreferences,
-  saveUpdatePreferences,
-} from "../model/updatePreferences";
+import { installPendingUpdate, probeForUpdate, readAppVersion, type UpdaterSnapshot } from "../model/updater";
+import { loadUpdatePreferences, saveUpdatePreferences } from "../model/updatePreferences";
 
 const RECHECK_MS = 30 * 60_000;
 const RETRY_MS = 60_000;

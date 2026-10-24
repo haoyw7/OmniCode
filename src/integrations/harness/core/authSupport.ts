@@ -1,4 +1,4 @@
-import type { Block, HarnessId } from "../../../features/sessions/model/session";
+import type { Block, HarnessId } from "../../../contracts/session";
 
 /**
  * Account-level login commands that can run without an interactive provider

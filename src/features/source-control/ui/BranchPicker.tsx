@@ -4,30 +4,15 @@ import { useIsPresent } from "motion/react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Check, GitBranch, Plus, Search } from "../../../shared/ui/icons";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
-import {
-  gitCheckout,
-  gitCommit,
-  gitCreateBranch,
-  gitStageAll,
-  gitStash,
-  isCheckoutBlockedByChanges,
-  notifyGitChanged,
-  type GitBranchInfo,
-} from "../../../platform/tauri/fs";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { gitCheckout, gitCommit, gitCreateBranch, gitStageAll, gitStash, isCheckoutBlockedByChanges, notifyGitChanged, type GitBranchInfo } from "../../../platform/tauri/fs";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useProjectBranchesState } from "../hooks/useProjectBranches";
 import { CreateBranchDialog } from "./CreateBranchDialog";
-import { GitPickerTrigger } from "./GitPickerTrigger";
+import { GitPickerTrigger } from "../../../shared/ui/forms/GitPickerTrigger";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { SwitchBranchDialog } from "./SwitchBranchDialog";
-import { BranchMenuScrollArea, branchMenuLayout } from "./branchMenu";
+import { BranchMenuScrollArea, branchMenuLayout } from "../../../shared/ui/primitives/branchMenu";
 
 type Props = {
   cwd: string;

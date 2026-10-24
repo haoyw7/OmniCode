@@ -1,7 +1,8 @@
+import { HostRequestError, type RpcTransport } from "./hostTransport";
 import { expect, it, vi } from "vitest";
-import { HostRequestError, MobileClient, type RpcTransport } from "./client";
+import { MobileClient } from "./client";
 import type { MobileStorage } from "./storage";
-import { parseCodexRateLimits } from "../features/providers/model/rateLimits";
+import { parseCodexRateLimits } from "../domain/rateLimits";
 
 vi.mock("@capacitor/core", () => ({ Capacitor: { isNativePlatform: () => true }, CapacitorHttp: { post: vi.fn() } }));
 function storage(): MobileStorage {

@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { HarnessId } from "../../sessions/model/session";
-import {
-  announceHarnessUpdated,
-  findHarnessUpdates,
-  onHarnessUpdated,
-} from "./harnessUpdates";
+import type { HarnessId } from "../../../contracts/session";
+import { announceHarnessUpdated, findHarnessUpdates, onHarnessUpdated } from "./harnessUpdates";
 
 const events = vi.hoisted(() => {
   const listeners = new Map<

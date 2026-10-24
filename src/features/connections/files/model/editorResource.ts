@@ -1,13 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
-import {
-  remoteMachineFor,
-  remoteRequest,
-} from "../../model/connections";
-import {
-  parseRemotePath,
-  sharedHostEnvironment,
-} from "../../model/remoteProjects";
-import type { HostDescriptor } from "../../model/protocol";
+import { remoteMachineFor, remoteRequest } from "../../model/connections";
+import { parseRemotePath, sharedHostEnvironment, sharedHostMachineId } from "../../model/remoteProjects";
+import { ownsLocalWorkspaceCommand } from "../../model/remoteCommands";
+import type { HostDescriptor } from "../../../../contracts/protocol";
 import { translate } from "../../../../shared/i18n/language";
 
 const RELEASE_PREFIX = "omnicode.editor-resource-release.v1.";
@@ -108,32 +102,38 @@ export function claimEditorResource(path: string): EditorResource {
   let claim: (() => Promise<unknown>) | undefined;
   let release: (() => Promise<unknown>) | undefined;
   const ready = (async () => {
+    let target: { machineId: string; hostPath: string } | undefined;
     const remote = parseRemotePath(path);
     if (remote) {
       const machine = await remoteMachineFor(remote.environmentId);
-      if (!machine) return;
+      if (machine) target = { machineId: machine.id, hostPath: remote.hostPath };
+    } else {
+      // Only registered projects and their worktrees have checkouts to protect.
+      const machineId = sharedHostEnvironment() ? sharedHostMachineId() : undefined;
+      if (machineId && ownsLocalWorkspaceCommand("read_text_file", { path }))
+        target = { machineId, hostPath: path };
+    }
+    if (target) {
+      const { machineId, hostPath } = target;
       const descriptor = await remoteRequest<HostDescriptor>(
-        machine.id,
+        machineId,
         "environment.describe",
       );
       if (!descriptor.capabilities.includes("resources")) return;
       claim = () =>
-        remoteRequest(machine.id, "resources.claim", {
+        remoteRequest(machineId, "resources.claim", {
           resourceId,
-          path: remote.hostPath,
+          path: hostPath,
         });
       release = async () => {
-        rememberRelease({ machineId: machine.id, resourceId });
+        rememberRelease({ machineId, resourceId });
         try {
-          await remoteRequest(machine.id, "resources.release", { resourceId });
+          await remoteRequest(machineId, "resources.release", { resourceId });
           forgetRelease(resourceId);
         } finally {
           scheduleReleaseRetry();
         }
       };
-    } else if (sharedHostEnvironment()) {
-      claim = () => invoke("shared_host_resource_claim", { resourceId, path });
-      release = () => invoke("shared_host_resource_release", { resourceId });
     }
     if (claim) {
       attempted = true;

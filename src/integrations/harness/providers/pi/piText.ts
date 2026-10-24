@@ -1,25 +1,11 @@
-import { modelsFor } from "../../../../features/sessions/model/models";
-import {
-  childUsesSelectedMachine,
-  killChild,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
+import { modelsFor } from "../../core/modelCatalog";
+import { childUsesSelectedMachine, killChild, spawnChild, unwatchChild, watchChild } from "../../core/child";
 import { PiRpc } from "./piClient";
 import { OMP_FLAVOR, PI_FLAVOR, type PiFlavor } from "./piFlavor";
-import {
-  agentEndWillRetry,
-  asRecord,
-  assistantDeltaFromEvent,
-  buildPiPrompt,
-  buildPiSpawnArgs,
-  isAgentSettled,
-  isPiThinkingLevel,
-} from "./piProtocol";
+import { agentEndWillRetry, asRecord, assistantDeltaFromEvent, buildPiPrompt, buildPiSpawnArgs, isAgentSettled, isPiThinkingLevel } from "./piProtocol";
 import { abortTextPromptRace } from "../../core/abortTextPrompt";
-import { mergeStream } from "../../core/streamText";
-import type { HarnessEvent } from "../../core/types";
+import { mergeStream } from "../../../../domain/streamText";
+import type { HarnessEvent } from "../../../../contracts/harness";
 
 const INIT_TIMEOUT_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 45_000;

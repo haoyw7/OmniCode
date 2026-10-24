@@ -1,36 +1,17 @@
 import { parseQuickAttachments } from "./quickAttachments";
-import { isHarnessAvailable } from "../../../integrations/harness/core/availability";
-import { invoke } from "@tauri-apps/api/core";
+import { isHarnessAvailable } from "../../providers/model/harnessAvailability";
+import { configureQuickComposerShortcut } from "../../../platform/tauri/quickComposer";
 import { IS_MAC } from "../../../platform/tauri/platform";
 import { loadQuickComposerShortcut } from "../../settings/model/settings";
 import { pathKey, projectName, prettyParent } from "../../../shared/lib/paths";
-import {
-  loadArchivedProjects,
-  loadPinnedProjects,
-  loadProjectRailOrder,
-  loadRecents,
-  looksLikeProject,
-  normalizeProjectPath,
-} from "../../projects/model/recents";
-import {
-  defaultSessionChoice,
-  hasLiveCatalog,
-  modelsFor,
-  resolveModel,
-  setHarnessModels,
-  validCatalogModels,
-  type AgentModel,
-} from "../../sessions/model/models";
-import {
-  HARNESSES,
-  HARNESS_TITLE,
-  RUNTIME_MODES,
-  type RuntimeMode,
-  type WorkspaceMode,
-  type Attachment,
-  harnessSupportsAttachments,
-  type HarnessId,
-} from "../../sessions/model/session";
+import { loadArchivedProjects, loadPinnedProjects, loadProjectRailOrder, loadRecents, looksLikeProject } from "../../projects/model/recents";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
+import { defaultSessionChoice } from "../../sessions/model/models";
+import { hasLiveCatalog, modelsFor, resolveModel, setHarnessModels, validCatalogModels } from "../../../integrations/harness/core/modelCatalog";
+import { type AgentModel, HARNESSES, RUNTIME_MODES, type RuntimeMode, type WorkspaceMode, type Attachment, type HarnessId } from "../../../contracts/session";
+
+import { harnessSupportsAttachments } from "../../../domain/session";
+import { HARNESS_TITLE } from "../../../contracts/session";
 
 /** Workspace windows hear this when the panel has a session for them. */
 export const QUICK_COMPOSER_LAUNCH_EVENT = "quick_composer_launch";
@@ -82,7 +63,7 @@ export async function setQuickComposerShortcut(
   shortcut = loadQuickComposerShortcut(),
 ) {
   if (!quickComposerSupported()) return;
-  await invoke("quick_composer_set_enabled", { enabled, shortcut });
+  await configureQuickComposerShortcut(enabled, shortcut);
 }
 
 export function isHarnessId(value: unknown): value is HarnessId {

@@ -4,45 +4,14 @@ import { DetailsChevron } from "../../../shared/ui/DetailsChevron";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { CheckRepairForm, type CheckRepair } from "./CheckRepairForm";
-import {
-  CheckRepairProgress,
-  CheckRepairStatus,
-  findCheckRepair,
-  useCheckRepairs,
-  type RepairGroup,
-} from "./CheckRepairProgress";
+import { CheckRepairProgress, CheckRepairStatus, findCheckRepair, useCheckRepairs, type RepairGroup } from "./CheckRepairProgress";
 import { CheckEvidence } from "./CheckEvidence";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openExternalUrl } from "../../../platform/tauri/browser";
 import { useEffect, useId, useRef, useState } from "react";
-import {
-  AlertCircle,
-  CheckCircle,
-  CircleDashed,
-  CircleHelp,
-  CircleX,
-  ExternalLink,
-  LoaderCircle,
-  Minus,
-  RefreshCw,
-  Sparkles,
-  type IconComponent,
-} from "../../../shared/ui/icons";
+import { AlertCircle, CheckCircle, CircleDashed, CircleHelp, CircleX, ExternalLink, LoaderCircle, Minus, RefreshCw, Sparkles, type IconComponent } from "../../../shared/ui/icons";
 import type { GithubPrChecksView } from "../hooks/useGithubPrChecks";
-import {
-  CHECK_STATES,
-  checkDuration,
-  checkStateLabel,
-  countChecks,
-  describeCheckCounts,
-  fetchGithubCheckDetails,
-  githubActionsJobId,
-  isHttpUrl,
-  sortChecks,
-  type GithubPrCheck,
-  type GithubPrChecksOverall,
-  type GithubPrCheckState,
-  type GithubCheckDetails,
-} from "../model/githubPrChecks";
+import type { GithubPrCheck, GithubPrCheckState, GithubCheckDetails } from "../../../contracts/github";
+import { CHECK_STATES, checkDuration, checkStateLabel, countChecks, describeCheckCounts, fetchGithubCheckDetails, githubActionsJobId, isHttpUrl, sortChecks, type GithubPrChecksOverall } from "../model/githubPrChecks";
 
 const TAB =
   "surface-tab relative flex h-7.5 items-center gap-1.5 px-2 text-[12px] leading-none select-none";
@@ -330,7 +299,7 @@ function PrCheckRow({
             type="button"
             title={title}
             aria-label={title}
-            onClick={() => void openUrl(url)}
+            onClick={() => void openExternalUrl(url)}
             className={className}
           >
             {body}
@@ -399,7 +368,7 @@ function PrCheckRow({
             aria-label={uiT("View {value0} on GitHub", {
               value0: String(check.name),
             })}
-            onClick={() => void openUrl(url)}
+            onClick={() => void openExternalUrl(url)}
             className={`${REFRESH_BUTTON} opacity-60 group-hover/check:opacity-100 focus-visible:opacity-100`}
           >
             <ExternalLink className="size-3" />

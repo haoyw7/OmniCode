@@ -12,18 +12,8 @@ import { workflowEntry } from "./../../../components/workflow-timeline/workflow-
  */
 
 import { memo, useMemo } from "react";
-import {
-  applyArtifactItems,
-  type ArtifactItem,
-  type BoardCardModel,
-  type BoardColumnModel,
-} from "./apply.js";
-import {
-  PresetEmpty,
-  PresetHeading,
-  REVEAL_ANIMATION_CLASS,
-  type PresetLabels,
-} from "./parts.js";
+import { applyArtifactItems, type ArtifactItem, type BoardCardModel, type BoardColumnModel } from "./apply.js";
+import { PresetEmpty, PresetHeading, REVEAL_ANIMATION_CLASS, type PresetLabels } from "./parts.js";
 import type { BoardSpec } from "./spec.js";
 import { cn } from "../../../../../../shared/lib/cn";
 

@@ -1,29 +1,14 @@
+import type { GitChangedFile, GitDiffIndex } from "../../../contracts/workspace";
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 // @vitest-environment happy-dom
 import { act, createElement, useEffect, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  gitDiffFiles,
-  gitBaseDiffFiles,
-  gitBaseFileDiff,
-  gitCommitFiles,
-  gitCommitFileDiff,
-  gitFileDiff,
-  gitDiscardFile,
-  gitStageFile,
-  gitUnstageFile,
-  gitStageContents,
-  revealPath,
-  type GitChangedFile,
-  type GitDiffIndex,
-} from "../../../platform/tauri/fs";
+import { gitDiffFiles, gitBaseDiffFiles, gitBaseFileDiff, gitCommitFiles, gitCommitFileDiff, gitFileDiff, gitDiscardFile, gitStageFile, gitUnstageFile, gitStageContents, revealPath } from "../../../platform/tauri/fs";
 import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
 import { copyText } from "../../../platform/tauri/clipboard";
-import {
-  sessionCheckpointStatus,
-  type CheckpointStatus,
-} from "../../sessions/model/checkpoint";
+import type { CheckpointStatus } from "../../../contracts/checkpoint";
+import { sessionCheckpointStatus } from "../../sessions/model/checkpoint";
 import type { ReviewLoadedDiff } from "../model/reviewDiff";
 import { GitReviewPane, type GitReviewPaneProps } from "./GitReviewPane";
 import { WorkingTreeDiff } from "./WorkingTreeDiff";
@@ -56,7 +41,7 @@ vi.mock("../../sessions/model/checkpoint", () => ({
   sessionCheckpointFileDiff: vi.fn(),
   subscribeReviewChanged: () => () => {},
 }));
-vi.mock("../../connections/files/ui/FileTypeIcon", () => ({ FileTypeIcon: () => null }));
+vi.mock("../../../shared/ui/FileTypeIcon", () => ({ FileTypeIcon: () => null }));
 const rail = vi.hoisted(() => ({ props: undefined as undefined | Record<string, any>, renders: 0 }));
 vi.mock("./GitChangesPanel", async () => {
   const { memo } = await import("react");

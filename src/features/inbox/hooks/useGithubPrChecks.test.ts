@@ -2,11 +2,8 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  useGithubPrChecks,
-  type GithubPrChecksView,
-} from "./useGithubPrChecks";
-import type { GithubPrChecks } from "../model/githubPrChecks";
+import { useGithubPrChecks, type GithubPrChecksView } from "./useGithubPrChecks";
+import type { GithubPrChecks } from "../../../contracts/github";
 
 const { fetchGithubPrChecks } = vi.hoisted(() => ({
   fetchGithubPrChecks: vi.fn(),

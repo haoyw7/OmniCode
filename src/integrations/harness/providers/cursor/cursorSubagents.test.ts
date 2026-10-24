@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { newSession } from "../../../../features/sessions/model/session";
-import { applyHarnessEvent } from "../../core/apply";
+import { createSessionProjection } from "../../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import type { StoredCursorSubagentRun } from "./cursorStore";
-import { cursorAgentLabel, recoverCursorSubagents } from "./cursorSubagents";
+import { cursorAgentLabel, recoverCursorSubagentEvents } from "./cursorSubagents";
 
 const read = vi.hoisted(() => vi.fn());
 vi.mock("./cursorStore", () => ({ readStoredCursorSubagentRuns: read }));
@@ -145,3 +147,9 @@ describe("Cursor stored subagents", () => {
     expect(read).not.toHaveBeenCalled();
   });
 });
+
+async function recoverCursorSubagents(session: ReturnType<typeof newSession>) {
+  let next = session;
+  for (const event of await recoverCursorSubagentEvents(session)) next = applyHarnessEvent(next, event);
+  return next;
+}

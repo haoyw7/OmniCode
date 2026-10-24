@@ -10,32 +10,20 @@ vi.mock("../../features/bots/model/delegateDesktopSession", () => ({ delegateDes
 // @vitest-environment happy-dom
 import { savePinnedProjects } from "../../features/projects/model/recents";
 import { act, createElement, type ComponentProps } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  loadProjectTreeExpanded,
-  saveProjectTreeExpanded,
-  clearProjectTreeExpanded,
-  rebaseProjectTreeExpanded,
-} from "../../features/projects/model/projectTree";
-import {
-  loadSessionFolders,
-  saveSessionFolders,
-  loadSessionSidebarOrder,
-  saveSessionSidebarOrder,
-} from "../../features/sessions/model/sessionFolders";
+import { loadProjectTreeExpanded, saveProjectTreeExpanded, clearProjectTreeExpanded, rebaseProjectTreeExpanded } from "../../features/projects/model/projectTree";
+import { loadSessionFolders, saveSessionFolders, loadSessionSidebarOrder, saveSessionSidebarOrder } from "../../features/sessions/model/sessionFolders";
 import { saveTabGroupLabel } from "../../features/workspace/model/tabGroups";
 import { useProjectDiffStats } from "../../features/source-control/hooks/useProjectDiffStats";
 import { setUiLanguage } from "../../shared/i18n/language";
-import {
-  configureSharedHost,
-  rememberRemoteProject,
-} from "../../features/connections/model/remoteProjects";
-import type { RemoteProjectSessions } from "../../features/connections/model/connections";
-import { REMOTE_HISTORY_UPDATED } from "../../features/connections/model/connections";
-import type { HostSessionSummary } from "../../features/connections/model/protocol";
+import { configureSharedHost, rememberRemoteProject } from "../../features/connections/model/remoteProjects";
+import { type RemoteProjectSessions, REMOTE_HISTORY_UPDATED } from "../../features/connections/model/connections";
+
+import type { HostSessionSummary } from "../../contracts/protocol";
 import type { SessionSummary } from "../../features/sessions/data/sessionStore";
 import { replaceProjectHistory } from "../../features/sessions/data/sessionHistory";
 

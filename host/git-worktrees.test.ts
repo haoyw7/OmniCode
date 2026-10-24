@@ -162,7 +162,10 @@ it("creates registered host worktrees and binds new sessions to the selected che
     rmSync(cwd, { recursive: true, force: true });
   });
 
-  const tree = await createHostWorktree(cwd, "feature/task", "HEAD", false);
+  const streamed: string[] = [];
+  const tree = await createHostWorktree(cwd, "feature/task", "HEAD", false, cwd, line => streamed.push(line));
+  // Live lines arrive while Git runs and match the final record.
+  expect(streamed).toEqual(tree.log);
   expect(tree).toMatchObject({
     branch: "feature/task",
     isMain: false,

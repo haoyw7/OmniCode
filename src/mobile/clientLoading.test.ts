@@ -1,7 +1,8 @@
+import { HostRequestError, type RpcTransport } from "./hostTransport";
 import { describe, expect, it, vi } from "vitest";
-import { HostRequestError, MobileClient, type RpcTransport } from "./client";
+import { MobileClient } from "./client";
 import type { MobileStorage } from "./storage";
-import type { HostSession } from "../features/connections/model/protocol";
+import type { HostSession } from "../contracts/protocol";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

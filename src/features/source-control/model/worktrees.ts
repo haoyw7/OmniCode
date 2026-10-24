@@ -1,25 +1,14 @@
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { appendReadyHandoff, buildDeterministicHandoff } from "../../sessions/model/handoff";
+import { hostWorktreeCommand } from "../../connections/model/hostWorktrees";
+import { appendReadyHandoff, buildDeterministicHandoff } from "../../../domain/handoff";
 import { invokeWorkspace, notifyGitChanged } from "../../../platform/tauri/fs";
 import { isFilesystemTab, type FilePaneTab } from "../../workspace/model/layout";
 import { isEqualOrInside, pathKey } from "../../../shared/lib/paths";
 import { isBlankSession } from "../../projects/model/projectReturn";
-import { newSession, sessionExecutionCwd, type Session } from "../../sessions/model/session";
+import { newSession } from "../../sessions/model/session";
+import { sessionExecutionCwd } from "../../../domain/session";
+import { type Session } from "../../../contracts/session";
 
-export type Worktree = {
-  path: string;
-  branch: string | null;
-  head: string;
-  isMain: boolean;
-  locked: boolean;
-  prunable: boolean;
-  missing: boolean;
-  dirty: boolean | null;
-  unpushed: number | null;
-  sessionIds: string[];
-};
-export type Worktrees = { worktrees: Worktree[]; defaultRoot: string };
+import type { Worktree, Worktrees } from "../../../contracts/worktree";
 
 /** Match an execution directory against Git's registered roots, including subdirectories. */
 export function registeredWorktreeAt(cwd: string, trees: readonly Worktree[]): Worktree | undefined {
@@ -30,9 +19,6 @@ export function registeredWorktreeAt(cwd: string, trees: readonly Worktree[]): W
 export const listWorktrees = (cwd: string) =>
   invokeWorkspace<Worktrees>("git_worktrees", { cwd });
 
-/** Event carrying one line of `git worktree add` output, tagged with its log id. */
-export const WORKTREE_CREATE_LOG_EVENT = "worktree-create-log";
-
 export async function createWorktree(
   cwd: string,
   branch: string,
@@ -40,39 +26,7 @@ export async function createWorktree(
   existing: boolean,
   progress?: { id: string; onLine: (line: string) => void },
 ) {
-  // Subscribe before invoking so the first Git lines are not dropped.
-  const unlisten = progress
-    ? await listen<{ id: string; line: string }>(
-        WORKTREE_CREATE_LOG_EVENT,
-        (event) => {
-          if (event.payload.id === progress.id)
-            progress.onLine(event.payload.line);
-        },
-      )
-    : undefined;
-  try {
-    const tree = await invoke<Worktree>("git_worktree_create", {
-      cwd,
-      branch,
-      base,
-      existing,
-      logId: progress?.id,
-    });
-    notifyGitChanged();
-    return tree;
-  } finally {
-    unlisten?.();
-  }
-}
-
-export async function createOrchestrationWorktree(
-  cwd: string,
-  branch: string,
-) {
-  const tree = await invoke<Worktree>("git_orchestration_worktree_create", {
-    cwd,
-    branch,
-  });
+  const tree = await hostWorktreeCommand<Worktree>(cwd, "git.worktreeCreate", { branch, base, existing }, progress?.onLine);
   notifyGitChanged();
   return tree;
 }
@@ -87,56 +41,23 @@ export function temporaryWorktreeBranchName(
   return `oc/${token || Date.now().toString(36)}`;
 }
 
-export function orchestrationWorktreeBranchName(id: string): string {
-  const token = id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12).toLowerCase();
-  return `oc/orch-${token || Date.now().toString(36)}`;
-}
-
-export function namedWorktreeBranch(fragment: string): string | null {
-  const clean = fragment
-    .trim()
-    .replace(/^(?:oc|mc|omnicode)\/+/, "")
-    .replace(/^\/+|\/+$/g, "");
-  return clean ? `oc/${clean}` : null;
-}
-
 export async function removeWorktree(
   cwd: string,
   path: string,
   force = false,
   keepSessions = false,
 ) {
-  const result = await invoke<{ sessionIds: string[]; projectCwd: string }>(
-    "git_worktree_remove",
-    { cwd, path, force, keepSessions },
+  const result = await hostWorktreeCommand<{ sessionIds: string[]; projectCwd: string }>(
+    cwd, "git.worktreeRemove",
+    { path, force, keepSessions },
   );
   notifyGitChanged();
   return result;
-}
-
-export async function removeOrchestrationWorktree(
-  cwd: string,
-  path: string,
-) {
-  const result = await invoke<{ sessionIds: string[]; projectCwd: string }>(
-    "git_orchestration_worktree_remove",
-    { cwd, path },
-  );
-  notifyGitChanged();
-  return result;
-}
-
-export async function removeOrchestrationBranch(
-  cwd: string,
-  branch: string,
-) {
-  await invoke<void>("git_orchestration_branch_remove", { cwd, branch });
-  notifyGitChanged();
 }
 
 /** Read-only preflight; final removal must still recheck for new blockers. */
 export const checkWorktreeRemoval: RemoveWorktree = (cwd, path, force) =>
-  invoke("git_worktree_check_remove", { cwd, path, force });
+  hostWorktreeCommand(cwd, "git.worktreeCheckRemove", { path, force });
 
 export function assertWorktreeFilesClosed(
   path: string,

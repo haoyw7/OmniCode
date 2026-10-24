@@ -1,4 +1,4 @@
-import { walkTranscript } from "../src/features/sessions/model/agentTranscript";
+import { walkTranscript } from "../src/domain/agentTranscript";
 import {
   mkdirSync,
   openSync,
@@ -11,8 +11,8 @@ import {
 import { randomUUID } from "node:crypto";
 import { decodeGeneratedImage } from "../src/integrations/harness/core/generatedImage";
 import { join } from "node:path";
-import type { Attachment } from "../src/features/sessions/model/session";
-import type { RemoteAttachment } from "../src/features/connections/model/protocol";
+import type { Attachment } from "../src/contracts/session";
+import type { RemoteAttachment } from "../src/contracts/protocol";
 import { BotThreadStore } from "./bots/thread/store";
 import type { HostStore } from "./store";
 

@@ -18,12 +18,7 @@
 //      计数，而不是把它们继承下来——继承会让一个这一世一步没走的节点显示「第 9 轮、40 次工具
 //      调用」，那正是这几个读数要用来排除的假象。
 
-import {
-  WORKFLOW_RUNS_LIMITS,
-  type WorkflowRunNode,
-  type WorkflowRunNodeLastTool,
-  type WorkflowRunState,
-} from "./workflow-runs.js";
+import { WORKFLOW_RUNS_LIMITS, type WorkflowRunNode, type WorkflowRunNodeLastTool, type WorkflowRunState } from "./workflow-runs.js";
 
 /** 一次 ask 的任务与进度读数，即本模块负责的那四个键。 */
 type NodeProgressFields = Pick<

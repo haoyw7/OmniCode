@@ -2,9 +2,9 @@
 import { act, createElement, lazy } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AgentMarkdown } from "./AgentMarkdown";
-import { MarkdownDocumentPreview } from "./MarkdownDocumentPreview";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
+import { MarkdownDocumentPreview } from "../../../shared/ui/markdown/MarkdownDocumentPreview";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
 import { EditorView } from "@codemirror/view";
 
 const mocked = vi.hoisted(() => ({ fail: false }));
@@ -28,7 +28,7 @@ vi.mock("streamdown", async (importOriginal) => {
 
 // Regular fences now use the incremental renderer; exercise the same failure
 // boundary while the Streamdown renderer remains the Mermaid fallback.
-vi.mock("./HighlightedCodeBlock", async () => ({
+vi.mock("../../../shared/ui/markdown/HighlightedCodeBlock", async () => ({
   HighlightedCodeBlock: (await import("streamdown")).CodeBlock,
 }));
 

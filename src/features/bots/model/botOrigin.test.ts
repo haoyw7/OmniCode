@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import type { TurnOrigin } from "../../sessions/model/session";
+import type { TurnOrigin } from "../../../contracts/session";
 import { resolveBotOrigin } from "./botOrigin";
 
 const origin: TurnOrigin = { kind: "assistant", assistantId: "legacy", botId: "bot", threadId: "thread", assistantName: "Same name", actionId: "send", wakeupId: "wake" };

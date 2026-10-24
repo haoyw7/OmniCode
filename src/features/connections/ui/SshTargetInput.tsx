@@ -1,7 +1,7 @@
 import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { invoke } from "@tauri-apps/api/core";
+import { listDesktopSshAliases } from "../../../platform/tauri/connections";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ChevronDown } from "../../../shared/ui/icons";
 import { LAYER } from "../../../shared/lib/layers";
@@ -45,7 +45,7 @@ export function SshTargetInput({
 
   useEffect(() => {
     let live = true;
-    void invoke<SshConfigHost[]>("remote_ssh_config_hosts")
+    void listDesktopSshAliases()
       .then((value) => {
         if (live) setHosts(Array.isArray(value) ? value : []);
       })

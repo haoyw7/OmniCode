@@ -4,29 +4,13 @@ import { motionGeometry, panelTransition } from "../shared/motion/tokens";
 import { useListReorderMotion } from "../shared/hooks/useListReorderMotion";
 import { MobileSpinner } from "./MobileSpinner";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type {
-  HostProject,
-  HostSessionSummary,
-} from "../features/connections/model/protocol";
+import type { HostProject, HostSessionSummary } from "../contracts/protocol";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { useMobilePageState } from "./mobilePageState";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
-import {
-  Archive,
-  Check,
-  ChevronDown,
-  Folder,
-  FolderPlus,
-  LoaderCircle,
-  MessageSquare,
-  MessageSquarePlus,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  TriangleAlert,
-} from "../shared/ui/icons";
+import { Archive, Check, ChevronDown, Folder, FolderPlus, LoaderCircle, MessageSquare, MessageSquarePlus, Plus, Search, SlidersHorizontal, TriangleAlert } from "../shared/ui/icons";
 import { MobileSheet, type MobileSheetPoint } from "./MobileSheet";
 import { MobileListPreview } from "./MobileListPreview";
 import { MobileSessionRow } from "./MobileSessionRow";
@@ -35,14 +19,9 @@ import { useMobileSessionLists } from "./sessionListStore";
 import { MobileListSkeleton } from "./MobileListSkeleton";
 import { lightImpact } from "./haptics";
 import { sortMobileProjects } from "./sessionList";
-import { isChatFolder } from "../features/projects/model/chatFolderPath";
+import { isChatFolder } from "../domain/chatFolderPath";
 import type { MobileRemoteHost } from "./useMobileHostDirectory";
-import {
-  filterMobileSessions,
-  MOBILE_SESSION_FILTER_LABELS,
-  MOBILE_SESSION_FILTERS,
-  type MobileSessionFilter,
-} from "./sessionFilter";
+import { filterMobileSessions, MOBILE_SESSION_FILTER_LABELS, MOBILE_SESSION_FILTERS, type MobileSessionFilter } from "./sessionFilter";
 
 const FILTER_ICONS: Record<MobileSessionFilter, typeof Check> = {
   all: SlidersHorizontal,

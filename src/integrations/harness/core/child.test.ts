@@ -5,10 +5,14 @@ const mocks = vi.hoisted(() => ({
   handlers: new Map<string, (event: { payload: never }) => void>(),
   invoke: vi.fn(),
   listen: vi.fn(),
+  recordLocalExecution: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: mocks.listen }));
+vi.mock("../../../shared/lib/localExecutionDiagnostics", () => ({
+  recordLocalExecution: mocks.recordLocalExecution,
+}));
 
 type Deferred<T> = {
   promise: Promise<T>;
@@ -37,7 +41,9 @@ function installResolvedListeners() {
 
 async function loadChild() {
   vi.resetModules();
-  return import("./child");
+  const child = await import("./child");
+  child.configureChildBackend({ invoke: mocks.invoke, listen: mocks.listen });
+  return child;
 }
 
 async function flush() {
@@ -49,8 +55,16 @@ afterEach(() => {
   mocks.handlers.clear();
   mocks.invoke.mockReset();
   mocks.listen.mockReset();
+  mocks.recordLocalExecution.mockReset();
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+it("refuses process execution without an explicitly configured Host runtime", async () => {
+  vi.resetModules();
+  const child = await import("./child");
+  await expect(child.spawnChild("id", "provider", [], "/repo")).rejects.toThrow("requires a Host runtime");
+  expect(mocks.invoke).not.toHaveBeenCalled();
 });
 
 describe("isCurrentChildExit", () => {
@@ -107,7 +121,7 @@ describe("child bridge", () => {
 
     late.resolve(lateUnlisten);
     await flush();
-    expect(lateUnlisten).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(lateUnlisten).toHaveBeenCalledOnce());
 
     installResolvedListeners();
     const releaseProbe = await child.acquireHarnessBridge();
@@ -141,10 +155,10 @@ describe("child bridge", () => {
   });
 
   it("passes stored overrides through resolution and command validation", async () => {
-    vi.stubGlobal("localStorage", {
-      getItem: (key: string) =>
-        key === "omnicode.providerBinaryPaths.v1"
-          ? JSON.stringify({
+    mocks.invoke.mockResolvedValue({ path: "/resolved" });
+    const child = await loadChild();
+    const { configureRuntimeBinaryPaths } = await import('./runtimeBinaryPaths');
+    configureRuntimeBinaryPaths({
               claude: "/opt/claude/bin/claude",
               codex: "/opt/codex/bin/codex",
               cursor: "/opt/cursor/bin/cursor-agent",
@@ -155,11 +169,8 @@ describe("child bridge", () => {
               fx: "/opt/fx/bin/fx",
               hermes: "/opt/hermes/bin/hermes",
               antigravity: "/opt/antigravity/bin/agy_acp_server.par",
-            })
-          : null,
-    });
-    mocks.invoke.mockResolvedValue({ path: "/resolved" });
-    const child = await loadChild();
+            });
+
 
     await child.resolveCodexBinary();
     expect(mocks.invoke).toHaveBeenCalledWith("harness_resolve_configured", {
@@ -322,3 +333,4 @@ describe("child bridge", () => {
     release();
   });
 });
+

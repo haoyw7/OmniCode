@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AgentMarkdown } from "./AgentMarkdown";
+import { AgentMarkdown } from "../../../shared/ui/markdown/AgentMarkdown";
 
 /**
  * https://github.com/hardbeat920/monocode/issues/218 - a reply with several

@@ -6,6 +6,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Capacitor } from "@capacitor/core";
 import { Clipboard } from "@capacitor/clipboard";
 import { BotChat } from "./BotChat";
+import { desktopTranscriptServices } from "../../../platform/tauri/transcriptServices";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
 import { MobileAssistant } from "../../../mobile/MobileAssistant";
 import { fullBotPolicy, type BotMessage } from "../model/botView";
 import { setUiLanguage } from "../../../shared/i18n/language";
@@ -92,12 +94,12 @@ async function mount(mobile: boolean) {
   });
   act(() =>
     root.render(
-      createElement(mobile ? MobileAssistant : BotChat, {
+      createElement(TranscriptPlatformContext.Provider, { value: desktopTranscriptServices }, createElement(mobile ? MobileAssistant : BotChat, {
         hostKey: "host",
         hostName: "Host",
         rpc: rpc as any,
         onOpen: () => {},
-      }),
+      })),
     ),
   );
   await flush();

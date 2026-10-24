@@ -9,10 +9,7 @@ vi.mock("motion/react", async (importOriginal) => {
   return { ...actual, ...motionTestDriver(actual, false) };
 });
 import { duration } from "../motion/tokens";
-import {
-  useAnimatedReorder,
-  type ReorderExternalDrop,
-} from "./useAnimatedReorder";
+import { useAnimatedReorder, type ReorderExternalDrop } from "./useAnimatedReorder";
 
 let container: HTMLDivElement;
 let root: Root;

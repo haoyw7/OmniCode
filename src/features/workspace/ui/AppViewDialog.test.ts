@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
-import { AppViewDialog } from "./AppViewDialog";
+import { AppViewDialog } from "../../../shared/ui/messaging/AppViewDialog";
 
 vi.mock("motion/react", async (original) => {
   const actual = await original<typeof import("motion/react")>();

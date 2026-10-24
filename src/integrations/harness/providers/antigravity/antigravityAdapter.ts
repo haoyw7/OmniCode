@@ -1,13 +1,5 @@
-import { readAntigravitySessionTitle } from "./antigravity";
-import {
-  bindAntigravitySession,
-  cancelAntigravityTurn,
-  forgetAntigravitySession,
-  respondAntigravityApproval,
-  sendAntigravityTurn,
-  steerAntigravityTurn,
-  stopAntigravitySession,
-} from "./antigravity";
+import { readAntigravitySessionTitle, bindAntigravitySession, cancelAntigravityTurn, forgetAntigravitySession, respondAntigravityApproval, sendAntigravityTurn, steerAntigravityTurn, stopAntigravitySession } from "./antigravity";
+
 import { refreshAntigravityCatalog } from "./antigravityCatalog";
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
 

@@ -1,27 +1,16 @@
 import { useEffect, useReducer, useRef, useState } from "react";
-import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { NOTIFICATION_CLICK_EVENT, notifyApp } from "../../notifications/model/notifications";
+import { subscribeNotificationClick } from "../../../platform/tauri/appShell";
+import { desktopWindow } from "../../../platform/tauri/window";
+import { notifyApp } from "../../notifications/model/notifications";
 import { sharedHostMachineId } from "../../connections/model/remoteProjects";
 import { translate } from "../../../shared/i18n/language";
-import {
-  botNotificationActivity,
-  parseBotLegacyNotificationTarget,
-  botLegacyNotificationTarget,
-  takeBotNotification,
-} from "../model/botNotifications";
+import { botNotificationActivity, parseBotLegacyNotificationTarget, botLegacyNotificationTarget, takeBotNotification } from "../model/botNotifications";
 import { remoteRequest } from "../../connections/model/connections";
-import {
-  REMOTE_PROVIDERS,
-  type HostDescriptor,
-} from "../../connections/model/protocol";
+import { REMOTE_PROVIDERS } from "../../../contracts/provider";
+import { type HostDescriptor } from "../../../contracts/protocol";
 import { BotClient } from "../model/botRpc";
 import type { BotMessage } from "../model/botView";
-import {
-  botReadRevision,
-  subscribeBotRead,
-  unreadBotMessages,
-} from "../model/botUnread";
+import { botReadRevision, subscribeBotRead, unreadBotMessages } from "../model/botUnread";
 import { useDesktopBotsHosts } from "../model/useDesktopBotsHosts";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { botCacheKey, type BotScope, type BotsSnapshot } from "../model/bots";
@@ -45,13 +34,13 @@ export function DesktopBotsButton({
   const current = useRef({ hosts, visibleHost, onOpen });
   current.current = { hosts, visibleHost, onOpen };
   useEffect(() => {
-    const unlisten = listen<string>(NOTIFICATION_CLICK_EVENT, ({ payload }) => {
+    const unlisten = subscribeNotificationClick( ({ payload }) => {
       const botTarget = parseBotNotificationTarget(payload);
       const target = botTarget ?? parseBotLegacyNotificationTarget(payload);
-      if (!target || target.windowLabel !== getCurrentWindow().label) return;
+      if (!target || target.windowLabel !== desktopWindow().label) return;
       const host = current.current.hosts.find((host) => host.environmentId === target.environmentId);
       if (!host) return;
-      const win = getCurrentWindow();
+      const win = desktopWindow();
       void win.unminimize().then(() => win.setFocus()).catch(() => {});
       if (botTarget) selectBotThread(host.environmentId, botTarget);
       current.current.onOpen(host.id);
@@ -115,7 +104,7 @@ export function DesktopBotsButton({
               const activity = botNotificationActivity(next.assistant, next.messages);
               const notice = takeBotNotification(key, activity);
               const selected = readBotSelection(machine.environmentId);
-              if (notice && activity) void notifyApp(botNotificationTarget(machine.environmentId, getCurrentWindow().label, scope), {
+              if (notice && activity) void notifyApp(botNotificationTarget(machine.environmentId, desktopWindow().label, scope), {
                 title: "OmniCode", subtitle: activity.name || translate("Bots"),
                 body: notice.text || translate(notice.kind === "input" ? "This conversation needs your input." : "A new reply is ready."),
               }, current.current.visibleHost === machine.environmentId && selected?.botId === scope.botId && selected.threadId === scope.threadId);
@@ -129,7 +118,7 @@ export function DesktopBotsButton({
             const activity = botNotificationActivity(next.assistant, next.messages);
             const notice = takeBotNotification(machine.environmentId, activity);
             if (notice && activity)
-              void notifyApp(botLegacyNotificationTarget(machine.environmentId, getCurrentWindow().label), {
+              void notifyApp(botLegacyNotificationTarget(machine.environmentId, desktopWindow().label), {
                 title: "OmniCode",
                 subtitle: activity.name || translate("Assistant"),
                 body: notice.text || translate(notice.kind === "input"

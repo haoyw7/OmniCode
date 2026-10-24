@@ -1,13 +1,7 @@
 import { hasComposerDraftContent } from "../../features/sessions/model/draftCache";
-import {
-  isReusableDraftSession,
-  type Session,
-} from "../../features/sessions/model/session";
-import {
-  closeLeaf,
-  leafIds,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { isReusableDraftSession } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
+import { closeLeaf, leafIds, type WorkspaceTab } from "../../features/workspace/model/layout";
 
 /** Stronger than "no user messages": only disposable, untouched conversations. */
 export function isDisposableEmptySession(session: Session): boolean {

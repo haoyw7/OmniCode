@@ -3,7 +3,7 @@ import { useTranslation } from "../../shared/i18n/useTranslation";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
 import { remoteModelControls } from "../../features/connections/model/remoteModels";
 import { ModelPicker } from "../../features/sessions/ui/ModelPicker";
-import { ModelSourceContext, type ModelSource } from "../../features/sessions/ui/modelSource";
+import { ModelSourceContext, type ModelSource } from "../../features/sessions/model/modelSource";
 import type { BotModelPickerProps } from "../../features/bots/ui/BotChatChrome";
 
 /** Reuse the conversation menu with this assistant's Host catalog. */

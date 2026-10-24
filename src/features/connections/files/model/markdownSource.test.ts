@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAtxHeadingLine } from "./markdownSource";
+import { isAtxHeadingLine } from "../../../../shared/lib/markdownSource";
 
 describe("isAtxHeadingLine", () => {
   it("matches ATX headings", () => {

@@ -1,59 +1,32 @@
+import type { Skill } from "../contracts/skills";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { MobileSpinner } from "./MobileSpinner";
 import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Keyboard } from "@capacitor/keyboard";
-import {
-  ArrowUp,
-  AiIdea,
-  Camera,
-  Check,
-  ChevronsUpDown,
-  File,
-  Folder,
-  FolderTree,
-  Images,
-  Plus,
-  Shapes,
-  Square,
-  X,
-} from "../shared/ui/icons";
+import { ArrowUp, AiIdea, Camera, Check, ChevronsUpDown, File, Folder, FolderTree, Images, Plus, Shapes, Square, X } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { AnimatedCollapse, useCollapseMotion } from "../shared/ui/AnimatedCollapse";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
-import { AttachmentList } from "../features/sessions/ui/AttachmentList";
+import { HarnessIcon } from "../shared/ui/HarnessIcon";
+import { AttachmentList } from "../shared/ui/attachments/AttachmentList";
 import { AnimatePresence, motion, usePresence } from "motion/react";
 import { immediateTransition, panelTransition, popTransition } from "../shared/motion/tokens";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
 import { RuntimeModeIcon } from "../features/sessions/ui/RuntimeModeIcon";
 import { MODE_COMMAND_STYLES } from "../features/sessions/ui/modeCommands";
-import { PLAN_COMMAND } from "../features/sessions/model/plan";
+import { PLAN_COMMAND } from "../domain/plan";
 import { COMPACT_COMMAND } from "../features/sessions/model/compact";
 import { rankSkills, slashTokenAt, type SlashToken } from "../features/skills/model/slashCommands";
-import type { Skill } from "../features/skills/model/skillTypes";
+
 import { insertMobileSkill } from "./skillCommands";
 import { useMobileSkills, type MobileSkillsLoader } from "./useMobileSkills";
 import { MobileSkillList } from "./MobileSkillList";
-import {
-  RUNTIME_MODES,
-  RUNTIME_MODE_LABEL,
-  type Attachment,
-} from "../features/sessions/model/session";
-import type {
-  HostModelCatalog,
-  HostProject,
-} from "../features/connections/model/protocol";
-import {
-  MobileModelControls,
-  configurationLabels,
-  type MobileConfiguration,
-} from "./MobileModelControls";
+import { RUNTIME_MODES, type Attachment } from "../contracts/session";
+import { RUNTIME_MODE_LABEL } from "../contracts/session";
+import type { HostModelCatalog, HostProject } from "../contracts/protocol";
+import { MobileModelControls, configurationLabels, type MobileConfiguration } from "./MobileModelControls";
 import { MobileSheet, SHEET_WIDTH } from "./MobileSheet";
-import {
-  MobileWorkspaceControls,
-  workspaceLabel,
-  type MobileWorkspace,
-} from "./MobileWorkspaceControls";
+import { MobileWorkspaceControls, workspaceLabel, type MobileWorkspace } from "./MobileWorkspaceControls";
 import type { MobileBranches, MobileWorktrees } from "./client";
 import { preserveInputFocus, usePreserveInputFocusOnTouch } from "./inputFocus";
 import { useMobileTextareaAutosize } from "./useMobileTextareaAutosize";

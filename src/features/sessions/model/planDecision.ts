@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
-import type { Block, PlanBlockMeta } from "./session";
-import { legacyTaskListFromText } from "./taskList";
+import type { Block, PlanBlockMeta } from "../../../contracts/session";
+import { legacyTaskListFromText } from "../../../domain/taskList";
 
 /** The message sent when the user approves a plan from its decision panel. */
 export const IMPLEMENT_PLAN_PROMPT = "Implement the plan.";

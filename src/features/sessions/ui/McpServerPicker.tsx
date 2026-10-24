@@ -2,13 +2,11 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Search, Settings } from "../../../shared/ui/icons";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { HarnessIcon } from "./HarnessIcon";
-import {
-  MCP_PROVIDER_LABELS,
-  type McpConnection,
-} from "../../settings/model/mcp";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { MCP_PROVIDER_LABELS } from "../../settings/model/mcp";
+import { type McpConnection } from "../../../contracts/mcp";
 import { mcpPickerServers } from "../model/mcpPicker";
-import type { HarnessId } from "../model/session";
+import type { HarnessId } from "../../../contracts/session";
 
 export function McpServerPicker({
   connections,

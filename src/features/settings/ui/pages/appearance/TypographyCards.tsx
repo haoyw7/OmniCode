@@ -2,18 +2,7 @@ import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { useEffect, useState } from "react";
 import { Input } from "../../../../../shared/ui/forms/Input";
-import {
-  CONTENT_FONT_PRESETS,
-  CONTRAST_MAX,
-  CONTRAST_MIN,
-  FONT_SIZE_LIMITS,
-  FONT_WEIGHT_LABELS,
-  FONT_WEIGHTS,
-  loadSystemFonts,
-  normalizeFontFamily,
-  type FontSizeKind,
-  type FontWeight,
-} from "../../../model/typography";
+import { CONTENT_FONT_PRESETS, CONTRAST_MAX, CONTRAST_MIN, FONT_SIZE_LIMITS, FONT_WEIGHT_LABELS, FONT_WEIGHTS, loadSystemFonts, normalizeFontFamily, type FontSizeKind, type FontWeight } from "../../../model/typography";
 import { type AppearanceSettings } from "./useAppearanceSettings";
 import { Group, LiveSlider, Row, Segmented, Slider, Toggle } from "../../settingsLayout";
 import { AccentRow } from "./AccentRow";

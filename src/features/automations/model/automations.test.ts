@@ -1,21 +1,8 @@
 import { describe, expect, it } from "vitest";
-import {
-  applyTriggers,
-  automationScheduleLabel,
-  automationTriggers,
-  createAutomationTrigger,
-  draftFromAutomation,
-  draftFromTemplate,
-  formatAutomationRunAt,
-  formatAutomationRunDuration,
-  gmtOffsetLabel,
-  newAutomationDraft,
-  nextAutomationRunAt,
-  nextRunPreview,
-  nextTriggersRunAt,
-  overdueTriggerOccurrences,
-  type Automation,
-} from "./automations";
+import { automationScheduleLabel, draftFromAutomation, draftFromTemplate, formatAutomationRunAt, formatAutomationRunDuration, gmtOffsetLabel, newAutomationDraft, nextRunPreview } from "./automations";
+import type { Automation } from "../../../contracts/automations";
+import { applyTriggers, automationTriggers, createAutomationTrigger, nextAutomationRunAt, nextTriggersRunAt, overdueTriggerOccurrences } from "../../../domain/automationSchedule";
+
 
 const at = (value: string) => new Date(value).getTime();
 

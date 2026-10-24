@@ -1,5 +1,5 @@
-import { isTauri } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { isDesktopShell } from "../../platform/tauri/window";
+import { desktopWindow } from "../../platform/tauri/window";
 import type { MouseEvent, PointerEvent } from "react";
 import { IS_LINUX, IS_WIN } from "../../platform/tauri/platform";
 
@@ -40,7 +40,7 @@ export function windowDragRegion() {
 
 function isDragTarget(event: MouseEvent<HTMLElement>): boolean {
   if (
-    !isTauri() ||
+    !isDesktopShell() ||
     event.button !== 0 ||
     event.defaultPrevented ||
     event.currentTarget.getAttribute("data-window-drag-region") !== "deep"
@@ -86,7 +86,7 @@ export function startWindowDrag(event: MouseEvent<HTMLElement>): boolean {
 
   event.preventDefault();
   event.stopPropagation();
-  const win = getCurrentWindow();
+  const win = desktopWindow();
   void (event.detail === 2 ? win.toggleMaximize() : win.startDragging()).catch(() => {});
   return true;
 }

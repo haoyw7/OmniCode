@@ -6,8 +6,8 @@ import { type SiteTable } from "../analysis/sites.js";
 import type { AskSpec } from "../engine/types.js";
 import { SchemaEmitter, SchemaRejection } from "./emit.js";
 import { harvestConstraints, mergeConstraints } from "./jsdoc.js";
-import type { JsonSchema } from "./types.js";
-import { SCHEMA_DIAGNOSTIC_CODE } from "./types.js";
+import { type JsonSchema, SCHEMA_DIAGNOSTIC_CODE } from "./types.js";
+
 
 /**
  * Schema 合成（编译侧）：为每个「有类型」的 ask 站点，用 checker 的结构化视图把结果

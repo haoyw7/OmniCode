@@ -2,27 +2,8 @@ import { usePreferenceState } from "../../model/usePreferenceState";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useContext, useEffect } from "react";
 import { TitleModelSettings } from "../TitleModelSettings";
-import {
-  loadTranscriptLayout,
-  loadTranscriptAnchor,
-  saveTranscriptLayout,
-  saveTranscriptAnchor,
-  TRANSCRIPT_ANCHOR_CHANGE_EVENT,
-  type TranscriptLayout,
-} from "../../model/appearance";
-import {
-  loadDiffViewer,
-  loadFollowUpBehavior,
-  loadFormatOnSave,
-  loadModelControls,
-  saveDiffViewer,
-  saveFollowUpBehavior,
-  saveFormatOnSave,
-  saveModelControls,
-  type DiffViewer,
-  type FollowUpBehavior,
-  type ModelControls,
-} from "../../model/settings";
+import { loadTranscriptLayout, loadTranscriptAnchor, saveTranscriptLayout, saveTranscriptAnchor, TRANSCRIPT_ANCHOR_CHANGE_EVENT, type TranscriptLayout } from "../../model/appearance";
+import { loadDiffViewer, loadFollowUpBehavior, loadFormatOnSave, loadModelControls, saveDiffViewer, saveFollowUpBehavior, saveFormatOnSave, saveModelControls, type DiffViewer, type FollowUpBehavior, type ModelControls } from "../../model/settings";
 import { Group, RevealedSetting, Row, Segmented, Toggle } from "../settingsLayout";
 
 

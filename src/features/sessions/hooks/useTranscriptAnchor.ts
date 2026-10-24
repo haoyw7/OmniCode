@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  loadTranscriptAnchor,
-  TRANSCRIPT_ANCHOR_CHANGE_EVENT,
-} from "../../settings/model/appearance";
+import { loadTranscriptAnchor, TRANSCRIPT_ANCHOR_CHANGE_EVENT } from "../../settings/model/appearance";
 
 /** Subscribes to prompt-to-top changes triggered by saveTranscriptAnchor(). */
 export function useTranscriptAnchor(): boolean {

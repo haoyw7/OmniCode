@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  clearProjectSidebarTab,
-  loadProjectSidebarTab,
-  rebaseProjectSidebarTab,
-  saveProjectSidebarTab,
-} from "./projectSidebarTab";
+import { clearProjectSidebarTab, loadProjectSidebarTab, rebaseProjectSidebarTab, saveProjectSidebarTab } from "./projectSidebarTab";
 
 const KEY = "omnicode.projectSidebarTabs.v1";
 

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, createElement, StrictMode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useComposerEnvironment } from "./useComposerEnvironment";

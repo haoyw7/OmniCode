@@ -1,10 +1,6 @@
 import type { Terminal } from "@xterm/xterm";
 import { describe, expect, it, vi } from "vitest";
-import {
-  applyTerminalChrome,
-  fitTerminal,
-  terminalScrollbarWidth,
-} from "./terminalLayout";
+import { applyTerminalChrome, fitTerminal, terminalScrollbarWidth } from "./terminalLayout";
 
 describe("terminalScrollbarWidth", () => {
   it("defaults to 7px when overview ruler width is unset", () => {

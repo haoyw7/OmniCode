@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { LinkedWorkItem } from "../../sessions/model/session";
-import type { GithubWorkItem } from "./githubTasks";
+import type { LinkedWorkItem, GithubWorkItem } from "../../../contracts/session";
+
 import type { SessionSummary } from "../../sessions/data/sessionStore";
-import {
-  linkedSessionUpdateIds,
-  linkedWorkItemTargets,
-  linkedWorkItemUpdateKey,
-} from "./linkedSessionUpdates";
+import { linkedSessionUpdateIds, linkedWorkItemTargets, linkedWorkItemUpdateKey } from "./linkedSessionUpdates";
 
 const linked: LinkedWorkItem = {
   kind: "pr",

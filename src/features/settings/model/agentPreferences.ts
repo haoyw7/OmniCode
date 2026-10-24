@@ -1,5 +1,5 @@
 import { activePreferenceStore, preferenceStorage } from "./sharedPreferences";
-import { RUNTIME_MODES, type HarnessId, type RuntimeMode } from "../../sessions/model/session";
+import { RUNTIME_MODES, type HarnessId, type RuntimeMode } from "../../../contracts/session";
 
 export type SharedAgentDefaults = {
   harness?: HarnessId;

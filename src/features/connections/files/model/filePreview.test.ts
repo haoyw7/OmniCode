@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { formatFileSize, isImagePath, sniffImageMime } from "./filePreview";
+import { formatFileSize, isImagePath } from "./filePreview";
+import { sniffImageMime } from "../../../../domain/imageBytes";
 
 function bytes(...values: number[]): Uint8Array {
   return new Uint8Array(values);

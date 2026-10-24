@@ -1,5 +1,5 @@
-import { formatResetDuration } from "../../providers/model/rateLimits";
-import type { Session } from "./session";
+import { formatResetDuration } from "../../../domain/rateLimits";
+import type { Session } from "../../../contracts/session";
 
 /** Providers can still refuse right at the reset; give them a moment. */
 export const USAGE_LIMIT_RESUME_GRACE_MS = 30_000;

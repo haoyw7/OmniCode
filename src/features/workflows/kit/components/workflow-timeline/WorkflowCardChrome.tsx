@@ -7,13 +7,7 @@ import type { WorkflowRunState } from "../../_shims/protocol.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { cn } from "../../../../../shared/lib/cn";
 import { ControlHintTooltip } from "../../ControlHintTooltip.js";
-import {
-  RUN_STATUS_DOT,
-  RUN_STATUS_TEXT,
-  readWorkflowRunStopReason,
-  workflowRunStopReasonMessageId,
-  isWorkflowRunSuperseded,
-} from "../workflow-graph/run-status-presentation.js";
+import { RUN_STATUS_DOT, RUN_STATUS_TEXT, readWorkflowRunStopReason, workflowRunStopReasonMessageId, isWorkflowRunSuperseded } from "../workflow-graph/run-status-presentation.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 
 /**

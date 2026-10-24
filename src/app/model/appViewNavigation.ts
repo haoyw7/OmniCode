@@ -1,10 +1,7 @@
-import {
-  isAppViewOnlyTab,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { isAppViewOnlyTab, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { workspaceTabCwd } from "../../features/workspace/model/workspaceTabGroups";
 import { sameProjectPath } from "../../features/projects/model/recents";
-import type { Session } from "../../features/sessions/model/session";
+import type { Session } from "../../contracts/session";
 
 /** App-only tabs preserve the project's last document/chat destination. */
 export function contentTabTarget(

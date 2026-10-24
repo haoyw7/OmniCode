@@ -3,29 +3,9 @@ import { motion } from "motion/react";
 import { motionGeometry, panelTransition, immediateTransition, outlineRippleStep } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FocusEvent as ReactFocusEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type RefObject,
-} from "react";
-import {
-  activePromptId,
-  barLift,
-  barWindow,
-  promptBlocks,
-  promptLabel,
-  promptPreview,
-  NEAR_END_PX,
-  RIPPLE_SPAN,
-  type OutlineAnchor,
-  type OutlineBand,
-} from "../model/promptOutline";
-import type { Block } from "../model/session";
+import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
+import { activePromptId, barLift, barWindow, promptBlocks, promptLabel, promptPreview, NEAR_END_PX, RIPPLE_SPAN, type OutlineAnchor, type OutlineBand } from "../model/promptOutline";
+import type { Block } from "../../../contracts/session";
 import { Popover } from "../../../shared/ui/Popover";
 import { isPaneResizing, onPaneResizeSettled } from "../../../shared/lib/paneResize";
 

@@ -1,39 +1,22 @@
 import { Button } from "../shared/ui/forms/Button";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { MobileSpinner } from "./MobileSpinner";
-import {
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-  type Ref,
-} from "react";
-import {
-  ArrowLeft,
-  File,
-  RefreshCw,
-  Search,
-  X,
-} from "../shared/ui/icons";
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
+import { ArrowLeft, File, RefreshCw, Search, X } from "../shared/ui/icons";
 import { translate } from "../shared/i18n/language";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
-import { AgentMarkdown } from "../features/sessions/ui/AgentMarkdown";
+import { AgentMarkdown } from "../shared/ui/markdown/AgentMarkdown";
 import { BotTopicNote as AssistantTopicNote } from "../features/bots/ui/BotTopicNote";
 import { useBotTopicNotes as useAssistantTopicNotes } from "../features/bots/model/useBotTopicNotes";
-import { TranscriptPlatformContext } from "../features/sessions/ui/TranscriptPlatform";
-import {
-  notePreview,
-  noteSourceProject,
-  type Note,
-} from "../features/notes/notesText";
-import type { HostProject } from "../features/connections/model/protocol";
+import { TranscriptPlatformContext } from "../shared/ui/markdown/TranscriptPlatform";
+import { notePreview, noteSourceProject } from "../features/notes/notesText";
+import { type Note } from "../contracts/session";
+import type { HostProject } from "../contracts/protocol";
 import type { MobileClient } from "./client";
 import { MobilePageTransition } from "./MobilePageTransition";
 import { mobileTranscriptPlatform } from "./transcriptPlatform";
-import { formatMobileRelativeTime } from "./relativeTime";
+import { formatRelativeTime } from "../shared/lib/relativeTime";
 import { MobileEmpty } from "./MobileEmpty";
 import "./styles/notes.css";
 
@@ -293,7 +276,7 @@ export function MobileNotes({
                           <time
                             dateTime={new Date(note.updatedAt).toISOString()}
                           >
-                            {formatMobileRelativeTime(
+                            {formatRelativeTime(
                               note.updatedAt,
                               Date.now(),
                               language,
@@ -428,7 +411,7 @@ function MobileNoteViewer({
         <h2 className="mobile-note-title">{note.title}</h2>
         <p className="mobile-muted">
           {t("Updated ")}
-          {formatMobileRelativeTime(note.updatedAt, Date.now(), language)}
+          {formatRelativeTime(note.updatedAt, Date.now(), language)}
         </p>
         {!!note.tags.length && (
           <div className="mobile-note-tags">

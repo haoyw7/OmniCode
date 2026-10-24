@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MobileTranscript } from "./MobileTranscript";
-import type { HostSession } from "../features/connections/model/protocol";
-import type { Block } from "../features/sessions/model/session";
+import type { HostSession } from "../contracts/protocol";
+import type { Block } from "../contracts/session";
 import { setUiLanguage } from "../shared/i18n/language";
 import { backMobileSheet } from "./mobileSheetBack";
 

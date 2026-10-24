@@ -2,10 +2,7 @@ import { javascript } from "@codemirror/lang-javascript";
 import { describe, expect, it } from "vitest";
 import { buildUnifiedFile } from "../../../source-control/model/unifiedDiff";
 import { languageForPath } from "./editorLanguage";
-import {
-  highlightDiffFile,
-  highlightSource,
-} from "./syntaxTokens";
+import { highlightDiffFile, highlightSource } from "./syntaxTokens";
 
 const KEYWORD_DARK = "#da7bff";
 const STRING_DARK = "#a5df58";

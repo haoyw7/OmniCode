@@ -4,13 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const invoke = vi.hoisted(() => vi.fn());
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
 
-import {
-  attachmentsFromFiles,
-  attachmentsFromPaths,
-  MAX_EMBED_BYTES,
-  persistableAttachment,
-  prepareAttachments,
-} from "./attachments";
+import { attachmentsFromFiles, attachmentsFromPaths, MAX_EMBED_BYTES, persistableAttachment, prepareAttachments } from "./attachments";
 
 beforeEach(() => {
   invoke.mockReset();

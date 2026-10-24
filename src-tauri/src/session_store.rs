@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Emitter, Manager, State};
 
 const MIGRATION_V1: &str = r#"
@@ -73,6 +74,95 @@ impl SessionStore {
             .lock()
             .map_err(|_| "Session store is locked".into())
     }
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct DesktopImportRow {
+    id: String,
+    fingerprint: String,
+    source_updated_at: i64,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+pub(crate) struct DesktopImportAudit {
+    version: u8,
+    rows: Vec<DesktopImportRow>,
+}
+
+/// Hash exactly the sorted raw SQLite columns used by host/desktop-import.ts.
+/// This is an import proof, not an export of the user's transcript.
+pub(crate) fn desktop_import_audit(conn: &Connection) -> Result<DesktopImportAudit, String> {
+    let mut statement = conn
+        .prepare("SELECT * FROM sessions ORDER BY id")
+        .map_err(|e| e.to_string())?;
+    let mut columns: Vec<(String, usize)> = statement
+        .column_names()
+        .iter()
+        .enumerate()
+        .map(|(index, name)| (name.to_string(), index))
+        .collect();
+    columns.sort_by(|a, b| a.0.cmp(&b.0));
+    let mut cursor = statement.query([]).map_err(|e| e.to_string())?;
+    let mut rows = Vec::new();
+    while let Some(row) = cursor.next().map_err(|e| e.to_string())? {
+        let mut values = Vec::new();
+        for (name, index) in &columns {
+            let value = match row.get_ref(*index).map_err(|e| e.to_string())? {
+                rusqlite::types::ValueRef::Null => Value::Null,
+                rusqlite::types::ValueRef::Integer(value) => json!(value),
+                rusqlite::types::ValueRef::Real(value) => json!(value),
+                rusqlite::types::ValueRef::Text(value) => {
+                    Value::String(String::from_utf8(value.to_vec()).map_err(|e| e.to_string())?)
+                }
+                rusqlite::types::ValueRef::Blob(_) => {
+                    return Err("Unexpected binary desktop session column".into())
+                }
+            };
+            values.push(json!([name, value]));
+        }
+        let raw = serde_json::to_vec(&values).map_err(|e| e.to_string())?;
+        rows.push(DesktopImportRow {
+            id: row.get("id").map_err(|e| e.to_string())?,
+            fingerprint: format!("{:x}", Sha256::digest(raw)),
+            source_updated_at: row.get("updated_at").map_err(|e| e.to_string())?,
+        });
+    }
+    Ok(DesktopImportAudit { version: 2, rows })
+}
+
+/// Keep the commands and source rows for the release rollback window. The
+/// durable marker makes later failed startups read-only as well.
+pub(crate) fn accept_host_ownership(
+    conn: &Connection,
+    before: &DesktopImportAudit,
+    imported: &DesktopImportAudit,
+) -> Result<(), String> {
+    if imported.version != 2 || imported != before || &desktop_import_audit(conn)? != before {
+        return Err("Desktop conversation import changed during startup. The source database was preserved; retry after closing the older desktop.".into());
+    }
+    conn.execute_batch("CREATE TABLE IF NOT EXISTS desktop_host_ownership (id INTEGER PRIMARY KEY CHECK(id=1), audit_version INTEGER NOT NULL); INSERT OR REPLACE INTO desktop_host_ownership VALUES (1, 2);")
+        .map_err(|e| e.to_string())
+}
+
+fn require_legacy_session_writes(conn: &Connection) -> Result<(), String> {
+    let adopted: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='desktop_host_ownership')",
+        [], |row| row.get(0),
+    ).map_err(|e| e.to_string())?;
+    if adopted {
+        let owned: bool = conn
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM desktop_host_ownership WHERE id=1)",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(|e| e.to_string())?;
+        if owned {
+            return Err("Conversation changes must be saved by the Host".into());
+        }
+    }
+    Ok(())
 }
 
 pub fn init(app: &AppHandle) -> Result<(), String> {
@@ -261,6 +351,7 @@ pub fn session_upsert(
     }
 
     let conn = store.conn.lock().map_err(|_| "Session store is locked")?;
+    require_legacy_session_writes(&conn)?;
     // One commit for the row, its title state and worker links instead of a
     // separate fsync per statement while the store lock is held.
     let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
@@ -314,6 +405,7 @@ pub fn session_rebase_project(
         return Err("project paths are required".into());
     }
     let conn = store.conn.lock().map_err(|_| "Session store is locked")?;
+    require_legacy_session_writes(&conn)?;
     rebase_project(&conn, &from_cwd, &to_cwd).map_err(|error| error.to_string())
 }
 
@@ -533,6 +625,7 @@ pub fn session_delete(
 ) -> Result<(), String> {
     validate_id(&session_id, "session")?;
     let conn = store.conn.lock().map_err(|_| "Session store is locked")?;
+    require_legacy_session_writes(&conn)?;
     let persisted_paths = get_session(&conn, &session_id)
         .ok()
         .flatten()
@@ -558,6 +651,7 @@ pub fn session_set_archived(
 ) -> Result<(), String> {
     validate_id(&session_id, "session")?;
     let conn = store.conn.lock().map_err(|_| "Session store is locked")?;
+    require_legacy_session_writes(&conn)?;
     set_archived(&conn, &session_id, archived).map_err(|e| e.to_string())
 }
 
@@ -569,6 +663,7 @@ pub fn session_set_pinned(
 ) -> Result<(), String> {
     validate_id(&session_id, "session")?;
     let conn = store.conn.lock().map_err(|_| "Session store is locked")?;
+    require_legacy_session_writes(&conn)?;
     set_pinned(&conn, &session_id, pinned).map_err(|e| e.to_string())
 }
 
@@ -580,6 +675,7 @@ pub fn session_set_linked_work_item(
 ) -> Result<(), String> {
     validate_id(&session_id, "session")?;
     let conn = store.conn.lock().map_err(|_| "Session store is locked")?;
+    require_legacy_session_writes(&conn)?;
     set_linked_work_item(&conn, &session_id, linked_work_item.as_ref()).map_err(|e| e.to_string())
 }
 
@@ -1090,7 +1186,6 @@ fn migrate(conn: &Connection) -> rusqlite::Result<()> {
     )?;
     crate::notes::ensure_notes_table(conn)?;
     crate::reminders::ensure_table(conn)?;
-    crate::automations::ensure_tables(conn)?;
     ensure_orchestration_history(conn)?;
     crate::legacy_orchestration::ensure_tables(conn)?;
     Ok(())
@@ -2267,10 +2362,58 @@ pub(crate) fn now_millis() -> i64 {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn import_fingerprint_matches_node_sorted_json_for_unicode_and_escapes() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE sessions (id TEXT, updated_at INTEGER, title TEXT, blocks_json TEXT)",
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO sessions VALUES ('interop', 200, ?1, '[]')",
+            ["中文\nquoted: \"text\""],
+        )
+        .unwrap();
+        let audit = desktop_import_audit(&conn).unwrap();
+        assert_eq!(
+            audit.rows[0].fingerprint,
+            "01d95e474a88f98bcd8d80a7639ff6369b238ccdb4c179b3f0cd7bb0037ed948"
+        );
+        assert_eq!(audit.rows[0].source_updated_at, 200);
+    }
+
     use super::*;
     use rusqlite::hooks::{AuthAction, Authorization};
     use serde_json::json;
     use std::sync::atomic::AtomicUsize;
+
+    #[test]
+    fn host_import_ownership_requires_an_unchanged_source_and_is_durable() {
+        let store = SessionStore::open_in_memory().unwrap();
+        let conn = store.lock_conn().unwrap();
+        upsert_session(&conn, &sample("owned", "/project", "Original")).unwrap();
+        let before = desktop_import_audit(&conn).unwrap();
+        assert!(require_legacy_session_writes(&conn).is_ok());
+        conn.execute(
+            "UPDATE sessions SET title='Concurrent edit' WHERE id='owned'",
+            [],
+        )
+        .unwrap();
+        assert!(accept_host_ownership(&conn, &before, &before).is_err());
+        assert!(require_legacy_session_writes(&conn).is_ok());
+        let current = desktop_import_audit(&conn).unwrap();
+        assert_ne!(current.rows[0].fingerprint, before.rows[0].fingerprint);
+        accept_host_ownership(&conn, &current, &current).unwrap();
+        assert!(require_legacy_session_writes(&conn)
+            .unwrap_err()
+            .contains("Host"));
+        assert_eq!(
+            get_session(&conn, "owned").unwrap().unwrap().title,
+            "Concurrent edit"
+        );
+        // The rollback table and transcript remain readable after the gate.
+        assert_eq!(desktop_import_audit(&conn).unwrap(), current);
+    }
 
     #[test]
     fn startup_does_not_read_saved_transcripts() {

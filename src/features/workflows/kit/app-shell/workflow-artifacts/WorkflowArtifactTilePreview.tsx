@@ -2,17 +2,10 @@ import { workflowFade } from "../../components/workflow-timeline/workflow-motion
 import { motion as motionElement } from "motion/react";
 import { useMemo } from "react";
 import { MessageResponse } from "../../components/ai-elements/message.js";
-import {
-  artifactFileBadge,
-  buildPresetLabels,
-  isArtifactPresetKind,
-} from "./artifactPresentation.js";
+import { artifactFileBadge, buildPresetLabels, isArtifactPresetKind } from "./artifactPresentation.js";
 import { ArtifactPresetBody } from "./ArtifactPresetBody.js";
 import { cn } from "../../../../../shared/lib/cn";
-import {
-  ArtifactSheetGlyph,
-  type WorkflowCompletionArtifact,
-} from "../../components/workflow-timeline/WorkflowArtifactTile.js";
+import { ArtifactSheetGlyph, type WorkflowCompletionArtifact } from "../../components/workflow-timeline/WorkflowArtifactTile.js";
 import { useWorkflowRunArtifactBytes } from "../../hooks/useWorkflowRunArtifactBytes.js";
 import { useWorkflowRunArtifactData } from "../../hooks/useWorkflowRunArtifactData.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";

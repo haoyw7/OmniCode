@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { HarnessEvent, SendTurnInput } from "../../core/types";
+import type { HarnessEvent } from "../../../../contracts/harness";
+import type { SendTurnInput } from "../../core/types";
 
 const io = vi.hoisted(() => ({
   machine: "local",

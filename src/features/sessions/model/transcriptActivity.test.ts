@@ -1,33 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 import { INTERRUPT_MESSAGE } from "./inFlight";
-import {
-  activityPhaseTitle,
-  activityStillRunning,
-  buildActivityPhases,
-  editVerb,
-  firstFoldableIndex,
-  foldableWork,
-  foldedBlocks,
-  groupTurnItems,
-  groupTurns,
-  hasRunningSubagent,
-  initialThinkingIndex,
-  lastActivityIndex,
-  nestedScrollAbsorbsWheel,
-  proseSummary,
-  resolveToolCallDisplay,
-  isSubagentBlock,
-  subagentBrief,
-  subagentFailureSummary,
-  subagentName,
-  toolCallLabel,
-  turnCopyText,
-  subagentModelName,
-  workDiffStats,
-  workKind,
-  workSummaryLine,
-} from "./transcriptActivity";
+import { activityPhaseTitle, activityStillRunning, buildActivityPhases, editVerb, firstFoldableIndex, foldableWork, foldedBlocks, groupTurnItems, groupTurns, hasRunningSubagent, initialThinkingIndex, lastActivityIndex, nestedScrollAbsorbsWheel, proseSummary, resolveToolCallDisplay, isSubagentBlock, subagentBrief, subagentFailureSummary, subagentName, turnCopyText, subagentModelName, workDiffStats, workKind, workSummaryLine } from "./transcriptActivity";
+import { toolCallLabel } from "../../../domain/toolLabel";
 
 function shell(
   id: string,

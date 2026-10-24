@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from "vitest";
 
 const { remoteRequest, remoteMachineFor, invokeLocal } = vi.hoisted(() => ({
@@ -15,11 +16,15 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeLocal }));
 import { runRemoteCommand } from "./remoteCommands";
 import { parseRemotePath, remotePath, configureSharedHost } from "./remoteProjects";
 import { listDir, readBinaryFile, readTextFile, statFiles, writeTextFile } from "../../../platform/tauri/fs";
+import { rememberProject } from "../../projects/model/recents";
+import { inspectAttachmentPaths, readAttachmentBase64 } from "../../../platform/tauri/attachmentFiles";
+import { HOST_PROTOCOL_VERSION } from "../../../contracts/protocol";
 
 beforeEach(() => {
   remoteRequest.mockReset();
   invokeLocal.mockReset();
   configureSharedHost(undefined, []);
+  localStorage.clear();
 });
 
 it("routes WSL files through the desktop Host with explicit distribution and never native Windows IO", async () => {
@@ -48,6 +53,42 @@ it("keeps local writes local when their content mentions a remote path", async (
     content: "remote://env/home/me/repo",
   });
   expect(remoteRequest).not.toHaveBeenCalled();
+});
+
+it("routes registered local project reads and writes to Host while app data stays native", async () => {
+  configureSharedHost("env", [{ id: "project", cwd: "/home/me/repo", name: "repo" }], "machine");
+  remoteRequest.mockResolvedValue("content");
+  expect(await readTextFile("/home/me/repo/file.txt")).toBe("content");
+  await writeTextFile("/home/me/repo/file.txt", "changed");
+  expect(remoteRequest).toHaveBeenLastCalledWith("machine", "workspace.run", {
+    command: "write_text_file", args: { path: "/home/me/repo/file.txt", content: "changed" },
+  });
+  expect(invokeLocal).not.toHaveBeenCalled();
+  await readTextFile("/home/me/app-data/settings.json");
+  expect(invokeLocal).toHaveBeenCalledWith("read_text_file", { path: "/home/me/app-data/settings.json" });
+});
+
+it("does not fall back to native file writes when the project Host is unavailable", async () => {
+  configureSharedHost("env", [{ id: "project", cwd: "/home/me/repo", name: "repo" }], "machine");
+  remoteRequest.mockRejectedValue(new Error("Host unavailable"));
+  await expect(writeTextFile("/home/me/repo/file.txt", "changed")).rejects.toThrow("Host unavailable");
+  expect(invokeLocal).not.toHaveBeenCalled();
+});
+
+it("keeps remembered project files Host-owned before the startup handshake", async () => {
+  rememberProject("/home/me/repo");
+  await expect(writeTextFile("/home/me/repo/file.txt", "changed")).rejects.toThrow("not connected");
+  expect(invokeLocal).not.toHaveBeenCalled();
+});
+
+it("registers a remembered project before its first file operation", async () => {
+  rememberProject("/home/me/repo");
+  configureSharedHost("env", [], "machine");
+  remoteRequest.mockImplementation(async (_machine, method) => method === "projects.open"
+    ? { id: "project", cwd: "/home/me/repo", name: "repo" } : "content");
+  expect(await readTextFile("/home/me/repo/file.txt")).toBe("content");
+  expect(remoteRequest.mock.calls.map(call => call[1])).toEqual(["projects.open", "workspace.run"]);
+  expect(invokeLocal).not.toHaveBeenCalled();
 });
 
 it("runs the same file command on the machine with host paths", async () => {
@@ -167,4 +208,33 @@ it("refuses what the host cannot do and explains outdated hosts", async () => {
     runRemoteCommand("list_dir", { path: "remote://env/home/me" }),
   ).rejects.toThrow("Update OmniCode Host");
   expect(remoteRequest).toHaveBeenCalledTimes(1);
+});
+
+it("keeps mixed picked and project attachment paths on their respective owners and reads Host chunks", async () => {
+  configureSharedHost("env", [{ id: "project", cwd: "/home/me/repo", name: "repo" }], "machine");
+  remoteRequest.mockImplementation(async (_machine, method, params) => {
+    if (method === "environment.describe") return { protocolVersion: HOST_PROTOCOL_VERSION, environmentId: "env", name: "Host", providers: ["codex"], capabilities: ["workspace.attachments.v1"] };
+    if (method === "workspace.run" && params.command === "inspect_paths") return params.args.paths.map((path: string) => ({ path, name: "image.png", size: 5, isDir: false }));
+    if (method === "workspace.run" && params.command === "read_file_base64") return { transfer: "snapshot", size: 5 };
+    if (method === "workspace.run" && params.command === "read_attachment_chunk") return params.args.offset === 0
+      ? { data: "YWJj", offset: 3, size: 5 } : { data: "ZGU=", offset: 5, size: 5 };
+    throw new Error(`Unexpected ${method}`);
+  });
+  invokeLocal.mockImplementation(async (command, args) => command === "inspect_paths"
+    ? args.paths.map((path: string) => ({ path, name: "picked.png", size: 5, isDir: false })) : "bG9jYWw=");
+  const paths = ["/home/me/repo/image.png", "/Downloads/picked.png", "remote://env/other/image.png"];
+  expect((await inspectAttachmentPaths(paths)).map(entry => entry.path)).toEqual(paths);
+  expect(invokeLocal).toHaveBeenCalledExactlyOnceWith("inspect_paths", { paths: ["/Downloads/picked.png"] });
+  expect(await readAttachmentBase64("/home/me/repo/image.png")).toBe("YWJjZGU=");
+  expect(invokeLocal).not.toHaveBeenCalledWith("read_file_base64", expect.anything());
+  expect(await readAttachmentBase64("/Downloads/picked.png")).toBe("bG9jYWw=");
+  expect(remoteRequest.mock.calls.filter(call => call[1] === "workspace.run").every(call => !JSON.stringify(call[2]).includes("/Downloads/"))).toBe(true);
+});
+
+it("rejects project attachment reads on an old Host without falling back to Rust", async () => {
+  configureSharedHost("env", [{ id: "project", cwd: "/home/me/repo", name: "repo" }], "machine");
+  remoteRequest.mockResolvedValue({ protocolVersion: HOST_PROTOCOL_VERSION, environmentId: "env", name: "Old Host", providers: ["codex"], capabilities: ["workspace.run"] });
+  await expect(readAttachmentBase64("/home/me/repo/image.png")).rejects.toThrow("Update OmniCode Host");
+  expect(invokeLocal).not.toHaveBeenCalled();
+  expect(remoteRequest.mock.calls.map(call => call[1])).toEqual(["environment.describe"]);
 });

@@ -1,14 +1,8 @@
-import type { Block, TaskListItem } from "./session";
-import { legacyTaskListFromText } from "./taskList";
-import { planTitle } from "./plan";
-import { agentStepCount } from "./agentTranscript";
-import {
-  isSubagentBlock,
-  subagentModelName,
-  subagentName,
-  toolCallState,
-  type ToolCallState,
-} from "./transcriptActivity";
+import type { Block, TaskListItem } from "../../../contracts/session";
+import { legacyTaskListFromText } from "../../../domain/taskList";
+import { planTitle } from "../../../domain/plan";
+import { agentStepCount } from "../../../domain/agentTranscript";
+import { isSubagentBlock, subagentModelName, subagentName, toolCallState, type ToolCallState } from "./transcriptActivity";
 
 export type SessionStatusGit = {
   additions: number;

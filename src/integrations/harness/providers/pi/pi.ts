@@ -1,27 +1,8 @@
-import { piImageMaterializer } from "./piImages";
-import {
-  bindSession,
-  cancelTurn,
-  compactContext,
-  forgetSession,
-  respondApproval,
-  respondQuestion,
-  rewindLastTurn,
-  sendTurn,
-  setPiBinaryResolver as setFlavorBinaryResolver,
-  steerTurn,
-  stopSession,
-} from "./piFamily";
+import { bindSession, cancelTurn, compactContext, forgetSession, respondApproval, respondQuestion, rewindLastTurn, sendTurn, setPiBinaryResolver as setFlavorBinaryResolver, steerTurn, stopSession } from "./piFamily";
 import { PI_FLAVOR } from "./piFlavor";
-import type { UserQuestionReply } from "../../../../features/sessions/model/userQuestion";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  RewindLastTurnInput,
-  RewindLastTurnResult,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+import type { UserQuestionReply } from "../../../../contracts/session";
+import type { ApprovalDecision } from "../../../../contracts/harness";
+import type { CompactContextInput, RewindLastTurnInput, RewindLastTurnResult, SendTurnInput, SteerTurnInput } from "../../core/types";
 
 /**
  * Live Pi adapter. Spawns `pi --mode rpc` with the user's config and extensions
@@ -29,7 +10,7 @@ import type {
  * keep working; TUI-only widgets do not appear in OmniCode.
  */
 export function sendPiTurn(input: SendTurnInput): Promise<void> {
-  return sendTurn(PI_FLAVOR, input, piImageMaterializer());
+  return sendTurn(PI_FLAVOR, input);
 }
 
 export function compactPiContext(input: CompactContextInput): Promise<void> {
@@ -75,7 +56,7 @@ export function bindPiSession(
   providerSessionId: string,
   cwd: string,
   _providerAccountId?: string,
-  nativeSession?: import("../../../../features/sessions/model/session").NativeSessionLink,
+  nativeSession?: import("../../../../contracts/session").NativeSessionLink,
 ): void {
   bindSession(PI_FLAVOR, threadId, providerSessionId, cwd, nativeSession?.path);
 }

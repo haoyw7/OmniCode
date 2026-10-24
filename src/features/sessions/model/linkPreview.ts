@@ -1,4 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
+import { fetchHostLinkPreview, hostMediaScope } from "../../connections/model/hostMedia";
+import type { LinkPreviewMetadata } from "../../../contracts/hostMedia";
 
 export type UserLink = {
   url: string;
@@ -19,10 +20,7 @@ export type UserMessageLink = {
   afterText: string;
 };
 
-export type LinkPreviewMetadata = {
-  title: string | null;
-  faviconDataUrl: string | null;
-};
+
 
 const metadataCache = new Map<string, Promise<LinkPreviewMetadata>>();
 
@@ -138,11 +136,12 @@ function count(value: string, character: string): number {
 export function fetchLinkPreviewMetadata(
   url: string,
 ): Promise<LinkPreviewMetadata> {
-  const cached = metadataCache.get(url);
+  const key = `${hostMediaScope()}:${url}`;
+  const cached = metadataCache.get(key);
   if (cached) return cached;
 
-  const pending = invoke<LinkPreviewMetadata>("fetch_link_preview", { url });
-  metadataCache.set(url, pending);
-  pending.catch(() => metadataCache.delete(url));
+  const pending = fetchHostLinkPreview(url);
+  metadataCache.set(key, pending);
+  pending.catch(() => metadataCache.delete(key));
   return pending;
 }

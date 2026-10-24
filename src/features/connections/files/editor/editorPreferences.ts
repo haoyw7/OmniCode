@@ -1,14 +1,6 @@
 import { EditorState, type Extension } from "@codemirror/state";
 import { indentUnit } from "@codemirror/language";
-import {
-  Decoration,
-  EditorView,
-  ViewPlugin,
-  highlightWhitespace,
-  scrollPastEnd,
-  type DecorationSet,
-  type ViewUpdate,
-} from "@codemirror/view";
+import { Decoration, EditorView, ViewPlugin, highlightWhitespace, scrollPastEnd, type DecorationSet, type ViewUpdate } from "@codemirror/view";
 import { loadEditorPreferences } from "../model/editorPreferences";
 
 function guides(view: EditorView): DecorationSet {

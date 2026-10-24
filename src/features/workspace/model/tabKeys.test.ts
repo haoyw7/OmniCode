@@ -1,14 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  adjacentItemId,
-  deferUnhandledEscape,
-  focusedBusyAgentSessionId,
-  shouldHandleListNavigation,
-  shouldStopFocusedTurnOnEscape,
-  tabCommand,
-  tabCommandForKeybinding,
-  tabCommandKeybinding,
-} from "./tabKeys";
+import { adjacentItemId, deferUnhandledEscape, focusedBusyAgentSessionId, shouldHandleListNavigation, shouldStopFocusedTurnOnEscape, tabCommand, tabCommandForKeybinding, tabCommandKeybinding } from "./tabKeys";
 
 function key(
   partial: Partial<

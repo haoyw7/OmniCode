@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Block } from "./session";
+import type { Block } from "../../../contracts/session";
 import { groupTurns } from "./transcriptActivity";
 import { TranscriptTurnCache } from "./transcriptTurnCache";
 

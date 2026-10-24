@@ -1,5 +1,6 @@
+import type { GitDiffIndex } from "../contracts/workspace";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { GitDiffIndex } from "../platform/tauri/fs";
+
 import type { MobileGitSource } from "./mobileGit";
 
 export type MobileGitIndexState = {

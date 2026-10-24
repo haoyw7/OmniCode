@@ -1,3 +1,4 @@
+import type { GitFileDiffKind } from "../../../../contracts/workspace";
 import { IconButton } from "../../../../shared/ui/forms/IconButton";
 import { editorPreferenceExtensions } from "../editor/editorPreferences";
 import { subscribeEditorPreferences } from "../model/editorPreferences";
@@ -5,92 +6,36 @@ import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { acceptCompletion, completionStatus } from "@codemirror/autocomplete";
 import { indentLess, indentMore } from "@codemirror/commands";
-import {
-  foldGutter,
-  foldKeymap,
-  getIndentUnit,
-  indentUnit,
-} from "@codemirror/language";
-import {
-  Annotation,
-  Compartment,
-  countColumn,
-  EditorSelection,
-  Prec,
-  StateField,
-  Transaction,
-  type EditorState,
-  type Text,
-} from "@codemirror/state";
-import {
-  Decoration,
-  type DecorationSet,
-  EditorView,
-  highlightActiveLine,
-  highlightActiveLineGutter,
-  keymap,
-  lineNumbers,
-} from "@codemirror/view";
-import {
-  AlertCircle,
-  Code,
-  Eye,
-  RotateCcw,
-} from "../../../../shared/ui/icons";
+import { foldGutter, foldKeymap, getIndentUnit, indentUnit } from "@codemirror/language";
+import { Annotation, Compartment, countColumn, EditorSelection, Prec, StateField, Transaction, type EditorState, type Text } from "@codemirror/state";
+import { Decoration, type DecorationSet, EditorView, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from "@codemirror/view";
+import { AlertCircle, Code, Eye, RotateCcw } from "../../../../shared/ui/icons";
 import { minimalSetup } from "codemirror";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  MarkdownViewShell,
-  useMarkdownMode,
-} from "../../../sessions/ui/MarkdownModeToggle";
+import { MarkdownViewShell, useMarkdownMode } from "../../../../shared/ui/MarkdownModeToggle";
 import { useColorScheme } from "../../../../shared/hooks/useColorScheme";
 import { useCodeThemePalette, useCodeThemes } from "../../../settings/model/codeAppearance";
 import { useLockOverscroll } from "../../../../shared/hooks/useLockOverscroll";
 import { isLightScheme } from "../../../settings/model/appearance";
 import { loadAutosave, loadFormatOnSave } from "../../../settings/model/settings";
 import { formatText } from "../../../../shared/lib/format";
-import {
-  basename,
-  gitDiffFiles,
-  gitFileDiff,
-  gitStageContents,
-  notifyGitChanged,
-  readTextFile,
-  subscribeGitChanged,
-  writeTextFile,
-  type GitFileDiffKind,
-} from "../../../../platform/tauri/fs";
+import { basename, gitDiffFiles, gitFileDiff, gitStageContents, notifyGitChanged, readTextFile, subscribeGitChanged, writeTextFile } from "../../../../platform/tauri/fs";
 import { syncWatchedMtime, watchFile } from "../model/fileWatch";
-import { displayPath } from "../../../../shared/lib/paths";
-import type { EditorNavigation } from "../../../search/model/search";
-import { MarkdownDocumentPreview } from "../../../sessions/ui/MarkdownDocumentPreview";
-import {
-  DiffCommentComposer,
-  type DiffCommentComposerTarget,
-} from "../../../source-control/ui/DiffCommentComposer";
+import { displayPath } from '../../../../domain/pathDisplay';
+import type { EditorNavigation } from "../../../../shared/lib/fileNavigation";
+import { MarkdownDocumentPreview } from "../../../../shared/ui/markdown/MarkdownDocumentPreview";
+import { DiffCommentComposer } from "../../../../shared/ui/DiffCommentComposer";
+import type { PopoverAnchor } from "../../../../shared/ui/Popover";
+import type { UnifiedLine } from "../../../source-control/model/unifiedDiff";
+import { diffCommentLocation, formatDiffComment } from "../../../source-control/model/diffComment";
+import { requestAddToChat } from "../../../sessions/model/quoteDraft";
+import { MOD } from "../../../../platform/tauri/platform";
 import { editorAutocomplete } from "../editor/editorAutocomplete";
 import { languageForPath, schemeExtensions } from "../editor/editorChrome";
-import {
-  detectLineEnding,
-  type LineEnding,
-  normalizeLineBreaks,
-  preserveEditorViewport,
-  replaceEditorDoc,
-  restoreLineEnding,
-} from "../editor/editorDoc";
-import {
-  editorMatching,
-  editorTyping,
-  tryExpandEmmet,
-} from "../editor/editorEditing";
-import {
-  EditorSelectionMenu,
-  type EditorSelectionTarget,
-} from "./EditorSelectionMenu";
-import {
-  editorGit,
-  setGitOriginal,
-} from "../editor/editorGit";
+import { detectLineEnding, type LineEnding, normalizeLineBreaks, preserveEditorViewport, replaceEditorDoc, restoreLineEnding } from "../editor/editorDoc";
+import { editorMatching, editorTyping, tryExpandEmmet } from "../editor/editorEditing";
+import { EditorSelectionMenu, type EditorSelectionTarget } from "./EditorSelectionMenu";
+import { editorGit, setGitOriginal } from "../editor/editorGit";
 import { editorLint } from "../editor/editorLint";
 import { editorSearch } from "../editor/editorSearch";
 import { editorScrollbar } from "../editor/editorScrollbar";
@@ -619,7 +564,7 @@ export function CodeMirrorEditor({
   const codeThemes = useCodeThemes();
   const codePalette = useCodeThemePalette(codeThemes[colorScheme]);
   const [commentTarget, setCommentTarget] =
-    useState<DiffCommentComposerTarget | null>(null);
+    useState<{ line: UnifiedLine; anchor: PopoverAnchor } | null>(null);
   const [selectionTarget, setSelectionTarget] =
     useState<EditorSelectionTarget | null>(null);
   const gitOptions = {
@@ -917,8 +862,10 @@ export function CodeMirrorEditor({
       </div>
       <PresenceBoundary propagate>{commentTarget ? (
         <DiffCommentComposer
-          path={commentPath}
-          target={commentTarget}
+          location={diffCommentLocation({ path: commentPath, line: commentTarget.line })}
+          anchor={commentTarget.anchor}
+          modifierLabel={MOD}
+          onSubmit={(comment) => requestAddToChat(formatDiffComment({ path: commentPath, line: commentTarget.line }, comment), "plain")}
           onDismiss={() => setCommentTarget(null)}
         />
       ) : null}</PresenceBoundary>

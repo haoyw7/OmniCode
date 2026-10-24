@@ -4,45 +4,15 @@ import { autoAnimateOptions } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  Archive,
-  Folder,
-  Internet,
-  MessageSquare,
-  MoreHorizontal,
-  Pin,
-  Plus,
-  Search,
-} from "../../../shared/ui/icons";
+import { Archive, Folder, Internet, MessageSquare, MoreHorizontal, Pin, Plus, Search } from "../../../shared/ui/icons";
 import { Popover } from "../../../shared/ui/Popover";
 import { MenuHover } from "../../../shared/ui/MenuHover";
-import {
-  desktopModeForCwd,
-  type DesktopMode,
-} from "../../../app/model/desktopMode";
-import {
-  pathKey,
-  prettyCwd,
-  projectName,
-  projectKey,
-} from "../../../shared/lib/paths";
+import { desktopModeForCwd, type DesktopMode } from "../../../app/model/desktopMode";
+import { pathKey, prettyCwd, projectName, projectKey } from "../../../shared/lib/paths";
 import { usePreferenceState } from "../../settings/model/usePreferenceState";
-import {
-  loadTabGroupLabels,
-  resolveTabGroupLabel,
-  subscribeTabGroupLabels,
-} from "../../workspace/model/tabGroups";
+import { loadTabGroupLabels, resolveTabGroupLabel, subscribeTabGroupLabels } from "../../workspace/model/tabGroups";
 import { useChatFolders } from "../model/chatFolders";
-import {
-  collectRailProjects,
-  isRemoteProjectPath,
-  loadArchivedProjects,
-  loadPinnedProjects,
-  subscribeArchivedProjects,
-  subscribeProjectPathsChanged,
-  toggleProjectPin,
-  type RecentProject,
-} from "../model/recents";
+import { collectRailProjects, isRemoteProjectPath, loadArchivedProjects, loadPinnedProjects, subscribeArchivedProjects, subscribeProjectPathsChanged, toggleProjectPin, type RecentProject } from "../model/recents";
 
 export function ProjectsPage({
   mode,

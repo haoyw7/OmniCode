@@ -2,43 +2,25 @@ import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
-import { invoke } from "@tauri-apps/api/core";
-import { ask } from "@tauri-apps/plugin-dialog";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { confirmNativeAction } from "../../../platform/tauri/dialogs";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { revealPath } from "../../../platform/tauri/fs";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import type { ComponentType } from "react";
+import type { ProjectPickerProps } from "../../projects/presentation";
 import type { RecentProject } from "../../projects/model/recents";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { Popover } from "../../../shared/ui/Popover";
 import { LAYER } from "../../../shared/lib/layers";
-import {
-  Globe,
-  Plus,
-  RefreshCw,
-  ListFilter,
-  Check,
-} from "../../../shared/ui/icons";
+import { Globe, Plus, RefreshCw, ListFilter, Check } from "../../../shared/ui/icons";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { mcpServerKey } from "../model/mcpInspect";
+import { addMcpServer, loginMcpServer, removeClaudeMcpServer } from "../model/mcpHost";
 import { McpServerDetails } from "./McpServerDetails";
-import { MCP_PROVIDER_LABELS, type McpConnection } from "../model/mcp";
-import {
-  getCachedMcpSettings,
-  loadMcpSettings,
-  subscribeMcpSettings,
-  type McpServerRow,
-  type McpSettingsSnapshot,
-} from "../model/mcpSettingsCache";
+import { MCP_PROVIDER_LABELS } from "../model/mcp";
+import { type McpConnection } from "../../../contracts/mcp";
+import { getCachedMcpSettings, loadMcpSettings, subscribeMcpSettings, type McpServerRow, type McpSettingsSnapshot } from "../model/mcpSettingsCache";
 
 type Scope = McpConnection["scope"];
 type ServerRow = McpServerRow;
@@ -196,8 +178,7 @@ function AddServerModal({
       setError("");
       await withStatusToast(
         () =>
-          invoke("mcp_add", {
-            cwd,
+          addMcpServer(cwd, {
             provider,
             scope,
             name: name.trim(),
@@ -306,9 +287,11 @@ function AddServerModal({
 }
 
 export function McpSettings({
+  ProjectPicker: SearchableProjectPicker,
   cwd,
   recents = [],
 }: {
+  ProjectPicker: ComponentType<ProjectPickerProps>;
   cwd: string;
   recents?: RecentProject[];
 }) {
@@ -416,8 +399,7 @@ function McpConnections({
     setBusy(server.name);
     setError("");
     try {
-      await invoke("mcp_provider_login", {
-        cwd,
+      await loginMcpServer(cwd, {
         provider: server.provider,
         name: server.name,
       });
@@ -434,7 +416,7 @@ function McpConnections({
       ? server.scope
       : (removeScopes[server.name] ?? "local");
     if (
-      !(await ask(`Remove ${server.name} from ${selectedScope} scope?`, {
+      !(await confirmNativeAction(`Remove ${server.name} from ${selectedScope} scope?`, {
         title: "Remove MCP server",
       }))
     )
@@ -442,8 +424,7 @@ function McpConnections({
     setBusy(server.name);
     setError("");
     try {
-      await invoke("claude_mcp_remove", {
-        cwd,
+      await removeClaudeMcpServer(cwd, {
         name: server.name,
         scope: selectedScope,
       });

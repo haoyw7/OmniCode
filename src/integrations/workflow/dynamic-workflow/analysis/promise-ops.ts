@@ -1,13 +1,5 @@
 import ts from "typescript";
-import {
-  clearExact,
-  cloneValue,
-  collapse,
-  collapseInto,
-  emptyValue,
-  mergeInto,
-  type AbstractValue,
-} from "./domain.js";
+import { clearExact, cloneValue, collapse, collapseInto, emptyValue, mergeInto, type AbstractValue } from "./domain.js";
 import type { EvalContext, Evaluator } from "./taint.js";
 import { applyPessimistically, recordCall } from "./calls.js";
 

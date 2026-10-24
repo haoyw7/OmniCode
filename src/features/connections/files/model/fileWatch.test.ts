@@ -4,11 +4,7 @@ const statFiles = vi.hoisted(() => vi.fn());
 
 vi.mock("../../../../platform/tauri/fs", () => ({ statFiles }));
 
-import {
-  invalidateWatchedFiles,
-  nudgeWatchedFiles,
-  watchFile,
-} from "./fileWatch";
+import { invalidateWatchedFiles, nudgeWatchedFiles, watchFile } from "./fileWatch";
 
 describe("file watch", () => {
   const stops: Array<() => void> = [];

@@ -1,25 +1,13 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useContext, useEffect, useState, useSyncExternalStore } from "react";
-import { useModelSource } from "../../sessions/ui/modelSource";
-import {
-  orchestrationTaskLabel,
-  type OrchestrationSummary,
-} from "../model/orchestrationSummary";
-import { HARNESS_TITLE } from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import {
-  OrchestrationActions,
-  OrchestrationWorkers,
-  OrchestrationRuntimeContext,
-} from "./OrchestrationActions";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  CircleAlert,
-} from "../../../shared/ui/icons";
-import { TerminalSpinner } from "../../sessions/ui/TerminalSpinner";
-import { localizeOrchestrationMessage } from "./orchestrationMessages";
+import { useModelSource } from "../../sessions/model/modelSource";
+import { orchestrationTaskLabel, type OrchestrationSummary } from "../model/orchestrationSummary";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { OrchestrationActions, OrchestrationWorkers, OrchestrationRuntimeContext } from "../model/OrchestrationActions";
+import { Check, ChevronDown, ChevronRight, CircleAlert } from "../../../shared/ui/icons";
+import { TerminalSpinner } from "../../../shared/ui/TerminalSpinner";
+import { localizeOrchestrationMessage } from "../model/orchestrationMessages";
 
 export function OrchestrationSidebarAgents({
   leadId,

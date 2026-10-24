@@ -4,7 +4,8 @@ import { PanelLeft, RotateCcw } from "../../../shared/ui/icons";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
-import { inboxItemRef, type InboxItem } from "../model/githubTasks";
+import { inboxItemRef } from "../model/githubTasks";
+import { type InboxItem } from "../../../contracts/session";
 import { inboxAskKey } from "../model/inboxAsk";
 
 export type InboxSessionPortal = { sessionId: string; host: HTMLElement };

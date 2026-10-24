@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { SettingsView } from "./SettingsView";
+import { SettingsView, preloadSettingsSection } from "../../../app/ui/SettingsView";
 import { saveKeybindingOverride } from "../model/settings";
 
 vi.mock("../../../platform/tauri/platform", () => ({
@@ -54,6 +55,7 @@ afterEach(async () => {
 });
 
 async function render() {
+  await preloadSettingsSection("keybindings");
   await act(async () =>
     root.render(
       createElement(SettingsView, {

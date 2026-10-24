@@ -1,63 +1,21 @@
-import {
-  measureGenerationTurn,
-  observeGenerationDelta,
-  invalidateObservedGeneration,
-  resetGenerationMetrics,
-} from "../../core/generationMetrics";
+import { measureGenerationTurn, observeGenerationDelta, invalidateObservedGeneration, resetGenerationMetrics } from "../../core/generationMetrics";
 import { botContextKey } from "../../core/botContext";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { sameProviderAccountId } from "../../../../features/providers/model/providerAccounts";
-import {
-  exhaustedWindowResetAt,
-  parseCodexRateLimits,
-} from "../../../../features/providers/model/rateLimits";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
-import { questionPromptTitle, type UserQuestionReply } from "../../../../features/sessions/model/userQuestion";
-import {
-  killChild,
-  resolveCodexBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-} from "../../core/child";
-import {
-  asRecord,
-  buildCodexAppServerArgs,
-  buildThreadStartParams,
-  buildTurnStartParams,
-  buildTurnSteerParams,
-  isRecoverableThreadResumeError,
-  mapApprovalRequest,
-  codexSubagentStates,
-  codexSubagentThreadIds,
-  mapCodexNotification,
-  mapCodexSubagentSteps,
-  stringField,
-  toCodexApprovalDecision,
-  type CodexApprovalKind,
-} from "./codexProtocol";
-import { isTauri } from "@tauri-apps/api/core";
+import { nativeModelId } from "../../core/modelCatalog";
+import { sameProviderAccountId } from "../../../../domain/providerAccount";
+import { exhaustedWindowResetAt, parseCodexRateLimits } from "../../../../domain/rateLimits";
+import type { RuntimeMode, UserQuestionReply } from "../../../../contracts/session";
+import { questionPromptTitle } from "../../../../domain/userQuestion";
+
+import { killChild, resolveCodexBinary, spawnChild, unwatchChild, watchChild } from "../../core/child";
+import { asRecord } from "../../../../domain/records";
+import { buildCodexAppServerArgs, buildThreadStartParams, buildTurnStartParams, buildTurnSteerParams, isRecoverableThreadResumeError, mapApprovalRequest, codexSubagentStates, codexSubagentThreadIds, mapCodexNotification, mapCodexSubagentSteps, stringField, toCodexApprovalDecision, type CodexApprovalKind } from "./codexProtocol";
 import { JsonRpcClient, type JsonRpcId } from "../../core/jsonRpc";
-import { deleteGeneratedImages, saveGeneratedImage } from "../../../../platform/tauri/fs";
-import {
-  codexAsyncQuestions,
-  codexAsyncQuestionResponse,
-  codexQuestions,
-  codexQuestionResponse,
-} from "./codexQuestions";
+import { codexAsyncQuestions, codexAsyncQuestionResponse, codexQuestions, codexQuestionResponse } from "./codexQuestions";
 import { codexMcpConfirmation } from "./codexElicitation";
-import { snapshotRemainder } from "../../core/streamText";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  HarnessEvent,
-  HarnessSessionInput,
-  RewindLastTurnInput,
-  RewindLastTurnResult,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+import { snapshotRemainder } from "../../../../domain/streamText";
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import type { CompactContextInput, HarnessSessionInput, RewindLastTurnInput, RewindLastTurnResult, SendTurnInput, SteerTurnInput } from "../../core/types";
 
 type ApprovalOutcome = ApprovalDecision | "cancelled";
 
@@ -445,7 +403,7 @@ export function bindCodexSession(
   providerSessionId: string,
   cwd: string,
   providerAccountId?: string,
-  nativeSession?: import("../../../../features/sessions/model/session").NativeSessionLink,
+  nativeSession?: import("../../../../contracts/session").NativeSessionLink,
 ): void {
   const providerThreadId = providerSessionId.trim();
   if (!threadId || !providerThreadId || !cwd.trim()) return;
@@ -1000,49 +958,8 @@ async function materializeGeneratedImage(
   live: Live,
   event: Extract<HarnessEvent, { type: "image.generated"; data: string }>,
 ): Promise<void> {
-  // The headless Host persists the raw bytes itself; only the desktop app can
-  // reach the Tauri image store.
-  if (!(typeof isTauri === "function" && isTauri())) {
-    live.onEvent(event);
-    return;
-  }
-  const turnGeneration = live.turnGeneration;
-  try {
-    const asset = await saveGeneratedImage({
-      data: event.data,
-      name: event.name,
-    });
-    if (
-      live.cancelled ||
-      live.muteUpdates ||
-      turnGeneration !== live.turnGeneration
-    ) {
-      void deleteGeneratedImages([asset.path]).catch(() => undefined);
-      return;
-    }
-    live.onEvent({
-      type: "image.generated",
-      itemId: event.itemId,
-      ...(event.agentCallId ? { agentCallId: event.agentCallId } : {}),
-      path: asset.path,
-      name: event.name,
-      mimeType: asset.mimeType,
-      size: asset.size,
-      ...(event.alt ? { alt: event.alt } : {}),
-    });
-  } catch (cause) {
-    if (
-      live.cancelled ||
-      live.muteUpdates ||
-      turnGeneration !== live.turnGeneration
-    ) {
-      return;
-    }
-    const message = `Could not save generated image: ${cause instanceof Error ? cause.message : String(cause)}`;
-    live.onEvent(event.agentCallId
-      ? { type: "agent.step", callId: event.agentCallId, stepId: `${event.itemId}:error`, kind: "message", text: message }
-      : { type: "session.error", message });
-  }
+  // Adapters run on the Host, which persists the raw bytes itself.
+  live.onEvent(event);
 }
 
 /** Rate-limit updates are sparse: a missing window keeps its last reading. */

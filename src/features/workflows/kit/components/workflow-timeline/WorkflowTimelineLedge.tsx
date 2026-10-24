@@ -1,14 +1,7 @@
 import { Scrollbar } from "../../../../../shared/ui/Scrollbar";
 import { workflowEntry } from "./workflow-motion.js";
 import { motion as motionElement } from "motion/react";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  type RefObject,
-} from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { reducedMotionQuery } from "../../../../../shared/lib/reducedMotion";
 import { cn } from "../../../../../shared/lib/cn";
 import { STATUS_DOT } from "../workflow-graph/run-status-presentation.js";

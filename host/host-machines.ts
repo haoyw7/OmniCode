@@ -1,9 +1,10 @@
 import { dirname, join } from "node:path";
 import { configureChildBackend, configureChildMachineSelector, removeChildBackend } from "../src/integrations/harness/core/child";
-import { parseProjectMachine, projectMachineKey, type ProjectMachine } from "../src/integrations/harness/core/machine";
+import { parseProjectMachine, projectMachineKey } from "../src/integrations/harness/core/machine";
+import { type ProjectMachine } from "../src/contracts/session";
 import type { HostStore } from "./store";
 import type { HostProvider } from "./providers";
-import type { RemoteProvider } from "../src/integrations/harness/core/provider";
+import type { RemoteProvider } from "../src/contracts/provider";
 import { currentMachineIO, localMachineIO, withMachineIO, WslMachineIO, type MachineIO, type MachineTransport } from "./machine-io";
 import { WslConnection } from "./machines/wsl";
 import { WslChildBackend } from "./wsl-child-backend";
@@ -96,7 +97,7 @@ export class HostMachines {
             const io = currentMachineIO();
             // Uploads and generated images belong to the Host. Only their process
             // view changes: Linux providers must receive the mounted data path.
-            if (["send", "steer", "compact"].includes(String(property)) && io.key !== "local" && first && typeof first === "object") {
+            if (["send", "steer", "compact", "rewindLastTurn", "checkpointRewind"].includes(String(property)) && io.key !== "local" && first && typeof first === "object") {
               return (async () => {
                 const prepared = { ...first } as Record<string, unknown>;
                 if ("attachments" in first && Array.isArray(first.attachments)) prepared.attachments = await Promise.all(first.attachments.map(async (file: { path?: string }) => ({

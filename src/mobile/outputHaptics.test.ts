@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { OutputHaptics } from "./outputHaptics";
 import { TranscriptHapticsTracker } from "./transcriptHaptics";
-import type { Block } from "../features/sessions/model/session";
+import type { Block } from "../contracts/session";
 
 beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(1000); });
 afterEach(() => vi.useRealTimers());

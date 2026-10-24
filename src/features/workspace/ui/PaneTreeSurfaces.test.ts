@@ -2,27 +2,19 @@
 import { completeMotionAnimation, motionTestDriver } from "../../../../tests/helpers/motionDriver";
 import { duration } from "../../../shared/motion/tokens";
 vi.mock("motion/react", async (importOriginal) => { const actual = await importOriginal<typeof import("motion/react")>(); return { ...actual, ...motionTestDriver(actual, true) }; });
-import {
-  act,
-  createElement,
-  useEffect,
-  type ComponentProps,
-  type ReactNode,
-} from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act, createElement, useEffect, type ComponentProps, type ReactNode } from "react";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "../../../contracts/session";
 import { layoutLeaves, type EditorPane, type LayoutNode } from "../model/layout";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { isPaneResizing } from "../../../shared/lib/paneResize";
-import { PaneTree } from "./PaneTree";
-import {
-  SessionHeaderActionsContext,
-  type SessionHeaderActions,
-} from "./SessionHeaderActions";
+import { PaneTree } from "../../../app/ui/PaneTree";
+import { SessionHeaderActionsContext, type SessionHeaderActions } from "../model/SessionHeaderActions";
 
 const lifetime = vi.hoisted(() => ({ mounts: 0, unmounts: 0 }));
-vi.mock("../../connections/files/ui/FilePane", () => ({
+vi.mock("../../../app/ui/FilePane", () => ({
   FilePane: ({
     pane,
     visible,

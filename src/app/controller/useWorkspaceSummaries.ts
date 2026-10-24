@@ -6,17 +6,12 @@ import type { useProjectBranches } from "../../features/source-control/hooks/use
 import { type WorkspaceTab } from "../../features/workspace/model/layout";
 import { openSessionIds } from "../model/workspaceSelectors";
 import { sameProjectPath, type RecentProject } from "../../features/projects/model/recents";
-import { type Session } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
 import { projectName } from "../../shared/lib/paths";
 import { type SessionSummary } from "../../features/sessions/data/sessionStore";
 import { useStableSummaries } from "../../features/sessions/hooks/useStableSummaries";
 import type { LinkedSessionUpdate } from "../../features/inbox/model/linkedSessionUpdates";
-import {
-  allProjectHistoryWithLiveSessions,
-  historyWithLiveSessions,
-  sidebarLiveSessions,
-  summaryFromSession,
-} from "../../features/sessions/data/sessionHistory";
+import { allProjectHistoryWithLiveSessions, historyWithLiveSessions, sidebarLiveSessions, summaryFromSession } from "../../features/sessions/data/sessionHistory";
 
 type Options = {
   history: SessionSummary[];
@@ -28,7 +23,6 @@ type Options = {
   projectBranches: ReturnType<typeof useProjectBranches>;
   orchestrationRuns: Parameters<typeof historyWithLiveSessions>[4];
   paletteOpen: boolean;
-  onInboxAppeared: NonNullable<Parameters<typeof useInboxActivity>[3]>["onAppeared"];
   linkedSessionUpdatesRef: RefObject<ReadonlyMap<string, LinkedSessionUpdate>>;
 };
 
@@ -43,7 +37,6 @@ export function useWorkspaceSummaries({
   projectBranches,
   orchestrationRuns,
   paletteOpen,
-  onInboxAppeared,
   linkedSessionUpdatesRef,
 }: Options) {
   // `history` now spans every visited project; consumers that expect the
@@ -100,9 +93,7 @@ export function useWorkspaceSummaries({
     unseen: inboxUnseen,
     linkedSessionUpdateIds,
     linkedSessionUpdates,
-  } = useInboxActivity(recents, sidebarCwd, sidebarHistory, {
-    onAppeared: onInboxAppeared,
-  });
+  } = useInboxActivity(recents, sidebarCwd, sidebarHistory);
   linkedSessionUpdatesRef.current = linkedSessionUpdates;
   const liveInboxRelatedSessions = useMemo(() => {
     const byId = new Map<string, SessionSummary>();

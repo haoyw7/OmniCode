@@ -5,18 +5,7 @@
  * 事务性不在端口面上，由 driver 组合 journal+session 写入。
  */
 
-import type {
-  ActorRecord,
-  Caps,
-  JournalStorePort,
-  ListEventsOptions,
-  NodeRecord,
-  RunEvent,
-  RunRecord,
-  RunSettlementRecord,
-  RunStatus,
-  StoredEvent,
-} from "./types.js";
+import type { ActorRecord, Caps, JournalStorePort, ListEventsOptions, NodeRecord, RunEvent, RunRecord, RunSettlementRecord, RunStatus, StoredEvent } from "./types.js";
 
 /** 结构化深拷贝：隔离存储边界两侧的引用。值均为 JSON 兼容或 PersonaSpec 等纯数据。 */
 function clone<T>(value: T): T {

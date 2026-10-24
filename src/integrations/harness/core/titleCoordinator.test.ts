@@ -1,9 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  newSession,
-  type Session,
-} from "../../../features/sessions/model/session";
-import { manualSessionTitle } from "../../../features/sessions/model/titlePolicy";
+import { newSession } from "../../../features/sessions/model/session";
+import { type Session } from "../../../contracts/session";
+import { manualSessionTitle } from "../../../domain/titlePolicy";
 import { SessionTitleCoordinator } from "./titleCoordinator";
 
 afterEach(() => vi.useRealTimers());

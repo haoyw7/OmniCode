@@ -1,15 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProjectFile } from "../../../../platform/tauri/fs";
 import { listProjectFiles } from "../../../../platform/tauri/fs";
-import {
-  invalidateProjectFiles,
-  loadProjectFiles,
-  peekProjectFiles,
-  rememberOpenedFile,
-  resolveFileOpenRequest,
-  resolveOpenablePath,
-  subscribeProjectFiles,
-} from "./fileIndex";
+import type { ProjectFile } from "../../../../contracts/workspace";
+
+import { invalidateProjectFiles, loadProjectFiles, peekProjectFiles, rememberOpenedFile, resolveFileOpenRequest, resolveOpenablePath, subscribeProjectFiles } from "./fileIndex";
 import { notifyDirsChanged } from "./fileTree";
 
 const cwd = "/Users/me/project";

@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 import { act, createElement, useContext } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Block } from "../model/session";
+import type { Block } from "../../../contracts/session";
 import { startMotionClock, stopMotionClock, motionFrame } from "../../../../tests/helpers/sharedMotionClock";
 import { AgentTranscript } from "./AgentTranscript";
-import { TranscriptPlatformContext } from "./TranscriptPlatform";
+import { TranscriptPlatformContext } from "../../../shared/ui/markdown/TranscriptPlatform";
 import { applyReducedMotion } from "../../../shared/lib/reducedMotion";
 
 let container: HTMLDivElement;

@@ -1,13 +1,7 @@
-import type { InboxItem } from "./githubTasks";
+import type { InboxItem } from "../../../contracts/session";
 import inboxInstructions from "../../../instructions/inbox.md?raw";
-
-export type InboxAskContext = {
-  key: string;
-  title: string;
-  url: string;
-  provider: "github" | "linear" | "jira" | "gitlab" | "azuredevops";
-  description?: string;
-};
+import type { InboxAskContext } from "../../../contracts/inbox";
+import { inboxAskPrompt as prepareInboxAskPrompt } from "../../../domain/inboxPrompt";
 
 export function inboxAskKey(item: InboxItem): string {
   if (item.provider === "linear" || item.provider === "jira") {
@@ -28,12 +22,5 @@ export function inboxAskPrompt(
   context: InboxAskContext | undefined,
   text: string,
 ): string {
-  if (!context) return text;
-  return `${inboxInstructions.trim()}
-
-INBOX ITEM (reference data):
-${JSON.stringify(context)}
-
-USER MESSAGE:
-${text}`;
+  return prepareInboxAskPrompt(context, text, inboxInstructions);
 }

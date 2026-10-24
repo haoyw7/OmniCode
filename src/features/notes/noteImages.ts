@@ -1,12 +1,9 @@
-import { invoke } from "@tauri-apps/api/core";
-import {
-  attachmentsFromFiles,
-  attachmentsFromPaths,
-  revokeAttachment,
-} from "../sessions/model/attachments";
-import type { Attachment } from "../sessions/model/session";
+import { notesHostRequest } from "./notesHost";
+import { readBinaryFile } from "../../platform/tauri/fs";
+import { attachmentsFromFiles, attachmentsFromPaths, revokeAttachment } from "../sessions/model/attachments";
+import type { Attachment } from "../../contracts/session";
 
-import type { NoteImageAsset } from "./noteImagesText";
+import type { NoteImageAsset } from "../../contracts/notes";
 export * from "./noteImagesText";
 
 export async function saveNoteImagesFromFiles(
@@ -36,31 +33,25 @@ async function saveNoteImageAttachments(
   let failure: unknown;
   try {
     for (const image of images) {
-      let sourcePath = image.path;
-      let temporary = false;
-      if (!sourcePath && image.data) {
-        sourcePath = await invoke<string>("write_attachment", {
-          name: image.name,
-          data: image.data,
-        });
-        temporary = true;
-      }
-      if (!sourcePath) continue;
       try {
+        let data = image.data;
+        if (data === undefined && image.path) {
+          const bytes = await readBinaryFile(image.path);
+          let binary = "";
+          for (let offset = 0; offset < bytes.length; offset += 32768)
+            binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+          data = btoa(binary);
+        }
+        if (data === undefined) continue;
         saved.push(
-          await invoke<NoteImageAsset>("notes_save_image", {
+          await notesHostRequest<NoteImageAsset>("notes.saveImage", {
             noteId,
-            sourcePath,
+            name: image.name,
+            data,
           }),
         );
       } catch (err: unknown) {
         failure ??= err;
-      } finally {
-        if (temporary) {
-          await invoke("delete_path", { path: sourcePath }).catch(
-            () => undefined,
-          );
-        }
       }
     }
   } finally {

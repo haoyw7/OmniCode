@@ -1,7 +1,7 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Check, ListEnd, Loader, Minus } from "../../../shared/ui/icons";
-import type { TaskListItem, TaskListItemStatus } from "../model/session";
-import { taskListProgressLabel } from "../model/taskList";
+import type { TaskListItem, TaskListItemStatus } from "../../../contracts/session";
+import { taskListProgressLabel } from "../../../domain/taskList";
 
 type Props = {
   items: TaskListItem[];

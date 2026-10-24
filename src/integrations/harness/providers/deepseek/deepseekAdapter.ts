@@ -1,16 +1,5 @@
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
-import {
-  bindDeepseekSession,
-  cancelDeepseekTurn,
-  forgetDeepseekSession,
-  keepDeepseekQuestionOpen,
-  respondDeepseekApproval,
-  respondDeepseekQuestion,
-  sendDeepseekTurn,
-  steerDeepseekTurn,
-  stopDeepseekSession,
-  stopDeepseekBackgroundTask,
-} from "./deepseek";
+import { bindDeepseekSession, cancelDeepseekTurn, forgetDeepseekSession, keepDeepseekQuestionOpen, respondDeepseekApproval, respondDeepseekQuestion, sendDeepseekTurn, steerDeepseekTurn, stopDeepseekSession, stopDeepseekBackgroundTask } from "./deepseek";
 import { refreshDeepseekCatalog } from "./deepseekCatalog";
 
 export const deepseekAdapter: HarnessAdapter = {

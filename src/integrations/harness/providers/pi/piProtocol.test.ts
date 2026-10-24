@@ -1,35 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  agentEndWillRetry,
-  assistantDeltaFromEvent,
-  buildPiPrompt,
-  buildPiSpawnArgs,
-  buildPiSteer,
-  forkMessagesFromRpcData,
-  contextFromSessionStats,
-  contextFromUsage,
-  turnMetricsFromUsage,
-  extensionUiResponse,
-  extensionUiTitle,
-  isAgentSettled,
-  mergeToolInput,
-  modelsFromRpcData,
-  needsExtensionUiReply,
-  parseExtensionUiRequest,
-  parseJsonLine,
-  parsePiModelRef,
-  parsePiVersion,
-  parseRpcResponse,
-  previewFromTool,
-  providerSessionIdFromState,
-  toolCallStartFromEvent,
-  toolExecutionEndFromEvent,
-  toolImagesFromEvent,
-  toolExecutionStartFromEvent,
-  toolKindFromName,
-  toolTitle,
-  turnErrorFromEvent,
-} from "./piProtocol";
+import { agentEndWillRetry, assistantDeltaFromEvent, buildPiPrompt, buildPiSpawnArgs, buildPiSteer, forkMessagesFromRpcData, contextFromSessionStats, contextFromUsage, turnMetricsFromUsage, extensionUiResponse, extensionUiTitle, isAgentSettled, mergeToolInput, modelsFromRpcData, needsExtensionUiReply, parseExtensionUiRequest, parseJsonLine, parsePiModelRef, parsePiVersion, parseRpcResponse, previewFromTool, providerSessionIdFromState, toolCallStartFromEvent, toolExecutionEndFromEvent, toolImagesFromEvent, toolExecutionStartFromEvent, toolKindFromName, toolTitle, turnErrorFromEvent } from "./piProtocol";
 
 it("keeps valid final PNG content and reports unsupported images", () => {
   const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";

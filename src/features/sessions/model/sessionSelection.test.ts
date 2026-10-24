@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  orderedSessionActionIds,
-  pruneSessionSelection,
-  toggleSessionSelection,
-} from "./sessionSelection";
+import { orderedSessionActionIds, pruneSessionSelection, toggleSessionSelection } from "./sessionSelection";
 
 describe("session selection", () => {
   it("toggles cards without mutating the current selection", () => {

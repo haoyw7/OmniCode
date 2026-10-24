@@ -2,17 +2,9 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { ChevronRight, Internet, Laptop, Plus } from "../../../shared/ui/icons";
-import {
-  OPEN_NEW_ENVIRONMENT_EVENT,
-  OPEN_REMOTE_PROJECT_EVENT,
-  knownRemoteMachine,
-} from "../../connections/model/connections";
+import { OPEN_NEW_ENVIRONMENT_EVENT, OPEN_REMOTE_PROJECT_EVENT, knownRemoteMachine } from "../../connections/model/connections";
 import { ensureSharedProject, parseRemotePath } from "../../connections/model/remoteProjects";
-import {
-  environmentForPath,
-  environmentProjectPath,
-  useHostEnvironments,
-} from "../../connections/model/hostEnvironments";
+import { environmentForPath, environmentProjectPath, useHostEnvironments } from "../../connections/model/hostEnvironments";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
 import { parseWslPath } from "../../../shared/lib/wslPaths";
 import { listWslDistributions } from "../../../platform/tauri/wsl";

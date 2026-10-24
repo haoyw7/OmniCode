@@ -1,15 +1,6 @@
 import ts from "typescript";
 import type { IterationCandidate } from "./sites.js";
-import {
-  addOcc,
-  cloneValue,
-  collapse,
-  emptyValue,
-  mergeInto,
-  provisionalFanoutId,
-  unionValues,
-  type AbstractValue,
-} from "./domain.js";
+import { addOcc, cloneValue, collapse, emptyValue, mergeInto, provisionalFanoutId, unionValues, type AbstractValue } from "./domain.js";
 import { applyCallbackFns } from "./calls.js";
 import type { EvalContext, Evaluator } from "./taint.js";
 

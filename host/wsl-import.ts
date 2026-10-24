@@ -3,8 +3,9 @@ import { createHash } from "node:crypto";
 import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, posix } from "node:path";
 import { tmpdir } from "node:os";
-import { projectMachineKey, type ProjectMachine } from "../src/integrations/harness/core/machine";
-import { isRemoteProvider } from "../src/integrations/harness/core/provider";
+import { projectMachineKey } from "../src/integrations/harness/core/machine";
+import { type ProjectMachine } from "../src/contracts/session";
+import { isRemoteProvider } from "../src/contracts/provider";
 import type { HostStore } from "./store";
 import type { MachineTransport } from "./machine-io";
 

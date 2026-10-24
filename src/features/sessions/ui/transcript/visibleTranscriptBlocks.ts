@@ -1,11 +1,6 @@
-import {
-  providerSessionAccessIssue,
-} from "../../../../integrations/harness/providers/sessionAccessErrors";
-import {
-  isHarnessAuthError,
-  supportsHarnessLogin,
-} from "../../../../integrations/harness/core/authSupport";
-import { type Block, type HarnessId } from "../../model/session";
+import { providerSessionAccessIssue } from "../../../../integrations/harness/providers/sessionAccessErrors";
+import { isHarnessAuthError, supportsHarnessLogin } from "../../../../integrations/harness/core/authSupport";
+import { type Block, type HarnessId } from "../../../../contracts/session";
 
 /** Hides login errors the harness handles itself and marks legacy session-access notices as errors. */
 export function visibleTranscriptBlocks(

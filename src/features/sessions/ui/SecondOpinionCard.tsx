@@ -1,7 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronRight } from "../../../shared/ui/icons";
-import { HARNESS_TITLE, type SecondOpinionMeta } from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type SecondOpinionMeta } from "../../../contracts/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 
 type Props = {
   card: SecondOpinionMeta;

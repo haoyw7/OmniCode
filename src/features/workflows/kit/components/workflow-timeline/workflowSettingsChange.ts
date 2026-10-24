@@ -6,10 +6,7 @@
 // 措辞规则只在这里写一次。纯函数 + 注入的 formatMessage / providerName，与 subagent-model-label 同规。
 
 import type { WorkflowSettingsAmendMeta } from "../../_shims/protocol.js";
-import {
-  describeWorkflowSubagentModel,
-  type WorkflowSubagentModelDeps,
-} from "./subagent-model-label.js";
+import { describeWorkflowSubagentModel, type WorkflowSubagentModelDeps } from "./subagent-model-label.js";
 
 /** 模型的屏幕名：只要名字（档位留给 tooltip），与 run 卡上的模型段同一个词。 */
 function modelName(canonical: string, deps: WorkflowSubagentModelDeps): string {

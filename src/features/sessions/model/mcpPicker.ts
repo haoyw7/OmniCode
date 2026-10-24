@@ -1,9 +1,7 @@
-import type { HarnessId } from "./session";
+import type { HarnessId } from "../../../contracts/session";
 import { piMcpStatus } from "../../../integrations/harness/providers/pi/piMcp";
-import {
-  MCP_PROVIDER_LABELS,
-  type McpConnection,
-} from "../../settings/model/mcp";
+import { MCP_PROVIDER_LABELS } from "../../settings/model/mcp";
+import { type McpConnection } from "../../../contracts/mcp";
 
 export type McpPickerServer = McpConnection & {
   availability: "available" | "authentication" | "unavailable";

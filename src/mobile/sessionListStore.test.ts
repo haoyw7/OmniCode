@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { HostSessionSummary } from "../features/connections/model/protocol";
+import type { HostSessionSummary } from "../contracts/protocol";
 import { createSessionListStore, sessionListStore } from "./sessionListStore";
 
 const session = (id: string, status: "idle" | "running" = "idle"): HostSessionSummary => ({

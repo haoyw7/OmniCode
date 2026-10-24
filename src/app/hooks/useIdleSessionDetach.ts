@@ -1,20 +1,8 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  type Dispatch,
-  type RefObject,
-  type SetStateAction,
-} from "react";
+import { useCallback, useEffect, useRef, type Dispatch, type RefObject, type SetStateAction } from "react";
 import type { OrchestrationReadRun } from "../../features/orchestration/model/orchestrationClient";
 import { shouldPersistSession } from "../../features/sessions/data/sessionStore";
-import { sessionChildHarnesses } from "../../features/sessions/model/handoff";
-import type { Session } from "../../features/sessions/model/session";
-import {
-  leafIds,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import { forgetHarnessSession } from "../../integrations/harness/core/registry";
+import type { Session } from "../../contracts/session";
+import { leafIds, type WorkspaceTab } from "../../features/workspace/model/layout";
 import type { WorkspaceSessionData } from "../model/workspaceSessionData";
 
 const SESSION_DETACH_DELAY_MS = 250;
@@ -104,9 +92,6 @@ export function useIdleSessionDetach({
         sessionData.retain(session);
       }
       void sessionData.persist(session);
-      for (const harness of sessionChildHarnesses(session)) {
-        void forgetHarnessSession(harness, session.id);
-      }
     }
     setSessions((prev) =>
       prev.filter(

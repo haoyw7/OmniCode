@@ -2,10 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  loadNotificationPreferences,
-  updateNotificationPreferences,
-} from "../../notifications/model/notificationPreferences";
+import { loadNotificationPreferences, updateNotificationPreferences } from "../../notifications/model/notificationPreferences";
 import { ProjectList } from "../../../app/shell/ProjectList";
 import { ActivityBar } from "../../../app/shell/ActivityBar";
 import { invoke } from "@tauri-apps/api/core";

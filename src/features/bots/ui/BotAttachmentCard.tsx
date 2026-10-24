@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { RemoteAttachment } from "../../connections/model/protocol";
-import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import type { RemoteAttachment } from "../../../contracts/protocol";
+import { FileTypeIcon } from "../../../shared/ui/FileTypeIcon";
 import { formatFileSize } from "../../connections/files/model/filePreview";
 import { Download, Loader2 } from "../../../shared/ui/icons";
 import { useTranslation } from "../../../shared/i18n/useTranslation";

@@ -1,7 +1,4 @@
-import type {
-  Attachment,
-  QueuedMessage,
-} from "../features/sessions/model/session";
+import type { Attachment, QueuedMessage } from "../contracts/session";
 import { readQueuedAttachmentPreviews } from "./attachments";
 
 /** Prepare previews before removal; a lost removal receipt must retain the draft. */

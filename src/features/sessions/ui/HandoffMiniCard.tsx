@@ -1,7 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronRight, Replace, X } from "../../../shared/ui/icons";
-import { HARNESS_TITLE, type HarnessId } from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import { HARNESS_TITLE } from "../../../contracts/session";
+import { type HarnessId } from "../../../contracts/session";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
 
 type Card = {
   from: HarnessId;

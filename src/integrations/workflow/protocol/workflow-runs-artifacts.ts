@@ -18,11 +18,7 @@
 //   report(artifactId) ⇒ 该 id 的 itemCount 加一。去重键回到 (siteId, ordinal)——它是一条
 //                        report，身份仍是 report 的身份。
 
-import {
-  WORKFLOW_ARTIFACT_LIMITS,
-  type WorkflowRunArtifactKind,
-  type WorkflowRunArtifactSummary,
-} from "./workflow-artifacts.js";
+import { WORKFLOW_ARTIFACT_LIMITS, type WorkflowRunArtifactKind, type WorkflowRunArtifactSummary } from "./workflow-artifacts.js";
 
 /** 产物的六个成员种类。归约不校验 schema，所以这里自带一张闭集表判读。 */
 const ARTIFACT_KINDS: ReadonlySet<string> = new Set<WorkflowRunArtifactKind>([

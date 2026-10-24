@@ -2,11 +2,8 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  REMOTE_PROVIDERS,
-  type HostModelCatalog,
-  type HostSession,
-} from "../features/connections/model/protocol";
+import { REMOTE_PROVIDERS } from "../contracts/provider";
+import { type HostModelCatalog, type HostSession } from "../contracts/protocol";
 import { newSession } from "../features/sessions/model/session";
 import { setUiLanguage } from "../shared/i18n/language";
 import { MobileSessionStatus } from "./MobileSessionStatus";

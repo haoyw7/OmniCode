@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { Block } from "../features/sessions/model/session";
+import type { Block } from "../contracts/session";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { loadHapticPreferences } from "./hapticPreferences";
 import { attentionHaptic, hapticsCanTrack, lightImpact, outputHaptics, subscribeHapticsLifecycle, successHaptic } from "./haptics";

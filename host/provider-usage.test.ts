@@ -4,13 +4,35 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HostProviderUsage } from "./provider-usage";
 import { providerUsageProfile } from "./provider-accounts";
-import { parseCodexRateLimits } from "../src/features/providers/model/rateLimits";
+import { parseCodexRateLimits } from "../src/domain/rateLimits";
 import { runCodexAccountRequest } from "../src/integrations/harness/providers/codex/codexAccountRequest";
 
 vi.mock("../src/integrations/harness/core/child", () => ({ resolveCodexBinary: async () => ({ path: "/bin/codex" }) }));
 vi.mock("../src/integrations/harness/providers/codex/codexAccountRequest", () => ({ runCodexAccountRequest: vi.fn() }));
 let dir: string, owner: string, accounts: string;
 const snapshot = () => parseCodexRateLimits({ primary: { usedPercent: 30, windowDurationMins: 300 } });
+
+it("owns Codex reset receipts across retries and rejects changed operation contents", async () => {
+  const service = new HostProviderUsage(owner);
+  vi.mocked(runCodexAccountRequest).mockResolvedValue({ outcome: "reset" });
+  const command = { operationId: "reset-once", accountId: "work", creditId: "credit-one" };
+  expect(await service.consumeReset(command)).toBe("reset");
+  expect(await service.consumeReset(command)).toBe("reset");
+  expect(await new HostProviderUsage(owner).consumeReset(command)).toBe("reset");
+  expect(runCodexAccountRequest).toHaveBeenCalledTimes(1);
+  expect(runCodexAccountRequest).toHaveBeenCalledWith("/bin/codex", expect.any(String), "account/rateLimitResetCredit/consume", {
+    idempotencyKey: "reset-once", creditId: "credit-one",
+  }, "work", expect.stringContaining("omnicode-host-reset-"));
+  await expect(service.consumeReset({ ...command, accountId: "default" })).rejects.toThrow("different input");
+});
+
+it("reuses the native reset identity after an uncertain provider response", async () => {
+  vi.mocked(runCodexAccountRequest).mockRejectedValueOnce(new Error("connection ended")).mockResolvedValueOnce({ outcome: "alreadyRedeemed" });
+  const command = { operationId: "retry-reset", accountId: "work" };
+  await expect(new HostProviderUsage(owner).consumeReset(command)).rejects.toThrow("connection ended");
+  expect(await new HostProviderUsage(owner).consumeReset(command)).toBe("alreadyRedeemed");
+  for (const call of vi.mocked(runCodexAccountRequest).mock.calls) expect(call[3]).toEqual({ idempotencyKey: "retry-reset" });
+});
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "host-usage-"));
   owner = join(dir, "desktop-owner.json");

@@ -1,27 +1,4 @@
-import {
-  Archive,
-  ArrowDownCircle,
-  AudioLines,
-  Bell,
-  Bot,
-  CodeXml,
-  Computer,
-  Eye,
-  Gauge,
-  Globe,
-  Laptop,
-  Link,
-  MessageMultiple,
-  Palette,
-  Play,
-  Sparkles,
-  SquarePen,
-  SunMoon,
-  Terminal,
-  UserRound,
-  Vibrate,
-  Volume2,
-} from "../shared/ui/icons";
+import { Archive, ArrowDownCircle, AudioLines, Bell, Bot, CodeXml, Computer, Eye, Gauge, Globe, Laptop, Link, MessageMultiple, Palette, Play, Sparkles, SquarePen, SunMoon, Terminal, UserRound, Vibrate, Volume2 } from "../shared/ui/icons";
 
 const glyphs = {
   agent: Bot,

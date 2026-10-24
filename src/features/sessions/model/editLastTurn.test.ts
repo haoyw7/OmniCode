@@ -1,17 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  canEditLastTurn,
-  createEditedResendAttempt,
-  createEditedResendCoordinator,
-  lastEditableTurnStartIndex,
-  lastTurnRecall,
-  lastUserTurnStartIndex,
-  prepareEditedResend,
-  replaceEditedResend,
-  truncateBeforeLastEditableTurn,
-  truncateBeforeLastUserTurn,
-} from "./editLastTurn";
-import { newSession, type Block } from "./session";
+import { canEditLastTurn, createEditedResendAttempt, createEditedResendCoordinator, lastEditableTurnStartIndex, lastTurnRecall, lastUserTurnStartIndex, prepareEditedResend, replaceEditedResend, truncateBeforeLastEditableTurn, truncateBeforeLastUserTurn } from "./editLastTurn";
+import { newSession } from "./session";
+import { type Block } from "../../../contracts/session";
 
 function chat(blocks: Block[]) {
   return { ...newSession("pi", "/tmp"), blocks };

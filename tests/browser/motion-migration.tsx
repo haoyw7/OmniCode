@@ -1,3 +1,4 @@
+import { TranscriptServices } from "../../src/app/ui/TranscriptServices";
 // Real components driven by deterministic local data; no provider or host calls.
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -10,7 +11,7 @@ import { AgentTranscript } from "../../src/features/sessions/ui/AgentTranscript"
 import { Composer } from "../../src/features/sessions/ui/Composer";
 import { AnimatedCollapse } from "../../src/shared/ui/AnimatedCollapse";
 import { Modal } from "../../src/shared/ui/Modal";
-import type { Block } from "../../src/features/sessions/model/session";
+import type { Block } from "../../src/contracts/session";
 import { applyDesktopSkin } from "../../src/shared/theme/desktopSkin";
 import { setUiLanguage } from "../../src/shared/i18n/language";
 import "../../src/styles/index.css";
@@ -46,4 +47,4 @@ function Fixture() {
   <AnimatePresence>{modal&&<Modal onClose={()=>setModal(false)} title="Motion dialog"><p>Closing keeps the panel until its exit completes.</p></Modal>}</AnimatePresence>
  </div></MotionConfig>;
 }
-createRoot(document.getElementById("root")!).render(<Fixture/>);
+createRoot(document.getElementById("root")!).render(<TranscriptServices>{<Fixture/>}</TranscriptServices>);

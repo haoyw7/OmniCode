@@ -1,12 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from "vitest";
-import {
-  announceSessionFinished,
-  notifySession,
-  notifyApp,
-  saveNotificationsEnabled,
-  setWindowFocused,
-} from "./notifications";
+import { announceSessionFinished, notifySession, notifyApp, saveNotificationsEnabled, setWindowFocused } from "./notifications";
 import { updateNotificationPreferences } from "./notificationPreferences";
 import { newSession } from "../../sessions/model/session";
 

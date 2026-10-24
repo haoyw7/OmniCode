@@ -1,7 +1,4 @@
-import type {
-  TimelineInk,
-  WorkflowTimelineModel,
-} from "../components/workflow-timeline/timeline-model.js";
+import type { TimelineInk, WorkflowTimelineModel } from "../components/workflow-timeline/timeline-model.js";
 
 /**
  * 脊线的排布：把时间线模型翻译成**每一节**

@@ -1,17 +1,7 @@
 import { Text } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
 import { Chunk } from "@codemirror/merge";
-import {
-  findChunk,
-  revertChunkText,
-  stageChunkText,
-  deletedLineTexts,
-  diffLineStatsFromState,
-  overviewTicks,
-  stateWithGitDoc,
-  stateWithGitOriginal,
-  stateWithGitOriginalUpdated,
-} from "./editorGit";
+import { findChunk, revertChunkText, stageChunkText, deletedLineTexts, diffLineStatsFromState, overviewTicks, stateWithGitDoc, stateWithGitOriginal, stateWithGitOriginalUpdated } from "./editorGit";
 
 describe("stageChunkText", () => {
   it("stages a whole added hunk and leaves later hunks unstaged", () => {

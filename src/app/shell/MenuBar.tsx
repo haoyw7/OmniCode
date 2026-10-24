@@ -1,28 +1,9 @@
 import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../shared/i18n/useTranslation";
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
-import { ExplorerMenu } from "../../features/connections/files/ui/ExplorerMenu";
-import {
-  loadAutosave,
-  loadKeybindingOverrides,
-  loadMenuBarVisible,
-  subscribeAutosave,
-  subscribeKeybindings,
-  subscribeMenuBarVisible,
-} from "../../features/settings/model/settings";
-import {
-  MENUS,
-  menuItems,
-  type CommandHandlers,
-  type MenuId,
-} from "../commands/registry";
+import { type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { ExplorerMenu } from "../../shared/ui/primitives/ExplorerMenu";
+import { loadAutosave, loadKeybindingOverrides, loadMenuBarVisible, subscribeAutosave, subscribeKeybindings, subscribeMenuBarVisible } from "../../features/settings/model/settings";
+import { MENUS, menuItems, type CommandHandlers, type MenuId } from "../commands/registry";
 import type { CommandDispatch } from "../commands/useCommandDispatcher";
 import { TabVisitNav, WINDOW_DRAG_BAR_HEIGHT, WINDOW_NAVIGATION_END } from "./WindowChrome";
 import { WindowControls } from "./WindowControls";

@@ -1,107 +1,19 @@
-import {
-  resetGenerationMetrics,
-  measureGenerationTurn,
-  observeGenerationDelta,
-  reportObservedGenerationUsage,
-  invalidateObservedGeneration,
-} from "../../core/generationMetrics";
+import { resetGenerationMetrics, measureGenerationTurn, observeGenerationDelta, reportObservedGenerationUsage, invalidateObservedGeneration } from "../../core/generationMetrics";
 import { botContextKey } from "../../core/botContext";
-import { readClaudeNativeTitle, readHarnessTextFile } from "../../core/child";
+import { readClaudeNativeTitle, readHarnessTextFile, killChild, resolveClaudeBinary, spawnChild, unwatchChild, watchChild, writeChild } from "../../core/child";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
-import type { NativeSessionLink } from "../../../../features/sessions/model/session";
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { sameProviderAccountId } from "../../../../features/providers/model/providerAccounts";
-import type {
-  RuntimeMode,
-  TaskListItem,
-  TaskListMeta,
-} from "../../../../features/sessions/model/session";
-import { loadClaudeHooks } from "../../../../features/settings/model/settings";
-import {
-  killChild,
-  resolveClaudeBinary,
-  spawnChild,
-  unwatchChild,
-  watchChild,
-  writeChild,
-} from "../../core/child";
-import {
-  askUserQuestionAllowInput,
-  asRecord,
-  assistantMessageId,
-  assistantTextBlocks,
-  assistantThinkingBlocks,
-  assistantToolUses,
-  contextFromResult,
-  contextFromUsageSnapshot,
-  contextUsedFromAssistant,
-  compareSemver,
-  turnMetricsFromResult,
-  buildClaudeSpawnArgs,
-  buildClaudeUserMessage,
-  buildControlRequest,
-  buildControlResponse,
-  claudeSettingsKey,
-  extractAskUserQuestionTitle,
-  extractExitPlanModePlan,
-  inputJsonDeltaFromEvent,
-  isAgentTaskType,
-  isClaudeUltracodeEffort,
-  isReplayedTaskNotificationResult,
-  isSubagentMessage,
-  isTerminalAgentTaskStatus,
-  isTodoTool,
-  applyClaudeTaskTool,
-  isUsageLimitResult,
-  normalizeClaudeCliEffort,
-  parseBackgroundTasks,
-  parseControlCancelId,
-  parseControlRequest,
-  parseControlResponse,
-  parseJsonLine,
-  parseClaudeVersion,
-  parseTaskNotification,
-  parseTaskProgress,
-  parseTaskStarted,
-  parseTaskUpdated,
-  parseToolProgress,
-  taskListFromTodos,
-  previewFromTool,
-  resolveClaudeApiModelId,
-  runtimeModeToPermission,
-  sessionIdFromMessage,
-  statusTextFromSystem,
-  streamDeltaFromEvent,
-  stringField,
-  summarizeToolRequest,
-  toClaudePermissionResult,
-  toolKindFromName,
-  toolResultsFromUserMessage,
-  toolStartFromEvent,
-  toolTitle,
-  tryParseJsonRecord,
-  turnStatusFromResult,
-  usageLimitFromRateLimitEvent,
-  type ClaudeAgentTaskNotification,
-  type ClaudeCliSettings,
-  type ClaudeControlRequest,
-  type ClaudeControlResponse,
-} from "./claudeProtocol";
-import { isAgentToolName } from "../../core/preview";
-import { joinStreamText, snapshotRemainder } from "../../core/streamText";
-import {
-  questionPromptTitle,
-  questionsFromUnknown,
-  type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  HarnessEvent,
-  HarnessSessionInput,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+import type { NativeSessionLink, RuntimeMode, TaskListItem, TaskListMeta, UserQuestionReply } from "../../../../contracts/session";
+import { nativeModelId } from "../../core/modelCatalog";
+import { sameProviderAccountId } from "../../../../domain/providerAccount";
+
+
+import { askUserQuestionAllowInput, asRecord, assistantMessageId, assistantTextBlocks, assistantThinkingBlocks, assistantToolUses, contextFromResult, contextFromUsageSnapshot, contextUsedFromAssistant, compareSemver, turnMetricsFromResult, buildClaudeSpawnArgs, buildClaudeUserMessage, buildControlRequest, buildControlResponse, claudeSettingsKey, extractAskUserQuestionTitle, extractExitPlanModePlan, inputJsonDeltaFromEvent, isAgentTaskType, isClaudeUltracodeEffort, isReplayedTaskNotificationResult, isSubagentMessage, isTerminalAgentTaskStatus, isTodoTool, applyClaudeTaskTool, isUsageLimitResult, normalizeClaudeCliEffort, parseBackgroundTasks, parseControlCancelId, parseControlRequest, parseControlResponse, parseJsonLine, parseClaudeVersion, parseTaskNotification, parseTaskProgress, parseTaskStarted, parseTaskUpdated, parseToolProgress, taskListFromTodos, previewFromTool, resolveClaudeApiModelId, runtimeModeToPermission, sessionIdFromMessage, statusTextFromSystem, streamDeltaFromEvent, stringField, summarizeToolRequest, toClaudePermissionResult, toolKindFromName, toolResultsFromUserMessage, toolStartFromEvent, toolTitle, tryParseJsonRecord, turnStatusFromResult, usageLimitFromRateLimitEvent, type ClaudeAgentTaskNotification, type ClaudeCliSettings, type ClaudeControlRequest, type ClaudeControlResponse } from "./claudeProtocol";
+import { isAgentToolName } from "../../../../domain/preview";
+import { joinStreamText, snapshotRemainder } from "../../../../domain/streamText";
+import { questionPromptTitle, questionsFromUnknown } from "../../../../domain/userQuestion";
+
+import type { ApprovalDecision, HarnessEvent } from "../../../../contracts/harness";
+import type { CompactContextInput, HarnessSessionInput, SendTurnInput, SteerTurnInput } from "../../core/types";
 
 /**
  * A PermissionRequest hook can decide before the user touches the prompt; Claude
@@ -2044,7 +1956,7 @@ function settingsKeyFor(input: HarnessSessionInput): string {
     thinking: input.modelSettings?.thinking,
     context: input.modelSettings?.context,
     runtimeMode: input.runtimeMode,
-    hooks: input.claudeHooks ?? loadClaudeHooks(),
+    hooks: input.claudeHooks ?? true,
   })}`;
 }
 
@@ -2075,7 +1987,7 @@ function launchOptions(
   if (isClaudeUltracodeEffort(effortRaw)) {
     settings.ultracode = true;
   }
-  if (!(input.claudeHooks ?? loadClaudeHooks())) {
+  if (!(input.claudeHooks ?? true)) {
     settings.disableAllHooks = true;
   }
   return {

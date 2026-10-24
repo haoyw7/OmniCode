@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  COMPOSER_MAX_HEIGHT,
-  growComposer,
-  isInsertion,
-  resizeComposer,
-} from "./composerResize";
+import { COMPOSER_MAX_HEIGHT, growComposer, isInsertion, resizeComposer } from "./composerResize";
 
 function field(scrollHeight: number, height = "") {
   return { style: { height }, scrollHeight };

@@ -2,22 +2,14 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  HostCommand,
-  HostModelCatalog,
-  HostProviderAccounts,
-  HostSession,
-} from "../features/connections/model/protocol";
-import { HARNESS_TITLE } from "../features/sessions/model/session";
+import type { HostCommand, HostModelCatalog, HostProviderAccounts, HostSession } from "../contracts/protocol";
+import { HARNESS_TITLE } from "../contracts/session";
 import { lastSelectedModelId } from "../features/sessions/model/models";
 import { setUiLanguage } from "../shared/i18n/language";
 import { MobileApp } from "./MobileApp";
 // Load the real settings module during collection, before timing interactions.
 import "./MobileSettings";
-import {
-  loadMobileAgentDefaults,
-  saveMobileAgentDefaults,
-} from "./agentDefaults";
+import { loadMobileAgentDefaults, saveMobileAgentDefaults } from "./agentDefaults";
 
 const COMPUTER = "http://computer:3774";
 const project = vi.hoisted(() => ({

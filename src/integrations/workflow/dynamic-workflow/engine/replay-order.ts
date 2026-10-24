@@ -13,8 +13,8 @@
  */
 
 import { isArtifactPresetOp } from "../facade/registry.js";
-import type { InstanceRef, JournalStorePort, NodeRecord, RunEvent } from "./types.js";
-import { refToString } from "./types.js";
+import { type InstanceRef, type JournalStorePort, type NodeRecord, type RunEvent, refToString } from "./types.js";
+
 
 export class ReplaySettleOrder {
   /** 实例键 → 它在首生结算次序里的位置。 */

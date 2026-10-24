@@ -1,12 +1,13 @@
 // @vitest-environment happy-dom
 import { act, createElement, type ComponentProps } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "../../../tests/helpers/sessionPresentationRoot";
+import { type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 import type { ProjectList } from "./ProjectList";
 import type { SessionSummary } from "../../features/sessions/data/sessionStore";
-import type { RemoteProjectSessions } from "../../features/connections/model/connections";
-import { REMOTE_HISTORY_UPDATED } from "../../features/connections/model/connections";
+import { type RemoteProjectSessions, REMOTE_HISTORY_UPDATED } from "../../features/connections/model/connections";
+
 
 const captured = vi.hoisted(() => ({
   projectList: undefined as ComponentProps<typeof ProjectList> | undefined,

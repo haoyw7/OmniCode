@@ -1,13 +1,14 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/sessionPresentationRoot";
+
 import { expect, it, vi } from "vitest";
 import { SHARED_PREFERENCES_CHANGED } from "../../settings/model/sharedPreferences";
 const mocks = vi.hoisted(() => ({ shortcut: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn().mockResolvedValue(null) }));
 vi.mock("@tauri-apps/api/event", () => ({ emit: vi.fn(), listen: vi.fn().mockResolvedValue(() => {}) }));
-vi.mock("../../../integrations/harness/core/availability", () => ({ probeHarnessAvailability: vi.fn() }));
-vi.mock("../../../integrations/harness/core/registry", () => ({ refreshHarnessCatalogs: vi.fn() }));
+vi.mock("../../providers/model/harnessAvailability", () => ({ probeHarnessAvailability: vi.fn() }));
+vi.mock("../../providers/model/hostModelCatalog", () => ({ refreshHostModelCatalogs: vi.fn() }));
 vi.mock("../model/prepareQuickComposer", () => ({ prepareQuickComposerWhenIdle: () => () => {} }));
 vi.mock("../model/quickComposer", () => ({
   quickComposerSupported: () => true, setQuickComposerShortcut: mocks.shortcut,

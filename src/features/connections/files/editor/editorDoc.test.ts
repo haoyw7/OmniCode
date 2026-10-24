@@ -1,11 +1,6 @@
 import { EditorState } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
-import {
-  detectLineEnding,
-  editorDocChanges,
-  normalizeLineBreaks,
-  restoreLineEnding,
-} from "./editorDoc";
+import { detectLineEnding, editorDocChanges, normalizeLineBreaks, restoreLineEnding } from "./editorDoc";
 
 describe("editorDocChanges", () => {
   it("returns no changes when the documents match", () => {

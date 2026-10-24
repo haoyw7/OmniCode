@@ -2,15 +2,11 @@ import type { AnalysisCore } from "./core.js";
 import { isStructuralRegionKind, type RegionKind } from "./constants.js";
 import type { OrderRegion } from "./causality-order.js";
 import { reduceOrdering, type OrderKind } from "./causality-reduce.js";
-import {
-  collectPhaseClaims,
-  projectPhaseGraph,
-  type PhaseSourceFact,
-} from "./phase-graph.js";
+import { collectPhaseClaims, projectPhaseGraph, type PhaseSourceFact } from "./phase-graph.js";
 import type { SiteGraph, SiteLoc, SiteNode } from "./types.js";
-import { SINK_ID, UNKNOWN_LANE, WORKSPACE_LANE } from "./causality-graph-types.js";
-import type { CausalityGraph, Certainty, Fact, Lane } from "./causality-graph-types.js";
-import type { OrderEdge, Region, Step, StepKind } from "./causality-graph-types.js";
+import { SINK_ID, UNKNOWN_LANE, WORKSPACE_LANE, type CausalityGraph, type Certainty, type Fact, type Lane, type OrderEdge, type Region, type Step, type StepKind } from "./causality-graph-types.js";
+
+
 import { dedupeFacts, expandMaySetLanes, weakest } from "./causality-graph-lanes.js";
 
 /** Re-exported so the causality vocabulary is importable from one module. */

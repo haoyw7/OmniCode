@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import type { QuestionAnswer, UserQuestionRecord } from "../model/userQuestion";
-import { QuestionForm } from "./QuestionForm";
+import type { QuestionAnswer, UserQuestionRecord } from "../../../contracts/session";
+import { QuestionForm } from "../../../shared/ui/messaging/QuestionForm";
 
 /** Shared late-reply handling for inline history and mobile sheets. */
 export function QuestionHistoryForm({

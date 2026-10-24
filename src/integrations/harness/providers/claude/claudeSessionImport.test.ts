@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseClaudeSession } from "./claudeSessionImport";
-import type { NativeSessionFile } from "../../core/nativeSessions";
+import type { NativeSessionFile } from "../../../../contracts/session";
 
 const file: NativeSessionFile = {
   provider: "claude",

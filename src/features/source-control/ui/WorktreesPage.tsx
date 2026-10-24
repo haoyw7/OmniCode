@@ -3,30 +3,16 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useMemo, useState } from "react";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
 import { DeleteWorktreeDialog } from "./DeleteWorktreeDialog";
-import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
-import {
-  FolderOpen,
-  FolderTree,
-  GitBranch,
-  Loader,
-  Plus,
-  RefreshCw,
-  Trash2,
-} from "../../../shared/ui/icons";
+import type { ComponentType } from "react";
+import type { ProjectPickerProps } from "../../projects/presentation";
+import { FolderOpen, FolderTree, GitBranch, Loader, Plus, RefreshCw, Trash2 } from "../../../shared/ui/icons";
 import { revealPath } from "../../../platform/tauri/fs";
 import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
 import { isEqualOrInside, pathKey, prettyCwd } from "../../../shared/lib/paths";
-import {
-  loadArchivedProjects,
-  type RecentProject,
-} from "../../projects/model/recents";
-import type { Session } from "../../sessions/model/session";
-import {
-  checkWorktreeRemoval,
-  worktreeSessionIds,
-  type RemoveWorktree,
-  type Worktree,
-} from "../model/worktrees";
+import { loadArchivedProjects, type RecentProject } from "../../projects/model/recents";
+import type { Session } from "../../../contracts/session";
+import type { Worktree } from "../../../contracts/worktree";
+import { checkWorktreeRemoval, worktreeSessionIds, type RemoveWorktree } from "../model/worktrees";
 
 // Git localizes this message, so match both English and Chinese output.
 function isNotGitRepositoryError(error: unknown) {
@@ -36,6 +22,7 @@ function isNotGitRepositoryError(error: unknown) {
 }
 
 export function WorktreesPage({
+  ProjectPicker: SearchableProjectPicker,
   cwd,
   recents = [],
   liveSessions = [],
@@ -43,6 +30,7 @@ export function WorktreesPage({
   onCheckRemove = checkWorktreeRemoval,
   onDeleteSessions,
 }: {
+  ProjectPicker: ComponentType<ProjectPickerProps>;
   cwd: string;
   recents?: RecentProject[];
   liveSessions?: Session[];

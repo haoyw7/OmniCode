@@ -1,17 +1,14 @@
-import { HARNESSES } from "../../sessions/model/session";
-import { modelsFor } from "../../sessions/model/models";
-import {
-  isHarnessAvailable,
-  probeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
-import { validateOrchestrationSettings } from "./orchestrationPlan";
+import { HARNESSES } from "../../../contracts/session";
+import { modelsFor } from "../../../integrations/harness/core/modelCatalog";
+import { isHarnessAvailable, probeHarnessAvailability } from "../../providers/model/harnessAvailability";
+import { refreshHostModelCatalogs } from "../../providers/model/hostModelCatalog";
+import { validateOrchestrationSettings } from "../../../domain/orchestrationPlan";
 
 /** Discover worker choices only when the user sends an orchestration request. */
 export async function discoverOrchestrationSettings() {
   await probeHarnessAvailability();
   const installed = HARNESSES.filter(isHarnessAvailable);
-  await refreshHarnessCatalogs(installed);
+  await refreshHostModelCatalogs(installed);
   return validateOrchestrationSettings({
     maxWorkers: 2,
     choices: installed

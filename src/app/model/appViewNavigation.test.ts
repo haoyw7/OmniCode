@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  newAppViewWorkspaceTab,
-  newTab,
-} from "../../features/workspace/model/layout";
+import { newAppViewWorkspaceTab, newTab } from "../../features/workspace/model/layout";
 import { contentTabTarget } from "./appViewNavigation";
 
 describe("app-view document destination", () => {

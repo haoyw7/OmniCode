@@ -1,13 +1,11 @@
+import type { GitDiffIndex } from "../contracts/workspace";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { GitDiffIndex } from "../platform/tauri/fs";
+
 import type { MobileGitSource } from "./mobileGit";
-import {
-  useMobileGitIndex,
-  type MobileGitIndexState,
-} from "./useMobileGitIndex";
+import { useMobileGitIndex, type MobileGitIndexState } from "./useMobileGitIndex";
 
 let root: Root;
 let node: HTMLDivElement;

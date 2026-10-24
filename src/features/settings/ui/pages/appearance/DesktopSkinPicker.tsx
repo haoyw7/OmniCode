@@ -1,12 +1,7 @@
 import { useId } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { Radio } from "../../../../../shared/ui/forms/Radio";
-import {
-  DESKTOP_SKIN_IDS,
-  DESKTOP_SKIN_INFO,
-  type DesktopSkinId,
-  type DesktopSkinPreference,
-} from "../../../../../shared/theme/desktopSkin";
+import { DESKTOP_SKIN_IDS, DESKTOP_SKIN_INFO, type DesktopSkinId, type DesktopSkinPreference } from "../../../../../shared/theme/desktopSkin";
 
 /** The real palette paints a miniature conversation, independent of the active skin. */
 function SkinScene({ skin }: { skin: DesktopSkinId }) {

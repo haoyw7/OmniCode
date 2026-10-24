@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { contextFromUsageSnapshot } from "../../../integrations/harness/providers/claude/claudeProtocol";
-import { applyHarnessEvent } from "../../../integrations/harness/core/apply";
+import { createSessionProjection } from "../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../../integrations/harness/core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { newSession } from "./session";
 import { contextBreakdownRows } from "./contextBreakdown";
-import { dropContextWindow, mergeContextUsage } from "./contextUsage";
+import { dropContextWindow, mergeContextUsage } from "../../../domain/contextUsage";
 
 const native = {
   totalTokens: 100_000, rawMaxTokens: 200_000,

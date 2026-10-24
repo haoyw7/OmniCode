@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { HostSkillCatalog } from "../features/connections/model/protocol";
+import type { HostSkillCatalog } from "../contracts/protocol";
 
 export type MobileSkillsLoader = (
   refresh?: boolean,

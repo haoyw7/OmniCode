@@ -1,14 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { applyHarnessEvent } from "../../core/apply";
+import { createSessionProjection } from "../../../../domain/apply";
+import { resolveModel as projectionResolveModel } from "../../core/modelCatalog";
+const { applyHarnessEvent } = createSessionProjection({ now: () => Date.now(), createId: () => crypto.randomUUID(), modelName: (harness, model) => projectionResolveModel(harness, model).name });
 import { newSession } from "../../../../features/sessions/model/session";
 import { backgroundTaskItems } from "../../../../features/sessions/model/backgroundTasks";
-import {
-  DeepseekEventMapper,
-  deepseekModels,
-  deepseekSelection,
-  deepseekQuestions,
-  deepseekContent,
-} from "./deepseekProtocol";
+import { DeepseekEventMapper, deepseekModels, deepseekSelection, deepseekQuestions, deepseekContent } from "./deepseekProtocol";
 
 describe("DeepSeek bridge projection", () => {
   it("keeps background job output, precise timing and terminal history without duplicate rows", () => {

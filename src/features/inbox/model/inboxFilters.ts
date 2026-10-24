@@ -1,11 +1,6 @@
-import {
-  filterInboxItems,
-  inboxItemStatus,
-  type InboxItem,
-  type InboxKind,
-  type InboxProvider,
-} from "./githubTasks";
-import { normalizeProjectPath } from "../../projects/model/recents";
+import { filterInboxItems, inboxItemStatus } from "./githubTasks";
+import { type InboxItem, type InboxKind, type InboxProvider } from "../../../contracts/session";
+import { normalizeProjectPath } from "../../../domain/pathDisplay";
 import { timeFilterStart, type SessionTimeFilter } from "../../sessions/model/sessionFilters";
 
 export type InboxTimeFilter = SessionTimeFilter;

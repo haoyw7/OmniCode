@@ -1,42 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  loadSidebarWidth,
-  saveSidebarWidth,
-  loadSidebarTabOrder,
-  SIDEBAR_WIDTH_DEFAULT,
-  SIDEBAR_WIDTH_MIN,
-  SIDEBAR_WIDTH_MAX,
-  ACCENT_COLOR_DEFAULT,
-  CHAT_BACKGROUND_OPACITY_DEFAULT,
-  loadChatBackgroundOpacity,
-  loadAccentColor,
-  loadChatBackgroundPath,
-  loadNewThreadBackgroundEffect,
-  loadTranscriptLayout,
-  saveChatBackgroundOpacity,
-  saveAccentColor,
-  saveChatBackgroundPath,
-  saveNewThreadBackgroundEffect,
-  saveTranscriptLayout,
-  TRANSCRIPT_LAYOUT_DEFAULT,
-  loadTranscriptAnchor,
-  saveTranscriptAnchor,
-  TRANSCRIPT_ANCHOR_DEFAULT,
-  loadShowExcludedFiles,
-  saveShowExcludedFiles,
-  SHOW_EXCLUDED_FILES_DEFAULT,
-  loadThemePreference,
-  loadThemeDarkLightness,
-  saveThemeDarkLightness,
-  saveThemePreference,
-  resolveColorScheme,
-  THEME_PREFERENCE_DEFAULT,
-  THEME_DARK_LIGHTNESS_DEFAULT,
-  NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
-  POPOVER_OPACITY_DEFAULT,
-  loadPopoverOpacity,
-  savePopoverOpacity,
-} from "./appearance";
+import { loadSidebarWidth, saveSidebarWidth, loadSidebarTabOrder, SIDEBAR_WIDTH_DEFAULT, SIDEBAR_WIDTH_MIN, SIDEBAR_WIDTH_MAX, ACCENT_COLOR_DEFAULT, CHAT_BACKGROUND_OPACITY_DEFAULT, loadChatBackgroundOpacity, loadAccentColor, loadChatBackgroundPath, loadNewThreadBackgroundEffect, loadTranscriptLayout, saveChatBackgroundOpacity, saveAccentColor, saveChatBackgroundPath, saveNewThreadBackgroundEffect, saveTranscriptLayout, TRANSCRIPT_LAYOUT_DEFAULT, loadTranscriptAnchor, saveTranscriptAnchor, TRANSCRIPT_ANCHOR_DEFAULT, loadShowExcludedFiles, saveShowExcludedFiles, SHOW_EXCLUDED_FILES_DEFAULT, loadThemePreference, loadThemeDarkLightness, saveThemeDarkLightness, saveThemePreference, resolveColorScheme, THEME_PREFERENCE_DEFAULT, THEME_DARK_LIGHTNESS_DEFAULT, NEW_THREAD_BACKGROUND_EFFECT_DEFAULT, POPOVER_OPACITY_DEFAULT, loadPopoverOpacity, savePopoverOpacity } from "./appearance";
 
 const KEY = "omnicode.transcriptLayout";
 const ACCENT_COLOR_KEY = "omnicode.accentColor";

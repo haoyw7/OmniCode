@@ -1,24 +1,7 @@
 import { useTranslation } from "../../shared/i18n/useTranslation";
-import {
-  Archive,
-  Bot,
-  FileImport,
-  Inbox,
-  FolderTree,
-  Globe,
-  Internet,
-  Keyboard,
-  MessageSquare,
-  Palette,
-  SlidersHorizontal,
-  Sparkles,
-  type IconComponent,
-} from "../../shared/ui/icons";
+import { Archive, Bot, FileImport, Inbox, FolderTree, Globe, Internet, Keyboard, MessageSquare, Palette, SlidersHorizontal, Sparkles, type IconComponent } from "../../shared/ui/icons";
 import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
-import {
-  settingsSectionsByGroup,
-  type SettingsSectionId,
-} from "../../features/settings/model/settings";
+import { settingsSectionsByGroup, type SettingsSectionId } from "../../features/settings/model/settings";
 
 const SECTION_ICONS: Record<SettingsSectionId, IconComponent> = {
   general: SlidersHorizontal,

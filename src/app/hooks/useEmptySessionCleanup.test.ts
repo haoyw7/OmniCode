@@ -3,12 +3,7 @@ import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { newSession } from "../../features/sessions/model/session";
-import {
-  leafIds,
-  newTab,
-  splitPane,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { leafIds, newTab, splitPane, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { isDisposableEmptySession } from "../model/emptySessionCleanup";
 import { useEmptySessionCleanup } from "./useEmptySessionCleanup";
 

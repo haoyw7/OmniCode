@@ -1,28 +1,11 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type Dispatch,
-  type RefObject,
-  type SetStateAction,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { workflowActivityIndex } from "../../features/workflows/model/workflowActivity";
 import { type WorkflowAppActions } from "../../features/workflows/ui/workflowAppContext";
-import {
-  leafIds,
-  newSubagentTab,
-  newWorkflowAgentTab,
-  newWorkflowArtifactTab,
-  newWorkflowRunTab,
-  openEditorTab,
-  type FilePaneTab,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+import { leafIds, newSubagentTab, newWorkflowAgentTab, newWorkflowArtifactTab, newWorkflowRunTab, openEditorTab, type FilePaneTab, type WorkspaceTab } from "../../features/workspace/model/layout";
 import type { useSessionSubmission } from "./useSessionSubmission";
 import type { useWorkspaceAppViews } from "./useWorkspaceAppViews";
 import { requestAddToChat } from "../../features/sessions/model/quoteDraft";
-import { type Session } from "../../features/sessions/model/session";
+import { type Session } from "../../contracts/session";
 import { type OpenSubagentRequest } from "../../features/sessions/ui/SubagentTabsContext";
 import type { RecentProject } from "../../features/projects/model/recents";
 

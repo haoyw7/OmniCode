@@ -1,9 +1,5 @@
-import {
-  listDir,
-  setFsWatch,
-  subscribeFsWatch,
-  type FsEntry,
-} from "../../../../platform/tauri/fs";
+import { listDir, setFsWatch, subscribeFsWatch } from "../../../../platform/tauri/fs";
+import type { FsEntry } from "../../../../contracts/workspace";
 import { pathSegments } from "./fileName";
 import { joinPath, parentPath } from "../../../../shared/lib/paths";
 

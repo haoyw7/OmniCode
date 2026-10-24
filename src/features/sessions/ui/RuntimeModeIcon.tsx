@@ -1,12 +1,5 @@
-import {
-  Lock,
-  Pencil,
-  Shield,
-  Sparkles,
-  type IconComponent,
-  type IconProps,
-} from "../../../shared/ui/icons";
-import type { RuntimeMode } from "../model/session";
+import { Lock, Pencil, Shield, Sparkles, type IconComponent, type IconProps } from "../../../shared/ui/icons";
+import type { RuntimeMode } from "../../../contracts/session";
 
 const ICONS: Record<RuntimeMode, IconComponent> = {
   supervised: Lock,

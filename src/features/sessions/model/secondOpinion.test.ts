@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Block, HarnessId } from "./session";
-import {
-  buildSecondOpinionCard,
-  buildSecondOpinionPrompt,
-  harnessForTurn,
-  secondOpinionTargets,
-  turnEditedFiles,
-  turnReport,
-  turnUserRequest,
-} from "./secondOpinion";
+import type { Block, HarnessId } from "../../../contracts/session";
+import { buildSecondOpinionCard, buildSecondOpinionPrompt, harnessForTurn, secondOpinionTargets, turnEditedFiles, turnReport, turnUserRequest } from "../../../domain/secondOpinion";
 
 function user(id: string, text: string): Block {
   return { id, role: "user", text };

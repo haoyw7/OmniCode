@@ -1,5 +1,5 @@
-import type { PreferenceRequest } from "./sharedPreferences";
-import { activePreferenceStore, preferenceStorage, SHARED_PREFERENCES_STATUS } from "./sharedPreferences";
+import { type PreferenceRequest, activePreferenceStore, preferenceStorage, SHARED_PREFERENCES_STATUS } from "./sharedPreferences";
+
 
 const PREFIX = "host-asset:";
 export const PREFERENCE_ASSET_READY = "omnicode:preference-asset-ready";

@@ -1,27 +1,8 @@
-import { readOpenCodeSessionTitle } from "./opencode";
-import {
-  bindOpenCodeSession,
-  cancelOpenCodeTurn,
-  compactOpenCodeContext,
-  forgetOpenCodeSession,
-  respondOpenCodeApproval,
-  respondOpenCodeQuestion,
-  rewindOpenCodeLastTurn,
-  sendOpenCodeTurn,
-  steerOpenCodeTurn,
-  stopOpenCodeSession,
-} from "./opencode";
+import { readOpenCodeSessionTitle, bindOpenCodeSession, cancelOpenCodeTurn, compactOpenCodeContext, forgetOpenCodeSession, respondOpenCodeApproval, respondOpenCodeQuestion, rewindOpenCodeLastTurn, sendOpenCodeTurn, steerOpenCodeTurn, stopOpenCodeSession } from "./opencode";
+
 import { refreshOpenCodeCatalog } from "./opencodeCatalog";
-import {
-  generateOpenCodeBranchName,
-  generateOpenCodeCommitMessage,
-  generateOpenCodePrContent,
-} from "./opencodeGit";
-import {
-  runOpenCodeTextPrompt,
-  stopOpenCodeTextPrompt,
-  warmupOpenCodeText,
-} from "./opencodeText";
+import { generateOpenCodeBranchName, generateOpenCodeCommitMessage, generateOpenCodePrContent } from "./opencodeGit";
+import { runOpenCodeTextPrompt, stopOpenCodeTextPrompt, warmupOpenCodeText } from "./opencodeText";
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const openCodeAdapter: HarnessAdapter = {

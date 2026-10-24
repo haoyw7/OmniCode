@@ -1,10 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  nativeAcpTitleEvent,
-  noteAcpTitleCapabilities,
-  parseClaudeNativeTitle,
-  readAcpSessionTitle,
-} from "./nativeTitles";
+import { nativeAcpTitleEvent, noteAcpTitleCapabilities, parseClaudeNativeTitle, readAcpSessionTitle } from "./nativeTitles";
 import type { AcpClient } from "./acp";
 
 describe("native title protocols", () => {

@@ -1,131 +1,46 @@
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { projectMascot } from "../../projects/model/projectMascots";
+import { useProjectLogoSource } from "../../projects/model/useProjectLogoSource";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { Switch } from "../../../shared/ui/forms/Switch";
-import { AppPageHeader } from "../../workspace/ui/AppPageHeader";
+import { AppPageHeader } from "../../../shared/ui/messaging/AppPageHeader";
 import { translate as translateUi } from "../../../shared/i18n/language";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type FormEvent,
-  type ReactNode,
-} from "react";
-import { AccessPicker } from "../../sessions/ui/AccessPicker";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import {
-  AlertCircle,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  File,
-  Gauge,
-  GitPullRequest,
-  Inbox,
-  LoaderCircle,
-  Lock,
-  MoreHorizontal,
-  Play,
-  Plus,
-  Search,
-  StickyNote,
-  Terminal,
-  Trash2,
-  X,
-  Zap,
-} from "../../../shared/ui/icons";
-import { InboxProviderMark } from "../../inbox/ui/InboxProviderMark";
-import { ModelControlPills, ModelPicker } from "../../sessions/ui/ModelPicker";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { HarnessIcon } from "../../../shared/ui/HarnessIcon";
+import { AlertCircle, CheckCircle, ChevronDown, ChevronRight, Clock, File, Gauge, GitPullRequest, Inbox, LoaderCircle, Lock, MoreHorizontal, Play, Plus, Search, StickyNote, Terminal, Trash2, X, Zap } from "../../../shared/ui/icons";
+import { InboxProviderMark } from "../../../shared/ui/branding/InboxProviderMark";
 import { Popover } from "../../../shared/ui/Popover";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
+import { ProjectLogoIcon } from "../../../shared/ui/ProjectLogoIcon";
+
+import type { ComponentType } from "react";
+import type { ProjectPickerProps } from "../../projects/presentation";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
-import { SkillPromptField } from "../../skills/ui/SkillPromptField";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import {
-  AUTOMATION_WEEKDAYS,
-  applyTriggers,
-  automationScheduleLabel,
-  automationTriggers,
-  createAutomationTrigger,
-  createManualAutomationRun,
-  deleteAutomation,
-  draftFromAutomation,
-  draftFromTemplate,
-  formatAutomationRunAt,
-  formatAutomationRunDuration,
-  gmtOffsetLabel,
-  listAutomationRuns,
-  listAutomations,
-  newAutomationDraft,
-  nextAutomationRunAt,
-  nextRunPreview,
-  peekAutomations,
-  saveAutomation,
-  setAutomationEnabled,
-  subscribeAutomations,
-  type Automation,
-  type AutomationDraft,
-  type AutomationRun,
-  type AutomationTrigger,
-  type AutomationTriggerKind,
-} from "../model/automations";
-import {
-  AUTOMATION_TEMPLATE_CATEGORIES,
-  templatesForCategory,
-  type AutomationTemplate,
-  type AutomationTemplateCategoryId,
-  type AutomationTemplateIcon,
-} from "../model/automationTemplates";
-import {
-  AZUREDEVOPS_CHANGE_EVENT,
-  azureDevOpsConnected,
-} from "../../inbox/model/azureDevOps";
+import { AUTOMATION_WEEKDAYS, automationScheduleLabel, createManualAutomationRun, deleteAutomation, draftFromAutomation, draftFromTemplate, formatAutomationRunAt, formatAutomationRunDuration, gmtOffsetLabel, listAutomationRuns, listAutomations, newAutomationDraft, nextRunPreview, peekAutomations, saveAutomation, setAutomationEnabled, subscribeAutomations } from "../model/automations";
+import type { Automation, AutomationDraft, AutomationRun, AutomationTrigger, AutomationTriggerKind } from "../../../contracts/automations";
+import { applyTriggers, automationTriggers, createAutomationTrigger, nextAutomationRunAt } from "../../../domain/automationSchedule";
+
+import { AUTOMATION_TEMPLATE_CATEGORIES, templatesForCategory, type AutomationTemplate, type AutomationTemplateCategoryId, type AutomationTemplateIcon } from "../model/automationTemplates";
+import { AZUREDEVOPS_CHANGE_EVENT, azureDevOpsConnected } from "../../inbox/model/azureDevOps";
 import { gitBranches } from "../../../platform/tauri/fs";
-import {
-  formatRelativeTime,
-  githubStatus,
-} from "../../inbox/model/githubTasks";
+import { formatRelativeTime, githubStatus } from "../../inbox/model/githubTasks";
 import { GITLAB_CHANGE_EVENT, gitlabConnected } from "../../inbox/model/gitlab";
 import { LAYER } from "../../../shared/lib/layers";
 import { LINEAR_CHANGE_EVENT, linearConnected } from "../../inbox/model/linear";
 import { JIRA_CHANGE_EVENT, jiraConnected } from "../../inbox/model/jira";
-import {
-  defaultSessionChoice,
-  firstEnabledHarness,
-  modelsFor,
-  preferredModelId,
-  resolveModel,
-} from "../../sessions/model/models";
+import { defaultSessionChoice, firstEnabledHarness, preferredModelId } from "../../sessions/model/models";
+import { modelsFor, resolveModel } from "../../../integrations/harness/core/modelCatalog";
 import { projectKey, projectName } from "../../../shared/lib/paths";
-import {
-  looksLikeProject,
-  type RecentProject,
-} from "../../projects/model/recents";
-import {
-  loadModelControls,
-  subscribeModelControls,
-} from "../../settings/model/settings";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupLabels,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLabel,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+import { looksLikeProject, type RecentProject } from "../../projects/model/recents";
+import { loadTabGroupColors, loadTabGroupCustomColors, loadTabGroupLabels, loadTabGroupMascots, resolveTabGroupColor, resolveTabGroupLabel, resolveTabGroupLogo, resolveTabGroupMascot } from "../../workspace/model/tabGroups";
 
 type Props = {
+  RuntimeControls: ComponentType<{ draft: AutomationDraft; onChange: (draft: AutomationDraft) => void }>;
+  ProjectPicker: ComponentType<ProjectPickerProps>;
   active?: boolean;
   cwd?: string;
   recents: RecentProject[];
@@ -145,6 +60,8 @@ const ACTION_OUTLINE = `${ACTION} h-7 border border-content/15 text-content/80 h
 let rememberedAutomationId: string | null = null;
 
 export function AutomationsView({
+  RuntimeControls,
+  ProjectPicker,
   active = true,
   cwd,
   recents,
@@ -175,6 +92,8 @@ export function AutomationsView({
     >
       <AppPageHeader title={uiT("Automations")} icon={Zap} onBack={onClose} />
       <AutomationsContent
+        RuntimeControls={RuntimeControls}
+        ProjectPicker={ProjectPicker}
         cwd={cwd}
         recents={recents}
         onLaunch={onLaunch}
@@ -185,11 +104,13 @@ export function AutomationsView({
 }
 
 function AutomationsContent({
+  RuntimeControls,
+  ProjectPicker,
   cwd,
   recents,
   onLaunch,
   onOpenSession,
-}: Pick<Props, "cwd" | "recents" | "onLaunch" | "onOpenSession">) {
+}: Pick<Props, "RuntimeControls" | "ProjectPicker" | "cwd" | "recents" | "onLaunch" | "onOpenSession">) {
   const { t: uiT } = useTranslation();
   const [automations, setAutomations] = useState<Automation[]>(
     () => peekAutomations() ?? [],
@@ -445,6 +366,8 @@ function AutomationsContent({
           </div>
         ) : editorDraft ? (
           <AutomationEditor
+            RuntimeControls={RuntimeControls}
+            ProjectPicker={ProjectPicker}
             key={editorDraft.id ?? "new"}
             draft={editorDraft}
             recents={recents}
@@ -507,6 +430,7 @@ function AutomationCard({
   onSelect: () => void;
   onToggle: (enabled: boolean) => void;
 }) {
+  const resolveProjectLogoSrc = useProjectLogoSource();
   const { t: uiT } = useTranslation();
   const seed = projectName(automation.cwd);
   const key = projectKey(automation.cwd);
@@ -548,15 +472,15 @@ function AutomationCard({
         <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-content/45">
           {logoPath ? (
             <ProjectLogoIcon
-              path={logoPath}
+              src={resolveProjectLogoSrc(logoPath)}
               className="size-3.5 shrink-0 rounded-sm"
               imageClassName="size-3.5"
             />
           ) : (
-            <ProjectMascot
-              project={seed}
-              color={mascotColor}
-              name={mascotName}
+            <Omi compact
+              expression={projectMascot(seed, mascotName).name}
+              style={{ color: mascotColor || undefined }}
+              
               className="size-3 shrink-0"
             />
           )}
@@ -811,6 +735,8 @@ function runTriggerMeta(
 }
 
 function AutomationEditor({
+  RuntimeControls,
+  ProjectPicker: SearchableProjectPicker,
   draft,
   recents,
   runs,
@@ -824,6 +750,8 @@ function AutomationEditor({
   onDelete,
   onOpenSession,
 }: {
+  RuntimeControls: Props["RuntimeControls"];
+  ProjectPicker: ComponentType<ProjectPickerProps>;
   draft: AutomationDraft;
   recents: RecentProject[];
   runs: AutomationRun[];
@@ -859,9 +787,6 @@ function AutomationEditor({
     gitlab: false,
     azuredevops: false,
   });
-  const controlsBeside =
-    useSyncExternalStore(subscribeModelControls, loadModelControls) ===
-    "beside";
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   useEffect(() => {
     let cancelled = false;
@@ -1318,49 +1243,7 @@ function AutomationEditor({
             <section>
               <SectionTitle>{uiT("Instructions")}</SectionTitle>
               <div className="relative mt-3 rounded-md border border-content/10 bg-content/3 backdrop-blur-sm has-focus:border-content/20">
-                <PromptField
-                  value={draft.prompt}
-                  harness={draft.harness}
-                  cwd={draft.cwd}
-                  onChange={(prompt) => update("prompt", prompt)}
-                />
-                <div className="flex items-center gap-1 px-2 pb-2">
-                  <div className="flex min-w-0 flex-1 items-center overflow-x-auto">
-                    <div className="flex shrink-0 items-center gap-1">
-                      <ModelPicker
-                        harness={draft.harness}
-                        model={draft.model}
-                        values={draft.modelSettings}
-                        project={draft.cwd}
-                        hideSettings={controlsBeside}
-                        onChange={(harness, model) =>
-                          onChange({ ...draft, harness, model })
-                        }
-                        onSettingsChange={(modelSettings) =>
-                          update("modelSettings", modelSettings)
-                        }
-                      />
-                      {controlsBeside ? (
-                        <ModelControlPills
-                          harness={draft.harness}
-                          model={draft.model}
-                          values={draft.modelSettings}
-                          onSettingsChange={(modelSettings) =>
-                            update("modelSettings", modelSettings)
-                          }
-                        />
-                      ) : null}
-                      {draft.harness !== "fx" ? (
-                        <AccessPicker
-                          value={draft.runtimeMode}
-                          onChange={(runtimeMode) =>
-                            update("runtimeMode", runtimeMode)
-                          }
-                        />
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
+                <RuntimeControls draft={draft} onChange={onChange} />
               </div>
               <p className="mt-2 px-1 text-[11px] text-content/35">
                 {uiT(
@@ -1480,27 +1363,6 @@ function AutomationEditor({
         )}
       </div>
     </form>
-  );
-}
-
-function PromptField({
-  value,
-  harness,
-  cwd,
-  onChange,
-}: {
-  value: string;
-  harness: AutomationDraft["harness"];
-  cwd: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <SkillPromptField
-      value={value}
-      harness={harness}
-      cwd={cwd}
-      onChange={onChange}
-    />
   );
 }
 

@@ -2,22 +2,12 @@ import { useMaskEmails } from "../model/displayPrefs";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
 import { useCallback, useEffect, useState } from "react";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openExternalUrl } from "../../../platform/tauri/browser";
 import { Button } from "../../../shared/ui/forms/Button";
 import { PrivateEmail } from "../../../shared/ui/PrivateEmail";
 import { clearInboxCache } from "../../inbox/model/githubTasks";
-import {
-  disconnectJira,
-  JIRA_CHANGE_EVENT,
-  jiraConnected,
-  listJiraProjects,
-  loadHiddenJiraProjectIds,
-  notifyJiraChange,
-  saveHiddenJiraProjectIds,
-  saveJiraConfig,
-  type JiraProject,
-  type JiraStatus,
-} from "../../inbox/model/jira";
+import { disconnectJira, JIRA_CHANGE_EVENT, jiraConnected, listJiraProjects, loadHiddenJiraProjectIds, notifyJiraChange, saveHiddenJiraProjectIds, saveJiraConfig } from "../../inbox/model/jira";
+import type { JiraProject, JiraStatus } from "../../../contracts/jira";
 
 export function JiraSettings() {
   const masked = useMaskEmails();
@@ -196,7 +186,7 @@ export function JiraSettings() {
             <button
               type="button"
               onClick={() =>
-                void openUrl(
+                void openExternalUrl(
                   "https://id.atlassian.com/manage-profile/security/api-tokens",
                 )
               }
@@ -209,7 +199,7 @@ export function JiraSettings() {
       )}
       {error ? (
         <p role="alert" className="mt-3 text-[12px] text-red-400/90">
-          {error}
+          {uiT(error)}
         </p>
       ) : null}
       {status?.connected ? (

@@ -1,4 +1,5 @@
-import type { AutomationScheduleKind, AutomationTriggerKind } from "./automations";
+import type { AutomationScheduleKind, AutomationTriggerKind } from "../../../contracts/automations";
+
 
 export const AUTOMATION_TEMPLATE_CATEGORIES = [
   { id: "popular", label: "Popular" },

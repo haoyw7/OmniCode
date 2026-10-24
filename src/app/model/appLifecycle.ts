@@ -1,50 +1,17 @@
-import { invoke } from "@tauri-apps/api/core";
+import { reportQuitState, confirmQuitDecision, reportQuitReady, hideWorkspaceWindow, destroyWorkspaceWindow } from "../../platform/tauri/appShell";
 import { sessionUsesHost } from "../../features/connections/model/remoteProjects";
-import { ask } from "@tauri-apps/plugin-dialog";
-import {
-  bindHarnessSession,
-  forgetHarnessSession,
-  isLiveHarness,
-} from "../../integrations/harness/core/registry";
-import { killAllChildren } from "../../integrations/harness/core/child";
-import {
-  hasInFlightSessions,
-  inFlightRefs,
-  isInFlightSession,
-  markTurnInterrupted,
-  quitWhileBusyMessage,
-  wasTurnInterrupted,
-  workspaceFromResumed,
-  type ResumedWorkspace,
-} from "../../features/sessions/model/inFlight";
+import { confirmNativeAction } from "../../platform/tauri/dialogs";
+import { hasInFlightSessions, inFlightRefs, isInFlightSession, quitWhileBusyMessage, workspaceFromResumed, type ResumedWorkspace } from "../../features/sessions/model/inFlight";
 import { leafIds, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { killPty } from "../../platform/tauri/pty";
-import {
-  projectTerminalFileIds,
-  type DockSide,
-  type ProjectTerminalDock,
-} from "../../features/projects/model/projectTerminal";
-import { sessionExecutionCwd, type Session } from "../../features/sessions/model/session";
-import { sessionChildHarnesses } from "../../features/sessions/model/handoff";
-import {
-  getSession,
-  listInFlightSessions,
-  listSessionsByProject,
-  loadWorkspaceSnapshot,
-  replaceInFlightSessions,
-  saveWorkspaceSnapshot,
-  shouldPersistSession,
-  upsertSession,
-  type SessionSummary,
-} from "../../features/sessions/data/sessionStore";
-import {
-  collectWorkspaceSnapshot,
-  hydrateWorkspaceSnapshot,
-  parseWorkspaceSnapshot,
-} from "../../features/workspace/model/workspaceSnapshot";
+import { projectTerminalFileIds, type DockSide, type ProjectTerminalDock } from "../../features/projects/model/projectTerminal";
+import { type Session } from "../../contracts/session";
+import { getSession, listInFlightSessions, listSessionsByProject, loadWorkspaceSnapshot, saveWorkspaceSnapshot, type SessionSummary } from "../../features/sessions/data/sessionStore";
+import { collectWorkspaceSnapshot, hydrateWorkspaceSnapshot, parseWorkspaceSnapshot } from "../../features/workspace/model/workspaceSnapshot";
 import { loadWindowTransfer } from "./windowTransferBootstrap";
 import type { WindowTransferPayload } from "./windowTransfer";
-import { lastProjectPath, normalizeProjectPath, sameProjectPath } from "../../features/projects/model/recents";
+import { lastProjectPath, sameProjectPath } from "../../features/projects/model/recents";
+import { normalizeProjectPath } from "../../domain/pathDisplay";
 import type { ProjectReturnMemory } from "../../features/projects/model/projectReturn";
 
 export type { ResumedWorkspace };
@@ -72,7 +39,6 @@ let liveWorkspace: {
   projectReturnMemory: () => ProjectReturnMemory;
   lastDockSide: () => DockSide | null;
   keepTab?: (tab: WorkspaceTab) => boolean;
-  flush: () => void;
 } | null = null;
 
 export function isAppQuitting(): boolean {
@@ -86,7 +52,6 @@ export function setQuitWorkspace(
   projectCwd: () => string,
   projectTerminals: () => ProjectTerminalDock[],
   projectReturnMemory: () => ProjectReturnMemory,
-  flush: () => void,
   lastDockSide: () => DockSide | null = () => null,
   keepTab?: (tab: WorkspaceTab) => boolean,
 ): () => void {
@@ -99,7 +64,6 @@ export function setQuitWorkspace(
     projectReturnMemory,
     lastDockSide,
     keepTab,
-    flush,
   };
   bootingResumed = null;
   return () => {
@@ -113,7 +77,6 @@ export function setQuitWorkspace(
  */
 export async function handleQuitRequested(): Promise<boolean> {
   if (liveWorkspace) {
-    liveWorkspace.flush();
     quitting = true;
     try {
       await persistQuitState(
@@ -150,12 +113,11 @@ export async function handleQuitRequested(): Promise<boolean> {
 export async function reportQuitPoll(id: number): Promise<void> {
   let inFlight = 0;
   if (liveWorkspace) {
-    liveWorkspace.flush();
     // Every running turn, not just the resumable ones `inFlightRefs` keeps:
     // an Inbox Ask still counts as work nobody agreed to throw away.
     inFlight = liveWorkspace.sessions().filter(isInFlightSession).length;
   }
-  await invoke("quit_poll_reply", { id, inFlight }).catch(() => undefined);
+  await reportQuitState(id, inFlight).catch(() => undefined);
 }
 
 /** The one quit dialog, shown by whichever window the coordinator picked. */
@@ -167,7 +129,7 @@ export async function askQuitConfirmation(
   if (!quitDialogOpen) {
     quitDialogOpen = true;
     try {
-      confirmed = await ask(quitWhileBusyMessage(inFlight), {
+      confirmed = await confirmNativeAction(quitWhileBusyMessage(inFlight), {
         title: "OmniCode",
         kind: "warning",
         okLabel: "Quit",
@@ -178,12 +140,12 @@ export async function askQuitConfirmation(
       quitDialogOpen = false;
     }
   }
-  await invoke("quit_decision", { id, confirmed }).catch(() => undefined);
+  await confirmQuitDecision(id, confirmed).catch(() => undefined);
 }
 
 export async function commitQuit(id: number): Promise<void> {
   const persisted = await handleQuitRequested();
-  await invoke("quit_ready", { id, persisted }).catch(() => undefined);
+  await reportQuitReady(id, persisted).catch(() => undefined);
 }
 
 /**
@@ -197,7 +159,6 @@ export function abortQuit(): void {
 /** Confirm and stop this window's work without terminating other windows. */
 export async function closeBusyWindow(): Promise<void> {
   if (!liveWorkspace) return;
-  liveWorkspace.flush();
   await confirmAndCloseWindow(
     liveWorkspace.sessions(),
     liveWorkspace.tabs(),
@@ -281,7 +242,6 @@ async function loadResumedWorkspaceOnce(): Promise<ResumedWorkspace | null> {
     loadWorkspaceSnapshot().catch(() => null),
     listInFlightSessions().catch(() => []),
   ]);
-  const interrupted = new Set(refs.map((ref) => ref.sessionId));
   const snapshot = parseWorkspaceSnapshot(snapshotRaw);
 
   const ids = new Set<string>();
@@ -301,6 +261,10 @@ async function loadResumedWorkspaceOnce(): Promise<ResumedWorkspace | null> {
     }),
   );
 
+  // Legacy IDs only restore navigation. Host projections retain their live
+  // execution state; reopening a WebView never interrupts or restarts a turn.
+  const interrupted = new Set(refs.map(ref => ref.sessionId));
+
   let workspace = snapshot
     ? hydrateWorkspaceSnapshot(snapshot, loaded, interrupted)
     : null;
@@ -309,74 +273,38 @@ async function loadResumedWorkspaceOnce(): Promise<ResumedWorkspace | null> {
     for (const ref of refs) {
       const record = loaded.get(ref.sessionId);
       if (!record) continue;
-      sessions.push(markTurnInterrupted(record));
+      sessions.push(record);
     }
     workspace = workspaceFromResumed(sessions);
   }
+  if (workspace) {
+    workspace.sessions = workspace.sessions.map((session) => {
+      const record = loaded.get(session.id);
+      return record && sessionUsesHost(record) ? record : session;
+    });
+  }
 
   bootingResumed = workspace;
-  if (workspace) {
-    await Promise.all(
-      workspace.sessions
-        // Idle transcripts already came from disk. Rewriting every open chat
-        // here serialized/indexed the entire workspace before first paint.
-        .filter(
-          (session) => interrupted.has(session.id) && shouldPersistSession(session),
-        )
-        .map((session) => upsertSession(session).catch(() => null)),
-    );
-  }
   return workspace;
 }
 
-export function bindResumedSessions(sessions: Session[]): void {
-  for (const session of sessions) {
-    if (
-      sessionUsesHost(session) ||
-      session.worktreeRemoved ||
-      !session.providerSessionId ||
-      !isLiveHarness(session.harness)
-    )
-      continue;
-    bindHarnessSession(
-      session.harness,
-      session.id,
-      session.providerSessionId,
-      sessionExecutionCwd(session),
-      session.providerAccountId,
-      session.blocks,
-      session.nativeSession,
-    );
-  }
-}
-
 export async function hideCurrentWindow(): Promise<void> {
-  await invoke("hide_window");
+  await hideWorkspaceWindow();
 }
 
 export async function closeCurrentWindow(): Promise<void> {
-  await invoke("destroy_window");
+  await destroyWorkspaceWindow();
 }
 
 export async function confirmReload(
   hasUnsavedFiles: boolean,
 ): Promise<boolean> {
   if (!hasUnsavedFiles) return true;
-  return ask("Reload OmniCode and discard unsaved changes?", {
+  return confirmNativeAction("Reload OmniCode and discard unsaved changes?", {
     title: "OmniCode",
     kind: "warning",
     okLabel: "Reload",
   });
-}
-
-export async function persistLiveTranscripts(
-  sessions: Session[],
-): Promise<void> {
-  await Promise.all(
-    sessions
-      .filter(shouldPersistSession)
-      .map((session) => upsertSession(session).catch(() => null)),
-  );
 }
 
 export async function persistQuitState(
@@ -390,23 +318,9 @@ export async function persistQuitState(
   lastDockSide?: DockSide,
   keepTab?: (tab: WorkspaceTab) => boolean,
 ): Promise<void> {
-  const refs = inFlightRefs(sessions, tabs);
-  const interrupted = new Set(refs.map((ref) => ref.sessionId));
-  // A quit ends the process, so a swallowed write is work that never comes
-  // back: let it reject and let the caller call the quit off. An unload is a
-  // reload, where best effort is enough and failing loudly helps nobody.
+  // Window state contains navigation and blank composers, never session rows.
   const write = <T,>(pending: Promise<T>): Promise<T | null> =>
     mode === "quit" ? pending : pending.catch(() => null);
-
-  await Promise.all(
-    sessions.map(async (session) => {
-      if (!shouldPersistSession(session)) return;
-      const payload = interrupted.has(session.id)
-        ? markTurnInterrupted(session)
-        : session;
-      await write(upsertSession(payload));
-    }),
-  );
   await write(
     saveWorkspaceSnapshot(
       collectWorkspaceSnapshot(
@@ -421,19 +335,10 @@ export async function persistQuitState(
       ),
     ),
   );
-  // Vite/webview reload must not wipe a restored snapshot: those chats are idle
-  // in this process until Continue runs.
-  if (mode === "quit" || refs.length > 0) {
-    await write(replaceInFlightSessions(refs));
-  }
+
 }
 
 async function persistBootingResume(workspace: ResumedWorkspace): Promise<void> {
-  await Promise.all(
-    workspace.sessions
-      .filter(shouldPersistSession)
-      .map((session) => upsertSession(session).catch(() => null)),
-  );
   await saveWorkspaceSnapshot(
     collectWorkspaceSnapshot(
       workspace.tabs,
@@ -445,14 +350,7 @@ async function persistBootingResume(workspace: ResumedWorkspace): Promise<void> 
       workspace.lastDockSide,
     ),
   ).catch(() => undefined);
-  await replaceInFlightSessions(
-    workspace.sessions
-      .filter(wasTurnInterrupted)
-      .map((session) => ({
-        sessionId: session.id,
-        cwd: session.cwd,
-      })),
-  ).catch(() => undefined);
+
 }
 
 async function confirmAndCloseWindow(
@@ -469,8 +367,8 @@ async function confirmAndCloseWindow(
   try {
     const refs = inFlightRefs(sessions, tabs);
     if (refs.length > 0) {
-      const ok = await ask(
-        "Close this window and stop its running chats? Other windows will stay open.",
+      const ok = await confirmNativeAction(
+        "Close this window? Running chats will continue on Host.",
         { title: "OmniCode", kind: "warning", okLabel: "Close window" },
       );
       if (!ok) return;
@@ -487,7 +385,7 @@ async function confirmAndCloseWindow(
         projectTerminals,
         lastDockSide,
       );
-      await reapWindowRuntime(sessions, tabs, projectTerminals, false);
+      await reapWindowRuntime(tabs, projectTerminals);
       await closeCurrentWindow();
     } catch {
       quitting = false;
@@ -498,28 +396,13 @@ async function confirmAndCloseWindow(
 }
 
 export async function reapWindowRuntime(
-  sessions: Session[],
   tabs: WorkspaceTab[],
   projectTerminals: ProjectTerminalDock[] = [],
-  includeAllChildren = true,
 ): Promise<void> {
+  // Local PTYs remain shell-owned until the Host PTY latency gate is verified.
   await Promise.all(
-    sessions.map((session) =>
-      Promise.all(
-        sessionChildHarnesses(session).map((harness) =>
-          forgetHarnessSession(harness, session.id),
-        ),
-      ),
-    ),
+    [...terminalFileIds(tabs), ...projectTerminalFileIds(projectTerminals)].map(id => killPty(id)),
   );
-  await Promise.all(
-    [...terminalFileIds(tabs), ...projectTerminalFileIds(projectTerminals)].map(
-      (id) => killPty(id),
-    ),
-  );
-  // Catalog probes, title generators, and usage scrapers are not session
-  // children. Drop them so an unused Pi/Codex probe cannot outlive the window.
-  if (includeAllChildren) await killAllChildren().catch(() => undefined);
 }
 
 function terminalFileIds(tabs: WorkspaceTab[]): string[] {

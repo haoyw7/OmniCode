@@ -7,17 +7,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { WorkflowRunState } from "../_shims/protocol.js";
-import type { Session } from "../../../sessions/model/session";
-import {
-  useWorkflowRunSettingsPopoverState,
-  type WorkflowRunSettingsAccepted,
-  type WorkflowRunSettingsHost,
-} from "../components/workflow-timeline/WorkflowRunSettingsPopover.js";
+import type { Session } from "../../../../contracts/session";
+import { useWorkflowRunSettingsPopoverState, type WorkflowRunSettingsAccepted, type WorkflowRunSettingsHost } from "../components/workflow-timeline/WorkflowRunSettingsPopover.js";
 import { isWorkflowRunConfigurable } from "../components/workflow-timeline/workflowRunSettings.js";
-import type {
-  OpenScopedWorkflowRunSideTabRequest,
-  WorkflowRunSidePaneTab,
-} from "../lib/workspaceSidePane.js";
+import type { OpenScopedWorkflowRunSideTabRequest, WorkflowRunSidePaneTab } from "../lib/workspaceSidePane.js";
 import { createCommandEnvelope } from "../v4/commandFactory.js";
 import type { useV4Conversation } from "../v4/V4ConversationContext.js";
 

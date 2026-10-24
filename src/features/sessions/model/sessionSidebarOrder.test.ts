@@ -1,13 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
-import {
-  buildSessionList,
-  loadSessionSidebarOrder,
-  rebaseSessionFolderSettings,
-  saveSessionSidebarOrder,
-  sessionSidebarOrder,
-  subscribeSessionSidebarOrder,
-} from "./sessionFolders";
+import { buildSessionList, loadSessionSidebarOrder, rebaseSessionFolderSettings, saveSessionSidebarOrder, sessionSidebarOrder, subscribeSessionSidebarOrder } from "./sessionFolders";
 import { mergeOrderedSubset } from "../../../shared/lib/reorder";
 import type { SessionSummary } from "../data/sessionStore";
 

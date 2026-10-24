@@ -2,37 +2,12 @@ import { supportsProjectTerminal } from "../../features/terminal/model/terminalA
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback } from "react";
 import { isBlankSession } from "../../features/projects/model/projectReturn";
-import type { ProjectTerminalDock } from "../../features/projects/model/projectTerminal";
-import {
-  addTerminalToDock,
-  closeTerminalInDock,
-  createProjectTerminal,
-  findProjectTerminal,
-  mapProjectTerminal,
-  nextDockTerminalTitle,
-  patchProjectTerminals,
-  reorderDockTerminals,
-  selectDockTerminal,
-  withDockOpen,
-  withDockSide,
-  withDockSize,
-  type DockSide,
-} from "../../features/projects/model/projectTerminal";
-import type { Session } from "../../features/sessions/model/session";
-import {
-  confirmCloseTerminal,
-  confirmCloseTerminals,
-} from "../../features/terminal/model/terminalClose";
+import { type ProjectTerminalDock, addTerminalToDock, closeTerminalInDock, createProjectTerminal, findProjectTerminal, mapProjectTerminal, nextDockTerminalTitle, patchProjectTerminals, reorderDockTerminals, selectDockTerminal, withDockOpen, withDockSide, withDockSize, type DockSide } from "../../features/projects/model/projectTerminal";
+
+import type { Session } from "../../contracts/session";
+import { confirmCloseTerminal, confirmCloseTerminals } from "../../features/terminal/model/terminalClose";
 import { type TerminalMetaPatch } from "../../features/terminal/model/terminalTab";
-import {
-  newTerminalFile,
-  newTerminalWorkspaceTab,
-  nextTerminalTitle,
-  openTerminalTab,
-  updateTerminalTab,
-  type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import { forgetHarnessSession } from "../../integrations/harness";
+import { newTerminalFile, newTerminalWorkspaceTab, nextTerminalTitle, openTerminalTab, updateTerminalTab, type WorkspaceTab } from "../../features/workspace/model/layout";
 import { orderByIds } from "../../shared/lib/reorder";
 import type { WorkspaceSessionData } from "../model/workspaceSessionData";
 
@@ -132,7 +107,6 @@ export function useProjectTerminalActions({
         occupying && isBlankSession(occupying) ? occupying.id : undefined;
       if (occupyPaneId && occupying) {
         sessionData.resetPersistence(occupyPaneId);
-        void forgetHarnessSession(occupying.harness, occupyPaneId);
         setSessions((prev) =>
           prev.filter((session) => session.id !== occupyPaneId),
         );

@@ -1,7 +1,7 @@
-import { sanitizeTitleState } from "../src/features/sessions/model/titlePolicy";
+import { sanitizeTitleState } from "../src/domain/titlePolicy";
 import { restoreContextBreakdown } from "../src/integrations/harness/core/contextUsage";
 import { DatabaseSync } from "node:sqlite";
-import { retainTurnOrigins } from "../src/features/sessions/model/turnOrigins";
+import { retainTurnOrigins } from "../src/domain/turnOrigins";
 import { createHash, randomUUID } from "node:crypto";
 import {
   copyFileSync,
@@ -12,11 +12,92 @@ import {
   unlinkSync,
 } from "node:fs";
 import { basename, resolve } from "node:path";
-import type { Block, Session } from "../src/features/sessions/model/session";
-import { isRemoteProvider, type HostSession } from "../src/features/connections/model/protocol";
+import { isDeepStrictEqual } from "node:util";
+import type { Block, Session } from "../src/contracts/session";
+import { isRemoteProvider } from "../src/contracts/provider";
+import { type HostSession } from "../src/contracts/protocol";
 import { attachmentPath, MAX_REMOTE_ATTACHMENT_BYTES } from "./attachments";
 import { migrateNativeLink } from "./native/migrate";
 import type { HostStore } from "./store";
+
+type DesktopRow = Record<string, unknown>;
+type ImportReceipt = { version: 2; fingerprint: string; sourceUpdatedAt: number };
+export type DesktopImportAudit = { version: 2; rows: { id: string; fingerprint: string; sourceUpdatedAt: number }[] };
+
+/** Sorted raw SQLite columns are also hashed by the native bootstrap. */
+function rowFingerprint(row: DesktopRow): string {
+  return createHash("sha256").update(JSON.stringify(Object.keys(row).sort().map(key => [key, row[key]]))).digest("hex");
+}
+
+function importableRow(row: DesktopRow): boolean {
+  return typeof row.cwd === "string" && row.cwd !== "~" && !row.cwd.startsWith("remote://") && !row.inbox_ask;
+}
+
+function receipt(row: DesktopRow): string {
+  return JSON.stringify({ version: 2, fingerprint: rowFingerprint(row), sourceUpdatedAt: Number(row.updated_at) } satisfies ImportReceipt);
+}
+
+function verifiedReceipt(raw: unknown, row: DesktopRow): boolean {
+  if (typeof raw !== "string" || raw === "1") return false;
+  let value: ImportReceipt;
+  try { value = JSON.parse(raw); } catch { return false; }
+  if (value.version !== 2 || value.fingerprint !== rowFingerprint(row) || value.sourceUpdatedAt !== Number(row.updated_at)) {
+    throw new Error(`Desktop conversation changed after import: ${row.id}. The original database was preserved; resolve the import conflict before retrying.`);
+  }
+  return true;
+}
+
+/** Older receipts lack a source revision. Only upgrade when the whole source
+ * transcript is demonstrably retained, including copied attachment identity. */
+function sourceTranscriptRetained(store: HostStore, sourceKey: string, row: DesktopRow, value: HostSession): boolean {
+  if (Number(row.updated_at) > value.updatedAt) return false;
+  const blocks = JSON.parse(String(row.blocks_json ?? "[]")) as Block[];
+  if (!Array.isArray(blocks)) return false;
+  for (const block of blocks) {
+    const copied = (originalId: string) => {
+      const key = `desktop-file:${sourceKey}:${row.id}:${createHash("sha256").update(originalId).digest("hex")}`;
+      const entry = store.db.prepare("SELECT value FROM metadata WHERE key=?").get(key);
+      if (!entry) return undefined;
+      const id = String(entry.value);
+      const path = attachmentPath(store, id);
+      return existsSync(path) ? { id, path, size: statSync(path).size } : undefined;
+    };
+    for (const file of block.attachments ?? []) {
+      const entry = copied(file.id);
+      if (!entry) return false;
+      Object.assign(file, entry);
+      delete file.previewUrl;
+      delete file.data;
+      if (block.image) block.image.path = entry.path;
+    }
+    if (block.image && !block.attachments?.length) {
+      const originalPath = block.image.path;
+      const entry = copied(originalPath);
+      if (!entry) return false;
+      block.image.path = entry.path;
+      block.attachments = [{ ...entry, name: basename(originalPath), kind: "image", mimeType: block.image.mimeType }];
+    }
+  }
+  const canonical = retainTurnOrigins([], blocks);
+  return isDeepStrictEqual(canonical, retainTurnOrigins([], value.session.blocks.slice(0, blocks.length)));
+}
+
+/** Includes ignored/retired rows so the native side can detect every concurrent
+ * source mutation. No transcript bytes leave the bootstrap in this manifest. */
+export function desktopImportAudit(store: HostStore, path: string): DesktopImportAudit {
+  if (!existsSync(path)) return { version: 2, rows: [] };
+  const sourceKey = createHash("sha256").update(resolve(path)).digest("hex");
+  const source = new DatabaseSync(path, { readOnly: true });
+  try {
+    const rows = source.prepare("SELECT * FROM sessions ORDER BY id").all();
+    for (const row of rows) {
+      if (!importableRow(row) || store.db.prepare("SELECT 1 FROM metadata WHERE key=?").get(`desktop-retired:${sourceKey}:${row.id}`)) continue;
+      const imported = store.db.prepare("SELECT value FROM metadata WHERE key=?").get(`desktop-import:${sourceKey}:${row.id}`);
+      if (!verifiedReceipt(imported?.value, row)) throw new Error(`Desktop conversation import is not verified: ${row.id}`);
+    }
+    return { version: 2, rows: rows.map(row => ({ id: String(row.id), fingerprint: rowFingerprint(row), sourceUpdatedAt: Number(row.updated_at) })) };
+  } finally { source.close(); }
+}
 
 /** Import once per source row, including a tombstone after Host deletion.
  * Never modify the source or replace an existing canonical conversation. */
@@ -32,22 +113,16 @@ export function importDesktopSessions(
     const rows = source.prepare("SELECT id, cwd, harness FROM sessions").all();
     for (const reference of rows) {
       const marker = `desktop-import:${sourceKey}:${reference.id}`;
-      if (
-        store.db.prepare("SELECT 1 FROM metadata WHERE key=?").get(`desktop-retired:${sourceKey}:${reference.id}`) ||
-        store.db.prepare("SELECT 1 FROM metadata WHERE key=?").get(marker)
-      )
+      if (store.db.prepare("SELECT 1 FROM metadata WHERE key=?").get(`desktop-retired:${sourceKey}:${reference.id}`))
         continue;
       const row = source
         .prepare("SELECT * FROM sessions WHERE id=?")
         .get(reference.id)!;
-      if (
-        !isRemoteProvider(row.harness) ||
-        typeof row.cwd !== "string" ||
-        row.cwd === "~" ||
-        row.cwd.startsWith("remote://") ||
-        row.inbox_ask
-      )
-        continue;
+      if (!importableRow(row)) continue;
+      if (!isRemoteProvider(row.harness) || typeof row.cwd !== "string")
+        throw new Error(`Desktop conversation cannot be imported: ${row.id}`);
+      const priorReceipt = store.db.prepare("SELECT value FROM metadata WHERE key=?").get(marker);
+      if (verifiedReceipt(priorReceipt?.value, row)) continue;
       const id = String(row.id);
       const cwd = existsSync(row.cwd) ? realpathSync(row.cwd) : row.cwd;
       const harness = row.harness;
@@ -65,8 +140,8 @@ export function importDesktopSessions(
       const copied: string[] = [];
       try {
         store.transaction(() => {
-          if (store.db.prepare("SELECT 1 FROM metadata WHERE key=?").get(marker))
-            return;
+          const currentReceipt = store.db.prepare("SELECT value FROM metadata WHERE key=?").get(marker);
+          if (verifiedReceipt(currentReceipt?.value, row)) return;
           const existing = store.db
             .prepare("SELECT snapshot FROM sessions WHERE id=?")
             .get(id);
@@ -79,7 +154,11 @@ export function importDesktopSessions(
               throw new Error(
                 `Conversation ID collision while importing ${id}`,
               );
+            if (!sourceTranscriptRetained(store, sourceKey, row, value))
+              throw new Error(`Desktop conversation import conflicts with Host history: ${id}. Neither history was overwritten.`);
           } else {
+            if (currentReceipt)
+              throw new Error(`Deleted desktop conversation has an unverified legacy import: ${id}. The deletion and source database were preserved.`);
             const copy = (
               originalPath: string | undefined,
               originalId: string,
@@ -201,8 +280,8 @@ export function importDesktopSessions(
             imported++;
           }
           store.db
-            .prepare("INSERT OR IGNORE INTO metadata VALUES (?, ?)")
-            .run(marker, "1");
+            .prepare("INSERT OR REPLACE INTO metadata VALUES (?, ?)")
+            .run(marker, receipt(row));
         });
       } catch (error) {
         for (const file of copied) {

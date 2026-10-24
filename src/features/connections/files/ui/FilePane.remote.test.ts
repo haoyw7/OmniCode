@@ -3,7 +3,7 @@ import { act, createElement, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { newEditorPane, newFileTab } from "../../../workspace/model/layout";
-import { FilePane } from "./FilePane";
+import { FilePane } from "../../../../app/ui/FilePane";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => []),

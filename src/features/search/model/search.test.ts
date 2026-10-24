@@ -1,13 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  cancelProjectSearch,
-  searchProject,
-} from "./search";
-import {
-  cancelSessionSearch,
-  searchSessions,
-} from "../../sessions/data/sessionStore";
+import { searchProject } from "./search";
+import { cancelSessionSearch, searchSessions } from "../../sessions/data/sessionStore";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -18,23 +12,17 @@ describe("project search cancellation", () => {
     vi.mocked(invoke).mockReset();
   });
 
-  it("passes the owner id with search and cancel commands", async () => {
+  it("passes the owner id with the search command", async () => {
     const options = {
       cwd: "/repo",
       query: "needle",
       searchId: "search-7",
     };
     vi.mocked(invoke).mockResolvedValueOnce({ matches: [], truncated: false });
-    vi.mocked(invoke).mockResolvedValueOnce(undefined);
 
     await searchProject(options);
-    await cancelProjectSearch(options.cwd, options.searchId);
 
-    expect(invoke).toHaveBeenNthCalledWith(1, "search_project", { options });
-    expect(invoke).toHaveBeenNthCalledWith(2, "cancel_project_search", {
-      cwd: "/repo",
-      searchId: "search-7",
-    });
+    expect(invoke).toHaveBeenCalledExactlyOnceWith("search_project", { options });
   });
 
   it("passes the owner id with session search and cancel commands", async () => {
@@ -50,10 +38,5 @@ describe("project search cancellation", () => {
     expect(invoke).toHaveBeenNthCalledWith(2, "cancel_session_search", {
       searchOwner: "owner-1",
     });
-  });
-
-  it("does not send remote cancellation to this computer", async () => {
-    await cancelProjectSearch("remote://env/home/me/repo", "remote-search");
-    expect(invoke).not.toHaveBeenCalled();
   });
 });

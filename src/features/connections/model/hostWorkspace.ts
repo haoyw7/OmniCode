@@ -1,13 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { HostDescriptor, HostProject } from "./protocol";
-import {
-  configureSharedHost, ensureSharedProject, parseRemotePath, remotePath,
-  remoteProjectFor, rememberRemoteProject, sharedHostEnvironment,
-  sharedHostMachineId, sharedProjects,
-} from "./remoteProjects";
-import {
-  rememberRemoteSession, remoteRequest, remoteSessionFor, remoteSessionScopeFor,
-} from "./connections";
+import { readLegacyWorkspaceSnapshot } from "../../../platform/tauri/appShell";
+import type { HostDescriptor, HostProject } from "../../../contracts/protocol";
+import { configureSharedHost, ensureSharedProject, parseRemotePath, remotePath, remoteProjectFor, rememberRemoteProject, sharedHostEnvironment, sharedHostMachineId, sharedProjects } from "./remoteProjects";
+import { rememberRemoteSession, remoteRequest, remoteSessionFor, remoteSessionScopeFor } from "./connections";
 import { parseWorkspaceSnapshot, type WorkspaceSnapshot } from "../../workspace/model/workspaceSnapshot";
 import { translate } from "../../../shared/i18n/language";
 import { hostStateTransportUnavailable } from "./hostStateOffline";
@@ -274,7 +268,7 @@ export async function loadHostWorkspace(): Promise<unknown | null | undefined> {
   const record = await desktop.read();
   if (record) return decodeHostWorkspace(record.snapshot);
   if (import.meta.env.DEV) return null;
-  const legacy = parseWorkspaceSnapshot(await invoke("workspace_get_snapshot"));
+  const legacy = parseWorkspaceSnapshot(await readLegacyWorkspaceSnapshot());
   if (!legacy) return null;
   const shared = await encodeHostWorkspace(legacy);
   await desktop.save(shared, true, true);

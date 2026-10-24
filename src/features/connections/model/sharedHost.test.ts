@@ -2,28 +2,16 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { initializeSharedHost } from "./sharedHost";
-import {
-  remoteProjectFor,
-  ensureSharedProject,
-  configureSharedHost,
-} from "./remoteProjects";
-import {
-  getSession,
-  listSessionsByProject,
-  setSessionArchived,
-  shouldPersistSession,
-  searchSessions,
-  deleteSession,
-  upsertSession,
-} from "../../sessions/data/sessionStore";
+import { remoteProjectFor, ensureSharedProject, configureSharedHost, sessionUsesHost } from "./remoteProjects";
+import { getSession, listSessionsByProject, setSessionArchived, shouldPersistSession, searchSessions, deleteSession, upsertSession } from "../../sessions/data/sessionStore";
 import { setSharedSessionBackend, sharedSessionBackend } from "../../sessions/data/sharedSessionBackend";
-import type { HostSession } from "./protocol";
+import type { HostSession } from "../../../contracts/protocol";
 import { remoteSessionFor, rememberRemoteSession } from "./connections";
 import { isRetiredSession } from "../../sessions/model/retiredSessions";
-import { sessionUsesHost } from "./remoteProjects";
+
 import { loadRecents, projectRailItems, rememberProject, saveProjectRailOrder } from "../../projects/model/recents";
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
-vi.mock("./remoteOutbox", () => ({
+vi.mock("../../../platform/tauri/remoteOutbox", () => ({
   OUTBOX_PREFIX: "omnicode.remote-command.v1:",
   loadRemoteOutbox: vi.fn(async () => undefined),
   outboxKeys: () => [],
@@ -40,9 +28,12 @@ const machine = {
 const project = { id: "project", cwd: "/home/me/repo", name: "repo" };
 let value: HostSession;
 let workspace: unknown;
+let cachedProjection: HostSession | null;
 beforeEach(() => {
+  vi.mocked(invoke).mockClear();
   localStorage.clear();
   workspace = null;
+  cachedProjection = null;
   value = {
     projectId: project.id,
     revision: 1,
@@ -67,6 +58,12 @@ beforeEach(() => {
         projects: [project],
         sessions: [{ id: "history", cwd: project.cwd }],
       };
+    if (command === "shared_host_cached_prepare") return { machine, projects: [project], sessions: [{ id: "history", cwd: project.cwd }] };
+    if (command === "host_projection_cache_identity") return "opaque-credential-scope";
+    if (command === "host_projection_cache_put") { cachedProjection = structuredClone(args.snapshot); return; }
+    if (command === "host_projection_cache_get") return cachedProjection;
+    if (command === "host_projection_cache_list") return cachedProjection ? [cachedProjection] : [];
+    if (command === "host_projection_cache_delete") { cachedProjection = null; return; }
     if (command === "remote_machines") return [machine];
     if (command === "workspace_get_snapshot") return workspace;
     if (command === "session_delete") return;
@@ -169,7 +166,7 @@ it("registers a newly opened local folder on the same Host once", async () => {
       ),
   ).toHaveLength(1);
 });
-it("deletes canonical history and clears legacy native references without removing recovery images", async () => {
+it("deletes canonical history and its projection cache while preserving the native rollback rows", async () => {
   await initializeSharedHost();
   await deleteSession("history");
   expect(invoke).toHaveBeenCalledWith("remote_request", {
@@ -177,14 +174,32 @@ it("deletes canonical history and clears legacy native references without removi
     method: "sessions.delete",
     params: { projectId: project.id, sessionId: "history" },
   });
-  expect(invoke).toHaveBeenCalledWith("session_delete", {
+  expect(invoke).toHaveBeenCalledWith("host_projection_cache_delete", {
+    machineId: machine.id,
     sessionId: "history",
-    imagePaths: [],
+    expectedScope: "opaque-credential-scope",
   });
+  expect(vi.mocked(invoke).mock.calls.some(([command]) => command === "session_delete")).toBe(false);
 });
 it("rejects bootstrap failure instead of silently selecting a local runtime", async () => {
   vi.mocked(invoke).mockRejectedValueOnce(new Error("Host unavailable"));
   await expect(initializeSharedHost()).rejects.toThrow("Host unavailable");
+});
+it("does not read workspace state or install a backend until native Host preparation finishes", async () => {
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  let ready!: () => void;
+  vi.mocked(invoke).mockImplementation(async (command, args) => {
+    if (command === "shared_host_prepare") await new Promise<void>((resolve) => { ready = resolve; });
+    return original(command, args);
+  });
+  const startup = initializeSharedHost();
+  await vi.waitFor(() => expect(ready).toBeTypeOf("function"));
+  expect(sharedSessionBackend()).toBeUndefined();
+  expect(remoteProjectFor(project.cwd)).toBeUndefined();
+  expect(invoke).not.toHaveBeenCalledWith("workspace_get_snapshot");
+  ready();
+  await startup;
+  expect(sharedSessionBackend()?.ownsProject(project.cwd)).toBe(true);
 });
 it("runs imported native conversations on the Host and never saves them on the desktop", async () => {
   await initializeSharedHost();
@@ -294,10 +309,48 @@ it("never falls back to bootstrap cache after authentication rejection or native
   await expect(initializeSharedHost()).rejects.toThrow("Authentication failed");
   vi.mocked(invoke).mockImplementation(async (command, args) => {
     if (command === "shared_host_prepare") throw new Error("offline");
-    if (command === "remote_machines") return [];
+    if (command === "shared_host_cached_prepare") return null;
     return original(command, args);
   });
   await expect(initializeSharedHost()).rejects.toThrow("offline");
+});
+
+it("rejects cached bootstrap after the saved endpoint changes and allows a fresh verified retry", async () => {
+  await initializeSharedHost();
+  configureSharedHost(undefined, []);
+  setSharedSessionBackend();
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (command, args) => {
+    if (command === "shared_host_prepare") throw new Error("connection refused");
+    if (command === "shared_host_cached_prepare") return null;
+    return original(command, args);
+  });
+  await expect(initializeSharedHost()).rejects.toThrow("connection refused");
+  expect(sharedSessionBackend()).toBeUndefined();
+  expect(remoteProjectFor(project.cwd)).toBeUndefined();
+  expect(sessionUsesHost(value.session)).toBe(true);
+  vi.mocked(invoke).mockImplementation(original);
+  await initializeSharedHost();
+  expect((await getSession("history"))?.blocks[0].text).toBe("Phone message");
+});
+
+it("reads cached history summaries during a verified offline startup without native session writes", async () => {
+  await initializeSharedHost();
+  await getSession("history");
+  expect(cachedProjection?.session.blocks[0].text).toBe("Phone message");
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (command, args) => {
+    if (command === "shared_host_prepare") throw new Error("Could not start shared conversation service: unavailable");
+    if (command === "remote_request") throw new Error("connection refused");
+    return original(command, args);
+  });
+  configureSharedHost(undefined, []);
+  setSharedSessionBackend();
+  await initializeSharedHost();
+  expect((await listSessionsByProject(project.cwd))[0]).toMatchObject({ id: "history", title: "Shared chat" });
+  expect((await getSession("history"))?.blocks[0].text).toBe("Phone message");
+  expect(await upsertSession(value.session)).toBeNull();
+  expect(vi.mocked(invoke).mock.calls.some(([command]) => command === "session_upsert")).toBe(false);
 });
 
 it("imports native history without promoting its project in the sidebar", async () => {
@@ -319,4 +372,19 @@ it("does not overwrite legacy project preferences during pre-settings bootstrap"
   localStorage.setItem("omnicode.recentProjects", legacy);
   await initializeSharedHost();
   expect(localStorage.getItem("omnicode.recentProjects")).toBe(legacy);
+});
+
+
+it("does not display a cached full transcript after an authenticated Host rejects access", async () => {
+  await initializeSharedHost();
+  await getSession("history");
+  expect(cachedProjection).not.toBeNull();
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (command, args) => {
+    if (command === "remote_request") throw new Error("HTTP 403 Forbidden");
+    return original(command, args);
+  });
+  vi.mocked(invoke).mockClear();
+  await expect(getSession("history")).rejects.toThrow("Forbidden");
+  expect(vi.mocked(invoke).mock.calls.some(([command]) => command === "host_projection_cache_get")).toBe(false);
 });

@@ -1,18 +1,6 @@
-import {
-  closeLeaf,
-  firstLeafId,
-  isSessionChangesTab,
-  leafIds,
-  removePane,
-  resetTabToSession,
-  type EditorPane,
-  type WorkspaceTab,
-} from "../../workspace/model/layout";
-import type { Session } from "./session";
-import {
-  planWorkspaceTabClose,
-  type WorkspaceTabCloseScope,
-} from "../../workspace/model/workspaceTabGroups";
+import { closeLeaf, firstLeafId, isSessionChangesTab, leafIds, removePane, resetTabToSession, type EditorPane, type WorkspaceTab } from "../../workspace/model/layout";
+import type { Session } from "../../../contracts/session";
+import { planWorkspaceTabClose, type WorkspaceTabCloseScope } from "../../workspace/model/workspaceTabGroups";
 
 export type SessionWorkspaceRemoval = {
   tabs: WorkspaceTab[];

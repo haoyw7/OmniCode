@@ -1,28 +1,14 @@
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useId, useState, useSyncExternalStore } from "react";
-import {
-  getCiRepairs,
-  subscribeCiRepairs,
-  type TrackedCiRepair,
-} from "../model/ciRepairTracking";
+import { getCiRepairs, subscribeCiRepairs, type TrackedCiRepair } from "../model/ciRepairTracking";
 import { sameProjectPath } from "../../projects/model/recents";
-import {
-  CheckCircle,
-  CircleDashed,
-  CircleX,
-  LoaderCircle,
-  MessageSquare,
-  type IconComponent,
-} from "../../../shared/ui/icons";
+import { CheckCircle, CircleDashed, CircleX, LoaderCircle, MessageSquare, type IconComponent } from "../../../shared/ui/icons";
 import type { CheckRepair } from "./CheckRepairForm";
 import type { GithubPrChecksView } from "../hooks/useGithubPrChecks";
-import type {
-  GithubPrCheck,
-  GithubPrChecks,
-  GithubPrCheckState,
-} from "../model/githubPrChecks";
+import type { GithubPrCheck, GithubPrChecks, GithubPrCheckState } from "../../../contracts/github";
 import { githubActionsJobId } from "../model/githubPrChecks";
+
 
 type RepairState =
   | GithubPrCheckState

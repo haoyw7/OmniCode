@@ -1,15 +1,15 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { createTaskWorktree } from "./taskWorktree";
 import { generateConfiguredWorktreeName } from "../../sessions/model/titleModelClient";
-import { generateHarnessBranchName } from "../../../integrations/harness/core/registry";
+import { generateHostBranchName } from "../../providers/model/providerAuxiliary";
 import { gitBranches } from "../../../platform/tauri/fs";
 import { createWorktree, listWorktrees } from "./worktrees";
 
 vi.mock("../../sessions/model/titleModelClient", () => ({
   generateConfiguredWorktreeName: vi.fn(),
 }));
-vi.mock("../../../integrations/harness/core/registry", () => ({
-  generateHarnessBranchName: vi.fn(),
+vi.mock("../../providers/model/providerAuxiliary", () => ({
+  generateHostBranchName: vi.fn(),
 }));
 vi.mock("../../../platform/tauri/fs", () => ({ gitBranches: vi.fn() }));
 vi.mock("./worktrees", () => ({
@@ -56,12 +56,12 @@ it("waits for a model name and creates the branch and directory once", async () 
     false,
     progress,
   );
-  expect(generateHarnessBranchName).not.toHaveBeenCalled();
+  expect(generateHostBranchName).not.toHaveBeenCalled();
 });
 
 it("uses the selected agent and avoids a model name that already exists", async () => {
   vi.mocked(generateConfiguredWorktreeName).mockResolvedValue(null);
-  vi.mocked(generateHarnessBranchName).mockResolvedValue("fix-login");
+  vi.mocked(generateHostBranchName).mockResolvedValue("fix-login");
   vi.mocked(gitBranches).mockResolvedValue({
     current: "main",
     detached: false,
@@ -75,7 +75,7 @@ it("uses the selected agent and avoids a model name that already exists", async 
     undefined,
     () => true,
   );
-  expect(generateHarnessBranchName).toHaveBeenCalledWith(
+  expect(generateHostBranchName).toHaveBeenCalledWith(
     "omp",
     "/repo",
     "Fix login",
@@ -91,7 +91,7 @@ it("uses the selected agent and avoids a model name that already exists", async 
 
 it("creates nothing when naming fails or the send was cancelled while naming", async () => {
   vi.mocked(generateConfiguredWorktreeName).mockResolvedValue(null);
-  vi.mocked(generateHarnessBranchName).mockResolvedValue(null);
+  vi.mocked(generateHostBranchName).mockResolvedValue(null);
   await expect(
     createTaskWorktree(
       "/repo",

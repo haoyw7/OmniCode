@@ -1,12 +1,4 @@
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type ComponentProps,
-} from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode, type ComponentProps } from "react";
 import type { PopoverAnchor } from "../Popover";
 import { PresenceBoundary } from "../PresenceBoundary";
 import { MenuHover } from "../MenuHover";

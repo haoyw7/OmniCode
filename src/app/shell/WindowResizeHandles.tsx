@@ -1,13 +1,10 @@
-import { isTauri } from "@tauri-apps/api/core";
-import {
-  getCurrentWindow,
-  type Window as TauriWindow,
-} from "@tauri-apps/api/window";
+import { isDesktopShell } from "../../platform/tauri/window";
+import { desktopWindow, type DesktopWindow, type WindowResizeDirection } from "../../platform/tauri/window";
 import { useEffect, useState, type CSSProperties } from "react";
 import { IS_LINUX, IS_WIN } from "../../platform/tauri/platform";
 import { deferredWindowRefresh } from "./windowResizeWork";
 
-type ResizeDirection = Parameters<TauriWindow["startResizeDragging"]>[0];
+type ResizeDirection = WindowResizeDirection;
 
 const DIRECTIONS: ResizeDirection[] = [
   "North",
@@ -136,7 +133,7 @@ const CURSORS: Record<ResizeDirection, string> = {
 
 /** Extend the inner hit area; the OS still performs the entire resize gesture. */
 export function WindowResizeHandles() {
-  const [resizeWindow, setResizeWindow] = useState<TauriWindow | null>(null);
+  const [resizeWindow, setResizeWindow] = useState<DesktopWindow | null>(null);
   const [nativeScale, setNativeScale] = useState(1);
   // Tauri/GTK uses 5 * scale GDK units. Convert to CSS pixels, including webview zoom.
   const nativeInset = IS_LINUX ? 5 * nativeScale * nativeScale / window.devicePixelRatio : 0;
@@ -144,8 +141,8 @@ export function WindowResizeHandles() {
   const corner = IS_LINUX ? Math.max(24, edge) : 16;
 
   useEffect(() => {
-    if (!(IS_LINUX || IS_WIN) || !isTauri()) return;
-    const win = getCurrentWindow();
+    if (!(IS_LINUX || IS_WIN) || !isDesktopShell()) return;
+    const win = desktopWindow();
     let mounted = true;
     let revision = 0;
     let unlisten: (() => void) | undefined;

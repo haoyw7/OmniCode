@@ -1,9 +1,6 @@
-import type { Session, LinkedWorkItem } from "../model/session";
+import type { Session, LinkedWorkItem, NativeSessionAccess, NativeSourceListing } from "../../../contracts/session";
 import type { SessionSummary, SessionSearchHit } from "./sessionStore";
-import type {
-  NativeSessionAccess,
-  NativeSourceListing,
-} from "../../../integrations/harness/core/nativeSessions";
+
 
 /** Host-managed native conversations. */
 export type SharedNativeBackend = {
